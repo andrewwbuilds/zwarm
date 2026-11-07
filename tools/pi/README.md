@@ -127,10 +127,16 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173`. The current frontend addresses `localhost:8000` and
-controls one backend at a time. Close the Pi 1 tunnel and open the same local-port
-tunnel to `zwarm-pi-02` to switch the console. All three Pi backends can run independently;
-a fleet coordinator and shared position feedback are separate work.
+- `http://localhost:5173/fleet` shows all three video feeds and backend status. It is view
+  only: it never opens the control websocket, so it cannot move a drone.
+- `http://localhost:5173/?backend=8001` (or `8002`, `8003`) is the console for one drone.
+  Each tile on the fleet page has an "open console" link. The tab title names the drone.
+- Only the focused console window sends stick input. An unfocused console centres its
+  sticks once and goes quiet, so its drone holds position. Click a window before flying it.
+- Without `?backend=`, the console uses `VITE_BACKEND_URL`, then `localhost:8000`, so the
+  single-tunnel setup (`ssh -N -L 8000:127.0.0.1:8000 zwarm-pi-01`) still works.
+
+Fleet coordination and shared position feedback are separate work.
 
 Inspect and stop the backend with:
 

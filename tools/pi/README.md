@@ -157,7 +157,26 @@ Before disconnecting USB power:
 ```sh
 ssh zwarm-pi-01 'sudo poweroff'
 ssh zwarm-pi-02 'sudo poweroff'
+ssh zwarm-pi-03 'sudo poweroff'
 ```
+
+## Writing a new card on macOS
+
+Raspberry Pi Imager v2.0.11 in `--cli` mode hung at "Unmounting drive" on this
+Mac, with or without administrator rights. Writing `/dev/rdiskN` with `dd` as root
+also fails (`Operation not permitted`) unless the terminal app has Full Disk Access.
+What worked for Pi 3:
+
+1. Decompress the image and check its SHA-256 against the release's `extract_sha256`.
+2. Open the raw disk through `/usr/libexec/authopen -stdoutpipe -o 2 /dev/rdiskN`,
+   which shows a system authorization prompt and passes back a file descriptor,
+   then write the image in 4 MiB blocks and read it back to compare the hash.
+3. Copy `user-data` and `network-config` onto the `bootfs` partition with `cat`
+   (plain `cp` leaves `._` AppleDouble files), keep the image's `meta-data`, eject.
+
+On first boot, set the Wi-Fi country (`sudo raspi-config nonint do_wifi_country US`)
+before `wlan0` will come up, and let NTP sync the clock before running `apt-get`.
+On the Mac, give the new gadget interface a manual `.2` address with no router.
 
 Private keys, passwords, local environment files, and recordings are not stored
 in this repository. Configuration backups remain on the Mac and on each Pi.

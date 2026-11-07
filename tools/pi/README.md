@@ -108,7 +108,7 @@ npm run dev
 
 Open `http://localhost:5173`. The current frontend addresses `localhost:8000` and
 controls one backend at a time. Close the Pi 1 tunnel and open the same local-port
-tunnel to `zwarm-pi-02` to switch the console. Both Pi backends can run independently;
+tunnel to `zwarm-pi-02` to switch the console. All three Pi backends can run independently;
 a fleet coordinator and shared position feedback are separate work.
 
 Inspect and stop the backend with:

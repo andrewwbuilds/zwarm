@@ -111,7 +111,7 @@ function DroneTile({ drone, state, onAssume }: {
         </a>
       </div>
       <div style={{ flex: 1, position: "relative", background: "#000", minHeight: 0 }}>
-        {status === "online" ? (
+        {state.status === "online" ? (
           <img
             key={videoKey}
             src={`${base}/mjpeg`}

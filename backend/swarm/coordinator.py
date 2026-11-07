@@ -642,7 +642,12 @@ class Coordinator:
             age = d.tracked.age(now)
             extra = min(1.0, max(0.0, age - STALE_S) * 0.4)
             velocity = d.tracked.v if age <= STALE_S else np.zeros(3)
-            position = d.tracked.now(now) if age <= STALE_S else d.tracked.p
+            if age <= STALE_S:
+                position = d.tracked.now(now)
+            else:
+                # Its sticks centre when commands stop, but it takes a moment to stop moving, so
+                # expect it where it would have come to rest, not where it was last seen.
+                position = d.tracked.p + d.tracked.v * min(age, STALE_S + self.limits.response)
             want = self._want(d, now) if steerable else np.zeros(3)
             bodies.append(Body(d.id, position, velocity, want, steerable, extra, descending=d.phase == Phase.LANDING))
         for d in self.drones.values():

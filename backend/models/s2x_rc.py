@@ -34,6 +34,11 @@ class S2xDroneModel(BaseRCModel):
         self.headless_flag = False
         self.calibration_flag = False
 
+        # Takeoff and land share one toggle bit and the drone reports nothing back,
+        # so this tracks what was last sent. It is a belief, not a measurement: a
+        # takeoff the drone ignored, or a crash, leaves it wrong until corrected.
+        self.airborne = False
+
         # misc
         self.speed = 20    # matches 0x14 from dumps
         self.speed_index = 2

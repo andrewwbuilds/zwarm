@@ -444,6 +444,19 @@ class Coordinator:
         moving = check.stage % 2 == 0
         length = CHECK_MOVE_S if moving else CHECK_STOP_S
         elapsed = now - check.stage_at
+        along = float(d.tracked.v @ direction)
+        check.recent.append(along)
+        del check.recent[:-8]  # 0.4 s at 20 Hz: enough that one noisy pose can't trigger this
+        along = sum(check.recent) / len(check.recent)
+        if moving and elapsed > 0.8 and along < -CHECK_WRONG_WAY:
+            # Don't wait for the end of the move: every correction would now make it worse.
+            d.check_results = check.results
+            d.check = None
+            d.sticks_wrong = True
+            d.fault("response", f"it moved the wrong way ({along:+.2f} m/s), so a stick is reversed or the "
+                                "heading is wrong; landing it where it is")
+            self._toggle_land(d, now)
+            return np.zeros(3)
         if elapsed >= length - CHECK_SAMPLE_S:
             check.samples.append(float(d.tracked.v @ direction))
         if elapsed < length:

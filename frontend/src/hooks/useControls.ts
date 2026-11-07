@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { API_BASE_URL, WS_BASE_URL } from "../backend";
 
 /* ─────────────────────────────────────────────────────────── */
 /*  Shared types                                               */

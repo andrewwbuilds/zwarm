@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { drop } from "../ui";
+import { API_BASE_URL } from "../backend";
 
-const API = "http://localhost:8000";
+const API = API_BASE_URL;
 
 const FIELDS = [
   ["hover_height", "hover height m"],

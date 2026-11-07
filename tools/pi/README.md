@@ -1,6 +1,6 @@
 # Raspberry Pi drone gateways
 
-Verified on two Raspberry Pi 4s running Raspberry Pi OS Lite 64-bit (Debian 13
+Verified on three Raspberry Pi 4s running Raspberry Pi OS Lite 64-bit (Debian 13
 Trixie), Python 3.13.5, with one independent drone connection per Pi.
 
 ## Current installation

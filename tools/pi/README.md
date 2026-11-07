@@ -147,10 +147,10 @@ actual Mac sleep has not yet been observed with the timer installed. Upstream
 reports describe similar symptoms: [issue 27](https://github.com/raspberrypi/rpi-usb-gadget/issues/27)
 and [proposed recovery](https://github.com/raspberrypi/rpi-usb-gadget/pull/31).
 
-If USB fails, use Ethernet to inspect `ip -s link show usb0` and the service logs.
+If USB fails, use Ethernet or home Wi-Fi to inspect `ip -s link show usb0` and the service logs.
 With no backend running, `sudo modprobe -r g_ether; sudo modprobe g_ether` reloads
-the USB network driver. This disconnects USB temporarily. Ethernet or a local
-console is needed to issue it when USB is already unreachable.
+the USB network driver. This disconnects USB temporarily. Ethernet, home Wi-Fi or a
+local console is needed to issue it when USB is already unreachable.
 
 Before disconnecting USB power:
 

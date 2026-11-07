@@ -619,6 +619,14 @@ def _flying_plan() -> bool:
     return runner is not None and runner.running
 
 
+SWARM_CLAIM_S = 1.0
+swarm_claim_until = 0.0  # while in the future, only the swarm coordinator may fly this drone
+
+
+def _swarm_flying() -> bool:
+    return time.monotonic() < swarm_claim_until
+
+
 def _sim_context() -> dict:
     """Where a prediction should fly: the live simulator's scene and pose, or open air."""
     url = os.getenv("SIM_URL")

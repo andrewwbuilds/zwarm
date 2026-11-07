@@ -26,7 +26,6 @@ export type CameraTiltDirection = -1 | 0 | 1;
 /* ─────────────────────────────────────────────────────────── */
 
 export function useControls() {
-  const API_BASE_URL = "http://localhost:8000";
 
   /* ------- state refs (mutable) ------- */
   const axesRef = useRef<Axes>({ throttle: 0, yaw: 0, pitch: 0, roll: 0 });

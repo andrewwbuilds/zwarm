@@ -6,7 +6,7 @@
 #       (localhost:8001-8003) and the app, then open the fleet monitor. Stays in the
 #       foreground and keeps the Mac awake. Ctrl-C closes the tunnels and the app; the
 #       backends keep running and a disconnected console centres the sticks.
-#       A Pi whose backend is already running is left alone, so re-running is safe.
+#       A running backend is left running (no preflight), so re-running is safe.
 #
 #   tools/pi/fleet.sh status
 #       Drone link, backend and tunnel for each Pi.

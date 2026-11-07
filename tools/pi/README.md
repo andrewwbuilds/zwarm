@@ -127,8 +127,16 @@ tools/pi/fleet.sh down     # after landing: stop the backends and close the tunn
 
 A Pi whose drone is off reports NOT READY and the other drones still come up.
 
-- `http://localhost:5173/fleet` shows all three video feeds and backend status. It is view
-  only: it never opens the control websocket, so it cannot move a drone.
+- `http://localhost:5173/fleet` shows all three video feeds and backend status, with
+  **Take off all**, **Land all** and **E-STOP all**. Sticks stay with the consoles.
+  Take off all asks for confirmation first. `?ports=8011,8012,8013` points the page at
+  other backends, such as local simulators, for testing without the drones.
+- The S20 sends takeoff and land as one toggle bit and reports nothing back, so each
+  backend tracks a *presumed* state (shown on each tile) and drops a takeoff to a drone
+  presumed in the air or a land to one presumed on the ground. This applies to consoles
+  and trajectory plans too. If a drone ignored a takeoff or crashed, the presumed state
+  is wrong: fix it with the tile's "mark landed" / "mark flying" button, which sends
+  nothing to the drone. E-stop is never blocked and marks the drone landed.
 - `http://localhost:5173/?backend=8001` (or `8002`, `8003`) is the console for one drone.
   Each tile on the fleet page has an "open console" link. The tab title names the drone.
 - Only the focused console window sends stick input. An unfocused console centres its

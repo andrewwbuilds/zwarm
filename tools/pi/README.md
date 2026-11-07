@@ -7,7 +7,8 @@ Trixie), Python 3.13.5, with one independent drone connection per Pi.
 
 - Pi 1: `molt`, USB address `10.12.194.1/28`, Mac address `10.12.194.2/28`.
 - Pi 2: `clawdbot-pi`, USB address `10.12.195.1/28`, Mac address `10.12.195.2/28`.
-- Mac SSH aliases: `zwarm-pi-01` and `zwarm-pi-02`, login user `andrew`.
+- Pi 3: `zwarm-pi-03`, USB address `10.12.196.1/28`, Mac address `10.12.196.2/28`.
+- Mac SSH aliases: `zwarm-pi-01`, `zwarm-pi-02` and `zwarm-pi-03`, login user `andrew`.
 - Repository on each Pi: `/home/andrew/zwarm`, backend environment: `backend/.venv`.
 - Each backend listens on `127.0.0.1:8000` on its Pi; use an SSH tunnel from the Mac.
 - `zwarm-backend.service` is installed for manual operation. It is not started or

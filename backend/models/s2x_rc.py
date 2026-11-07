@@ -70,9 +70,14 @@ class S2xDroneModel(BaseRCModel):
 
         In the HiTurbo app this shares the same one-shot flight bit as takeoff,
         so the protocol adapter maps the semantic intent rather than a distinct
-        dedicated land bit.
+        dedicated land bit. Sent to a grounded drone, it would take off.
+        Returns whether the command went out.
         """
+        if not self.airborne:
+            return False
         self.land_flag = True
+        self.airborne = False
+        return True
 
     def emergency_stop(self):
         """Hold the emergency stop flag for the next ESTOP_PACKETS packets."""

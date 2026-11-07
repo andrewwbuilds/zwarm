@@ -5,6 +5,7 @@ import { usePlugins } from "../hooks/usePlugins";
 import { VideoFeed } from "./VideoFeed";
 import { DrawingOverlay } from "./DrawingOverlay";
 import { block, drop, num } from "../ui";
+import { API_BASE_URL } from "../backend";
 
 type Controls = ReturnType<typeof useControls>;
 type Sim = ReturnType<typeof useSim>;

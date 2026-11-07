@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { API_BASE_URL } from "../backend";
 
-const API_BASE_URL = "http://localhost:8000";
 
 type Vec = [number, number, number];
 

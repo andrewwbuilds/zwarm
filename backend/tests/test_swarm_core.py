@@ -270,6 +270,14 @@ class MissionTests(unittest.TestCase):
                 outcome = bench.fly(name, 7)
                 self.assertTrue(outcome.passed, outcome)
 
+    def test_an_unreadable_floor_is_found_out_after_takeoff(self):
+        # A known limit: this catches most of it, not all, so the rule is not to fly there.
+        for seed in range(1, 6):
+            flight, script = bench.MISSIONS["blank_floor"](seed)
+            flight.run(script)
+            flagged = [d for d in flight.co.drones.values() if "response" in d.faults]
+            self.assertGreaterEqual(len(flagged), 2, f"seed {seed}")
+
     def test_the_bench_can_tell_when_the_filter_is_missing(self):
         def passthrough(bodies, room, limits, moving=()):
             return Result({b.id: b.want for b in bodies if b.controllable}, set(), False, 9.0)

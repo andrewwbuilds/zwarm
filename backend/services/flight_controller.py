@@ -117,7 +117,8 @@ class FlightController:
             now = time.time()
             dt = now - prev_time
             prev_time = now
-            
+            self._expire_axes()
+
             # Update drone controls based on input directions
             self.model.update(dt, {
                 "throttle": self.throttle_dir,   # still -1…+1

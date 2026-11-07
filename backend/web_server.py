@@ -834,7 +834,9 @@ async def ws_endpoint(websocket: WebSocket) -> None:
         # flying on the last stick input. A running plugin keeps control.
         if _flying_plan():
             runner.stop("web client disconnected")
-        if flight_controller and not (plugin_manager and plugin_manager.running()):
+        if is_swarm:
+            swarm_claim_until = 0.0
+        if flight_controller and not (plugin_manager and plugin_manager.running()) and not _swarm_flying():
             flight_controller.set_axes_from("disconnect", 0, 0, 0, 0)
 
 # ───────────────────────────────────────────────────────────────

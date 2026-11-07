@@ -91,7 +91,17 @@ function DroneTile({ drone, state, onAssume }: {
         <span style={{ width: 10, height: 10, borderRadius: 5, background: color }} />
         <strong>{drone.name}</strong>
         <span>:{drone.port}</span>
-        <span>{status}{droneType ? ` · ${droneType}` : ""}</span>
+        <span>{state.status}{state.droneType ? ` · ${state.droneType}` : ""}</span>
+        <span style={{ color: state.airborne ? "#fc6" : "#aaa" }}>{flightLabel(state)}</span>
+        {state.status === "online" && state.airborne !== null && (
+          <button
+            title="Correct the presumed state. Sends nothing to the drone."
+            onClick={() => onAssume(drone, !state.airborne)}
+            style={{ fontSize: 11 }}
+          >
+            {state.airborne ? "mark landed" : "mark flying"}
+          </button>
+        )}
         <a
           href={`/?backend=${drone.port}`}
           target={`zwarm-console-${drone.port}`}

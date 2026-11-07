@@ -128,7 +128,16 @@ function DroneTile({ drone, state, onAssume }: {
   );
 }
 
+const button = (bg: string) => ({
+  padding: "8px 16px", fontSize: 15, fontWeight: 600, border: "none", borderRadius: 4,
+  background: bg, color: "#fff", cursor: "pointer",
+});
+
 export default function FleetPage() {
+  const { states, refresh } = useFleetState();
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
   useEffect(() => {
     document.title = "Fleet monitor";
   }, []);

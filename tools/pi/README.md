@@ -124,10 +124,26 @@ share a toggle; a repeated command can reverse the intended action.
 
 ## USB recovery and shutdown
 
-Both installed Pis have `zwarm-usb-startup-recovery.service`. It checks for the
+All three Pis have `zwarm-usb-startup-recovery.service`. It checks for the
 observed receive-path stall at startup and attempts at most two `g_ether` reloads.
 It is a workaround, not a fix for the underlying driver. A reboot test passed on
-both Pis; ongoing reliability beyond that test has not been established. Upstream
+Pis 1 and 2; ongoing reliability beyond that test has not been established.
+
+The link also stalls after the Mac sleeps: macOS marks every gadget interface
+inactive and they stay inactive after wake, while each Pi still reports carrier.
+`zwarm-usb-watchdog.timer` covers this. Every minute it pings the Mac's `.2`
+address over `usb0`, and if there is no reply and `rx_packets` did not move, it
+reloads `g_ether`. Reloads are limited to one every three minutes, because a
+sleeping Mac looks the same as a stall. Expect USB back within about four minutes
+of the Mac waking. Install or update it on a Pi with:
+
+```sh
+bash ~/zwarm/tools/pi/usb-watchdog/install.sh
+sudo journalctl -u zwarm-usb-watchdog -n 20 --no-pager
+```
+
+The forced reload path and rate limit were tested on Pi 3. Recovery after an
+actual Mac sleep has not yet been observed with the timer installed. Upstream
 reports describe similar symptoms: [issue 27](https://github.com/raspberrypi/rpi-usb-gadget/issues/27)
 and [proposed recovery](https://github.com/raspberrypi/rpi-usb-gadget/pull/31).
 

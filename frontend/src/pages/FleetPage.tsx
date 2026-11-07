@@ -87,7 +87,7 @@ function DroneTile({ drone, state, onAssume }: {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, border: "1px solid #333" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "#111", color: "#ddd", fontFamily: "monospace", fontSize: 13 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, padding: "6px 10px", background: "#111", color: "#ddd", fontFamily: "monospace", fontSize: 13 }}>
         <span style={{ width: 10, height: 10, borderRadius: 5, background: color }} />
         <strong>{drone.name}</strong>
         <span>:{drone.port}</span>

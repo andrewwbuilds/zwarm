@@ -936,6 +936,33 @@ strips the `##` trailer, and emits a frame immediately once all declared chunks
 are present. It still keeps a frame-id rollover fallback for older captures or
 unexpected variants.
 
+## What the drone sends back over Wi-Fi (captured 2026-11-08)
+
+Raw captures on a Pi joined to a HITURBO S20 (`HITURBO_S20-8be411`), with the backend
+streaming centred controls, show exactly two drone-to-client streams and nothing else:
+
+1. **Video**, UDP `4096 → 8888`. The first slice of each frame carries a 44-byte
+   sub-header before the JPEG (`ff d8` at payload offset 52): frame counter (LE u16 at
+   18), JPEG length (LE u16 at 24), a microsecond timestamp (LE u32 at 40), and a mostly
+   zero u16 at 48 that did not track motion. No sensor fields.
+2. **A 5-byte reply to every packet sent to UDP `8080`**, back to the sender's port:
+   `ff 53 54 08 XX`, one per control packet (6,965 replies to 6,987 packets) and one per
+   `08` video heartbeat. `XX` is the **drone's Wi-Fi link quality**: in a walk test it
+   fell from ~72 to ~50 when the drone was carried away and rose to ~90 up close,
+   tracking the Pi's received signal (r = 0.84 over 2 min, roughly
+   `XX ≈ 2 × dBm + 174`). It is not battery: it recovers when the drone returns.
+
+With the motors off, tilting, lifting, shaking, sliding over a textured floor, and
+covering the camera changed nothing except `XX` (handling moves the antenna) and the
+JPEG size. No 10-byte `0x66` status frames (the REDRIE `DataParse` path) arrived on any
+port, including `8081`. TCP `8888` (the only open TCP port in 1-10000) accepted a
+connection but sent nothing, with or without an `08` heartbeat.
+
+So attitude, height, optical flow and battery are not available over Wi-Fi with the
+motors off. Still untested: traffic while flying, and the flight controller → Wi-Fi
+board UART direction (white wire), which is where battery and status would appear if
+the FC reports them at all.
+
 ## TurboDrone implementation notes
 
 Current matching files:

@@ -94,6 +94,21 @@ class FlightController:
         except Exception:
             pass
             
+    def expire_axes_after(self, seconds: float) -> None:
+        """Centre the sticks after this long unless a newer command arrives.
+
+        A remote coordinator that hangs or loses its link must not leave the
+        drone flying on its last command.
+        """
+        self.axes_deadline = time.monotonic() + seconds
+
+    def _expire_axes(self) -> None:
+        deadline = self.axes_deadline
+        if deadline is not None and time.monotonic() >= deadline:
+            self.throttle_dir = self.yaw_dir = self.pitch_dir = self.roll_dir = 0
+            self.axes_deadline = None
+            self.last_control_source = "expired"
+
     def _control_loop(self):
         """Background thread for sending control updates"""
         prev_time = time.time()

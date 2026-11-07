@@ -420,7 +420,7 @@ class Coordinator:
             def room_for(sign):
                 # Walls are checked further out: a drone that fails this test may coast a long way.
                 ahead = d.tracked.p + sign * axis * 0.8
-                far = d.tracked.p + sign * axis * 2.0
+                far = d.tracked.p + sign * axis * 1.6
                 others = [np.linalg.norm(ahead[:2] - other.tracked.p[:2]) - self.limits.separation
                           for other in self.drones.values() if other is not d and other.tracked.t is not None]
                 return min([self.room.clearance(far) - self.limits.surface_clearance, *others])

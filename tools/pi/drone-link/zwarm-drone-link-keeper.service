@@ -1,0 +1,8 @@
+[Unit]
+Description=Rejoin the paired drone's Wi-Fi when it is broadcasting
+After=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/zwarm-drone-link-keeper
+TimeoutStartSec=60

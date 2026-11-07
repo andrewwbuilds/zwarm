@@ -83,6 +83,7 @@ class S2xDroneModel(BaseRCModel):
         """Hold the emergency stop flag for the next ESTOP_PACKETS packets."""
         self.stop_flag = True
         self.stop_packets_left = self.ESTOP_PACKETS
+        self.airborne = False
 
     def set_speed_index(self, speed_index: int) -> None:
         """Set the Macrochip app speed tier: 0=low, 1=medium, 2=full."""

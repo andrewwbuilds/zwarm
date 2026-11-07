@@ -1,0 +1,513 @@
+"""The fleet's shared brain: what any drone sees, every drone can act on.
+
+Drones can't talk to each other. Each one only sends video and receives sticks, so "telling the other
+drones" means this hub writes a sighting to the shared memory and the coordinator flies everyone
+around it. The coordinator stays in charge of safety: everything here only chooses goals and headings.
+
+A failure in here must never stop the flight loop, so tick() catches and logs anything raised while
+thinking. The drones then keep flying their last goals under the safety filter.
+"""
+
+from __future__ import annotations
+
+import logging
+import math
+from dataclasses import dataclass, replace
+
+import numpy as np
+
+from swarm.commands import EXPLANATION, parse
+from swarm.coordinator import Coordinator, Phase
+from swarm.eyes import EDGE_MARGIN, RELIABLE_REACH, blocked, in_view, locate
+from swarm.memory import Memory, Thing
+from swarm.room import Obstacle
+from swarm.safety import Moving
+from swarm.search import SEARCH_Z, Coverage
+
+logger = logging.getLogger(__name__)
+
+LOOK_EVERY = 0.2  # seconds between looks through each camera
+OBSTACLE_MARGIN = 0.1  # added around a seen thing, since its size and place are estimates
+OBSTACLE_MOVE = 0.15  # the map only changes when the estimate has shifted this far, since every change replans
+TURN_FIRST = math.radians(25)  # turn to look where it's going before moving off
+TURN_TIMEOUT_S = 8.0
+FACED = math.radians(14)
+GO_TIMEOUT_S = 75.0
+HINT_MAX_AGE_S = 3600.0
+CLOSE_LOOK_S = 2.0
+CLOSE_TIMEOUT_S = 45.0
+CLOSE_SIGHTINGS = 3
+MOVER_RADIUS = 0.35
+DWELL_S = 1.0
+
+
+def _angle(a: float, b: float) -> float:
+    return (a - b + math.pi) % (2 * math.pi) - math.pi
+
+
+@dataclass
+class Order:
+    """Turn to look, go there, then face the way asked."""
+
+    goal: np.ndarray
+    face: float | None
+    stage: str  # turn, go, face, done, failed
+    since: float
+    why: str = ""
+
+
+class Search:
+    """Share out the floor until the thing is seen, then get a close look before saying it's found."""
+
+    def __init__(self, hub: "Hub", label: str, now: float, hint: Thing | None = None):
+        self.hub, self.label, self.started = hub, label, now
+        self.coverage = Coverage(hub.co.room)
+        self.state = "searching"  # searching, closing, found, exhausted, failed, stopped
+        self.views: dict[str, object] = {}
+        self.dwell: dict[str, float] = {}
+        self.banned: list[np.ndarray] = []
+        self.hint = hint.id if hint else None
+        self.thing_id: int | None = None
+        self.closer: str | None = None
+        self.close_started = 0.0
+        self.close_seen_from = 0
+        self.found_at: np.ndarray | None = None
+        self.obstacle_count = len(hub.co.room.obstacles)
+
+    def flying(self) -> list:
+        return [d for d in self.hub.co.drones.values() if d.phase == Phase.AIR and not d.landing_requested]
+
+    def step(self, now: float) -> None:
+        if self.state in ("found", "exhausted", "failed", "stopped"):
+            return
+        hub = self.hub
+        flying = self.flying()
+        if not flying and not any(d.phase in (Phase.TAKEOFF, Phase.CHECK) for d in hub.co.drones.values()) and not hub.co.takeoff_queue:
+            self.state = "failed"
+            hub.report(f"No drones are left flying, so I stopped looking for the {self.label}.")
+            return
+        if self.state == "closing":
+            self._close_in(now, flying)
+        if self.state == "searching":
+            spotted = next((t for t in hub.memory.find(self.label) if t.sure and t.last_seen >= self.started), None)
+            if spotted is not None:
+                self._start_close_look(spotted, now, flying)
+            else:
+                self._share_out(now, flying)
+
+    # ---------------------------------------------------------------- finding it
+    def _start_close_look(self, thing: Thing, now: float, flying: list) -> None:
+        hub = self.hub
+        if not flying:
+            return
+        self.thing_id = thing.id
+        self.state = "closing"
+        self.close_started = now
+        self.close_seen_from = thing.sightings
+        for d in flying:
+            hub.orders.pop(d.id, None)
+        self.views.clear()
+        closest = min(flying, key=lambda d: float(np.linalg.norm(d.tracked.p - thing.p)))
+        self.closer = closest.id
+        for d in flying:
+            if d is not closest:
+                hub.co._set_goal(d, d.tracked.p.copy())
+        hub.report(f"{closest.id} may have spotted a {self.label} near {_where(thing.p)}. Going closer to check.")
+        others = [d.tracked.p for d in flying if d is not closest]
+        view = self.coverage.standoff(closest.tracked.p, thing.p, avoid=others)
+        if view is None:
+            hub.aim(closest, math.atan2(thing.p[1] - closest.tracked.p[1], thing.p[0] - closest.tracked.p[0]))
+        else:
+            hub.order(closest, view.p, view.yaw, now)
+
+    def _close_in(self, now: float, flying: list) -> None:
+        hub = self.hub
+        thing = hub.memory.things.get(self.thing_id)
+        if thing is None:
+            hub.report(f"That {self.label} wasn't there on a closer look. Still searching.")
+            self._resume(now)
+            return
+        closer = hub.co.drones.get(self.closer)
+        if closer is None or closer not in flying:
+            self._resume(now)
+            return
+        order = hub.orders.get(closer.id)
+        settled = order is None or order.stage in ("done", "failed")
+        if settled and self.dwell.get(closer.id) is None:
+            self.dwell[closer.id] = now
+            self.close_seen_from = thing.sightings
+        looked = self.dwell.get(closer.id) is not None and now - self.dwell[closer.id] >= CLOSE_LOOK_S
+        if looked and thing.sightings - self.close_seen_from >= CLOSE_SIGHTINGS and thing.sure:
+            self.state = "found"
+            self.found_at = thing.p.copy()
+            hub.report(f"Found the {self.label} at {_where(thing.p)}, seen by {_names(thing.seen_by)}.")
+            return
+        if now - self.close_started > CLOSE_TIMEOUT_S or (looked and now - self.dwell[closer.id] > 8.0):
+            hub.report(f"I couldn't confirm the {self.label} near {_where(thing.p)}. Still searching.")
+            self.banned.append(thing.p.copy())
+            hub.memory.forget(thing.id)
+            self._resume(now)
+
+    def _resume(self, now: float) -> None:
+        self.state = "searching"
+        self.thing_id = None
+        self.closer = None
+        self.dwell.clear()
+        for d in self.flying():
+            self.hub.orders.pop(d.id, None)
+
+    # ---------------------------------------------------------------- sharing the floor
+    def _share_out(self, now: float, flying: list) -> None:
+        hub = self.hub
+        claimed = np.zeros(len(self.coverage.cells), bool)
+        free = []
+        for d in flying:
+            order = hub.orders.get(d.id)
+            view = self.views.get(d.id)
+            if order is not None and order.stage == "failed":
+                self.banned.append(order.goal.copy())
+                hub.orders.pop(d.id, None)
+                self.views.pop(d.id, None)
+                self.dwell.pop(d.id, None)
+                free.append(d)
+            elif order is None or order.stage == "done":
+                if view is not None and order is not None:
+                    arrived_at = self.dwell.setdefault(d.id, now)
+                    if now - arrived_at < DWELL_S:
+                        claimed[view.cells] = True
+                        continue
+                hub.orders.pop(d.id, None)
+                self.views.pop(d.id, None)
+                self.dwell.pop(d.id, None)
+                free.append(d)
+            elif view is not None:
+                claimed[view.cells] = True
+        for d in free:
+            hint = hub.memory.things.get(self.hint) if self.hint is not None else None
+            avoid = [other.tracked.p for other in flying if other is not d]
+            avoid += [o.goal for other_id, o in hub.orders.items() if other_id != d.id]
+            view = None
+            if hint is not None:
+                view = self.coverage.standoff(d.tracked.p, hint.p, avoid=avoid)
+                self.hint = None
+            if view is None:
+                view = self.coverage.best(d.tracked.p, d.tracked.yaw, claimed, avoid, banned=self.banned)
+            if view is None:
+                continue
+            if len(view.cells):
+                claimed[view.cells] = True
+            self.views[d.id] = view
+            hub.order(d, view.p, view.yaw, now)
+        busy = any(d.id in hub.orders for d in flying)
+        waiting_to_fly = any(d.phase in (Phase.TAKEOFF, Phase.CHECK) for d in hub.co.drones.values()) or bool(hub.co.takeoff_queue)
+        if flying and not busy and not waiting_to_fly:
+            self.state = "exhausted"
+            hub.report(f"I searched {self.coverage.share_seen() * 100:.0f}% of the floor I can see and didn't find a {self.label}.")
+
+
+class Hub:
+    def __init__(self, coordinator: Coordinator, memory: Memory, eyes, report=None):
+        self.co = coordinator
+        self.memory = memory
+        self.eyes = eyes
+        self.on_report = report
+        self.reports: list[str] = []
+        self.orders: dict[str, Order] = {}
+        self.search: Search | None = None
+        self.next_look = 0.0
+        self.mapped: dict[int, Obstacle] = {}
+        self.now = 0.0
+        self.think_errors = 0
+        self._sync_obstacles()
+
+    # ---------------------------------------------------------------- the loop
+    def tick(self, now: float, poses: dict, moving=()) -> None:
+        self.now = now
+        seen_movers = [Moving(f"seen-{t.id}", t.p + t.v * min(now - t.last_seen, 1.0), t.v.copy(), MOVER_RADIUS)
+                       for t in self.memory.movers(now)]
+        self.co.tick(now, poses, [*moving, *seen_movers])
+        try:
+            if now >= self.next_look:
+                self.next_look = now + LOOK_EVERY
+                self._look(now)
+                self._sync_obstacles()
+                self.memory.commit()
+            self._drive(now)
+            if self.search is not None:
+                self.search.step(now)
+        except Exception:
+            self.think_errors += 1
+            logger.exception("[hub] thinking failed; the drones carry on with their last goals")
+
+    def report(self, text: str) -> None:
+        self.reports.append(text)
+        self.memory.note(self.now, "report", text)
+        if self.on_report:
+            self.on_report(text)
+
+    # ---------------------------------------------------------------- seeing
+    def _look(self, now: float) -> None:
+        for d in self.co.drones.values():
+            if d.phase not in (Phase.AIR, Phase.CHECK) or d.tracked.age(now) > 0.3:
+                continue
+            detections = self.eyes.look(d.id, now)
+            if detections is None:
+                continue
+            p, yaw = d.tracked.p.copy(), d.tracked.yaw
+            seen_now = set()
+            for detection in detections:
+                where = locate(p, yaw, detection)
+                seen_now.add(self.memory.record(detection.label, where, detection.size, detection.confidence,
+                                                detection.range, d.id, now).id)
+            self._note_misses(p, yaw, seen_now)
+            if self.search is not None:
+                self.search.coverage.look(p, yaw)
+
+    def _note_misses(self, p, yaw: float, seen_now: set[int]) -> None:
+        """Looked straight at something the memory holds and saw nothing there: count it against it."""
+        for thing in list(self.memory.things.values()):
+            if thing.id in seen_now or thing.moves:
+                continue
+            if not in_view(p, yaw, thing.p, reach=RELIABLE_REACH, margin=EDGE_MARGIN)[0]:
+                continue
+            own = self.mapped.get(thing.id)
+            hidden = any(blocked(p, thing.p[None, :], o.lo, o.hi)[0] for o in self.co.room.obstacles.values() if o is not own)
+            if not hidden:
+                self.memory.missed(thing.id)
+
+    def _sync_obstacles(self) -> None:
+        """Share what's been seen: put it on the map every drone plans against."""
+        current = {t.id: t for t in self.memory.obstacles()}
+        for thing_id in [i for i in self.mapped if i not in current]:
+            self.co.remove_obstacle(self.mapped.pop(thing_id).name)
+        for thing_id, thing in current.items():
+            half = np.maximum(thing.size / 2, 0.05) + OBSTACLE_MARGIN
+            lo = np.maximum(thing.p - half, self.co.room.lo)
+            hi = np.minimum(thing.p + half, self.co.room.hi)
+            lo[2] = max(self.co.room.lo[2], lo[2])
+            if np.any(hi <= lo):
+                continue
+            old = self.mapped.get(thing_id)
+            if old is not None and np.max(np.abs(np.array(old.lo) - lo)) < OBSTACLE_MOVE and np.max(np.abs(np.array(old.hi) - hi)) < OBSTACLE_MOVE:
+                continue
+            obstacle = Obstacle(f"seen-{thing.label}-{thing_id}", tuple(lo.tolist()), tuple(hi.tolist()))
+            self.mapped[thing_id] = obstacle
+            self.co.add_obstacle(obstacle)
+            if old is None and self.search is not None:
+                self.search.coverage.obstacle_appeared(lo, hi)
+
+    # ---------------------------------------------------------------- moving and turning
+    def aim(self, d, yaw: float) -> None:
+        d.config = replace(d.config, yaw=_angle(yaw, 0.0))
+
+    def order(self, d, goal, face: float | None, now: float) -> None:
+        self.orders[d.id] = Order(np.asarray(goal, float), face, "turn", now)
+
+    def _drive(self, now: float) -> None:
+        for drone_id, order in list(self.orders.items()):
+            d = self.co.drones[drone_id]
+            if d.phase != Phase.AIR or d.landing_requested:
+                del self.orders[drone_id]
+                continue
+            self._advance(d, order, now)
+        for d in self.co.drones.values():
+            # Without an order it may still be flying somewhere, such as back to its pad. Look that way too.
+            if d.id not in self.orders and d.phase == Phase.AIR and d.goal is not None and not d.arrived:
+                self._look_along_path(d)
+
+    def _advance(self, d, order: Order, now: float) -> None:
+        p = d.tracked.p
+        if order.stage == "turn":
+            offset = order.goal - p
+            if math.hypot(offset[0], offset[1]) > 0.4:
+                self.aim(d, math.atan2(offset[1], offset[0]))
+                if abs(_angle(d.config.yaw, d.tracked.yaw)) > TURN_FIRST and now - order.since < TURN_TIMEOUT_S:
+                    return
+            problems = self.co.goto({d.id: order.goal})
+            if problems:
+                order.stage, order.why = "failed", "; ".join(problems)
+                return
+            order.stage, order.since = "go", now
+        if order.stage == "go":
+            if "path" in d.faults or now - order.since > GO_TIMEOUT_S:
+                order.stage, order.why = "failed", d.faults.get("path", "took too long")
+                self.co._set_goal(d, p.copy())
+                return
+            if not d.arrived:
+                self._look_along_path(d)
+                return
+            order.stage, order.since = "face", now
+        if order.stage == "face":
+            if order.face is None:
+                order.stage = "done"
+                return
+            self.aim(d, order.face)
+            if abs(_angle(order.face, d.tracked.yaw)) < FACED or now - order.since > TURN_TIMEOUT_S:
+                order.stage = "done"
+
+    def _look_along_path(self, d) -> None:
+        if not d.path or d.leg >= len(d.path):
+            return
+        offset = d.path[d.leg] - d.tracked.p
+        if math.hypot(offset[0], offset[1]) > 0.4:
+            self.aim(d, math.atan2(offset[1], offset[0]))
+
+    # ---------------------------------------------------------------- commands
+    def command(self, text: str) -> str:
+        """Do what was said and answer. Anything not understood changes nothing."""
+        self.memory.note(self.now, "said", text)
+        c = parse(text, tuple(self.co.drones))
+        try:
+            reply = getattr(self, f"_do_{c.verb}", self._do_unknown)(c)
+        except Exception:
+            logger.exception("[hub] command failed: %s", text)
+            reply = "That failed inside the hub, so nothing changed. Check the log."
+        self.memory.note(self.now, "reply", reply)
+        self.memory.commit()
+        return reply
+
+    def _stop_search(self) -> None:
+        """End any search and the moves it ordered. A plain "go to" for one drone leaves the others' moves alone."""
+        if self.search is not None and self.search.state in ("searching", "closing"):
+            self.search.state = "stopped"
+            self.orders.clear()
+
+    def _do_unknown(self, c) -> str:
+        return "I didn't understand that, so I did nothing. " + EXPLANATION
+
+    def _do_refused(self, c) -> str:
+        return c.problem
+
+    def _do_help(self, c) -> str:
+        return EXPLANATION
+
+    def _do_estop(self, c) -> str:
+        self._stop_search()
+        self.orders.clear()
+        self.co.estop()
+        return "Motors cut on every drone. They are falling."
+
+    def _do_takeoff(self, c) -> str:
+        problems = self.co.takeoff(self.now)
+        return "Not taking off: " + "; ".join(problems) + "." if problems else "Taking off, one at a time."
+
+    def _do_land(self, c) -> str:
+        self._stop_search()
+        self.orders.clear()
+        self.co.land(self.now)
+        return "Coming back to the pads to land."
+
+    def _do_land_here(self, c) -> str:
+        self._stop_search()
+        self.orders.clear()
+        self.co.land_here(self.now)
+        return "Landing where they are."
+
+    def _do_hold(self, c) -> str:
+        self._stop_search()
+        self.orders.clear()
+        self.co.hold()
+        return "Holding position."
+
+    def _do_form(self, c) -> str:
+        flying = [d for d in self.co.drones.values() if d.phase == Phase.AIR]
+        if not flying:
+            return "Nothing is flying yet."
+        self._stop_search()
+        self.orders.clear()
+        center = (self.co.room.lo[:2] + self.co.room.hi[:2]) / 2
+        problems = self.co.formation(c.shape, center, 1.0, SEARCH_Z)
+        return f"Can't do that: {'; '.join(problems)}." if problems else f"Forming a {c.shape}."
+
+    def _do_goto(self, c) -> str:
+        flying = [d for d in self.co.drones.values() if d.phase == Phase.AIR and not d.landing_requested]
+        if c.drone is not None and c.drone not in self.co.drones:
+            return f"There is no drone called {c.drone}."
+        if c.drone is not None:
+            flying = [d for d in flying if d.id == c.drone]
+            if not flying:
+                return f"{c.drone} isn't flying."
+        if not flying:
+            return "Nothing is flying yet."
+        if c.point is not None:
+            goal = np.array([c.point[0], c.point[1], c.point[2] if len(c.point) > 2 else SEARCH_Z])
+            d = min(flying, key=lambda x: float(np.linalg.norm(x.tracked.p - goal)))
+            problems = self.co.check_goals({d.id: goal})
+            if problems:
+                return f"Can't go there: {'; '.join(problems)}."
+            face = None
+            where = _where(goal)
+        else:
+            things = self.memory.find(c.label)
+            if not things:
+                return f"I haven't seen a {c.label}. Say \"find the {c.label}\" to look for one."
+            thing = things[0]
+            d = min(flying, key=lambda x: float(np.linalg.norm(x.tracked.p - thing.p)))
+            others = [x.tracked.p for x in flying if x is not d]
+            view = Coverage(self.co.room).standoff(d.tracked.p, thing.p, avoid=others)
+            if view is None:
+                return f"I can't find a clear place to see the {c.label} from."
+            goal, face, where = view.p, view.yaw, f"the {c.label}"
+        self._stop_search()
+        self.order(d, goal, face, self.now)
+        return f"{d.id} is going to {where}."
+
+    def _do_find(self, c) -> str:
+        if not self.eyes.knows(c.label):
+            return f"The camera can't recognise \"{c.label}\", so I didn't start a search."
+        drones = self.co.drones.values()
+        if all(d.phase in (Phase.GROUND, Phase.LANDING, Phase.STOPPED) for d in drones) and not self.co.takeoff_queue:
+            return f"Nothing is flying. Say \"take off\" first, then ask me to find the {c.label}."
+        hints = [t for t in self.memory.find(c.label) if self.now - t.last_seen <= HINT_MAX_AGE_S and not t.moves]
+        self._stop_search()
+        self.search = Search(self, c.label, self.now, hints[0] if hints else None)
+        if hints:
+            return f"I last saw a {c.label} near {_where(hints[0].p)}. Checking there first, then the rest of the room."
+        return f"Looking for a {c.label}."
+
+    def _do_where(self, c) -> str:
+        things = self.memory.find(c.label)
+        if not things:
+            return f"I haven't seen a {c.label}."
+        parts = [f"{_where(t.p)}, seen {_ago(self.now - t.last_seen)} by {_names(t.seen_by)}" for t in things[:3]]
+        doubt = "" if things[0].sure else " I'm not certain it's really one."
+        return f"{c.label.capitalize()}: " + "; ".join(parts) + "." + doubt
+
+    def _do_list(self, c) -> str:
+        things = self.memory.known()
+        if not things:
+            return "Nothing yet."
+        return "I've seen: " + "; ".join(f"{t.label} at {_where(t.p)}" for t in things) + "."
+
+    def _do_forget(self, c) -> str:
+        count = self.memory.forget_label(c.label)
+        self._sync_obstacles()
+        if c.label is None:
+            return f"Forgot all {count} things."
+        return f"Forgot {count} {c.label}." if count else f"I had nothing about a {c.label}."
+
+    def _do_status(self, c) -> str:
+        parts = []
+        for d in self.co.drones.values():
+            fault = f" ({'; '.join(d.faults.values())})" if d.faults else ""
+            parts.append(f"{d.id} {d.phase.value} at {_where(d.tracked.p)}{fault}")
+        text = ", ".join(parts) + f". I remember {len(self.memory.known())} things."
+        if self.search is not None:
+            text += f" Search for {self.search.label}: {self.search.state}, {self.search.coverage.share_seen() * 100:.0f}% of the floor seen."
+        return text
+
+
+def _where(p) -> str:
+    return f"({p[0]:.1f}, {p[1]:.1f})"
+
+
+def _names(names) -> str:
+    return " and ".join(sorted(names))
+
+
+def _ago(seconds: float) -> str:
+    if seconds < 2:
+        return "just now"
+    if seconds < 90:
+        return f"{seconds:.0f} s ago"
+    return f"{seconds / 60:.0f} min ago"

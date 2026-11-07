@@ -1,0 +1,709 @@
+"""Runs the fleet: one tick reads poses, decides every drone's velocity together, and sends sticks.
+
+It takes its clock and poses as arguments and talks to drones only through links, so the same code
+flies the simulator faster than real time and real drones at real time.
+
+S20 takeoff and landing share one toggle bit, so a repeat reverses the action. Each toggle is sent
+once and judged by what the tracker then sees. If it doesn't work, that's a fault for the operator,
+never a retry.
+"""
+
+from __future__ import annotations
+
+import logging
+import math
+from collections import deque
+from dataclasses import dataclass, field
+from enum import Enum
+
+import numpy as np
+from scipy.optimize import linear_sum_assignment
+
+from swarm.control import Airframe, Pose, StickMapper, Tracked
+from swarm.planner import PlanError, plan_path
+from swarm.room import Room
+from swarm.safety import Body, Limits, Moving, filter_velocities
+
+logger = logging.getLogger(__name__)
+
+TTL = 0.3  # the drone's backend centres the sticks if no newer command arrives in this time
+STALE_S = 0.3  # no pose for this long and the drone stops being steered
+LOST_LAND_S = 2.5  # no pose for this long while flying and it is told to land where it is
+TAKEOFF_STAGGER_S = 1.0
+LAND_STAGGER_S = 1.5
+TAKEOFF_TIMEOUT_S = 8.0
+LAND_TIMEOUT_S = 15.0
+PAD_APPROACH_TIMEOUT_S = 45.0
+AIRBORNE_HEIGHT = 0.4
+GROUNDED_HEIGHT = 0.15
+ARRIVED = 0.15
+LOOKAHEAD = 0.35
+OVERSPEED_FACTOR = 3.0  # this many times the speed limit, sustained, and the drone is landed
+FENCE_BREACH = 0.4  # this far past the fence and the drone is landed
+STUCK_S = 4.0
+FOLLOW_WINDOW_S = 3.0
+NEXT_TAKEOFF_HEIGHT = 0.25  # the next drone goes once the last one is seen this far up
+CHECK_SPEED = 0.4  # m/s for the small test moves after takeoff
+CHECK_MOVE_S = 1.5
+CHECK_STOP_S = 2.5
+CHECK_SAMPLE_S = 0.5  # the end of each stage that gets measured
+CHECK_MIN_SPEED = 0.12  # it has to have got at least this fast, the right way
+CHECK_STILL_SPEED = 0.1  # stopped, whatever it was doing before
+CHECK_STOP_RATIO = 0.5  # or at least slowed this much: no flow sensor means it coasts
+CHECK_MAX_COAST = 0.75  # m covered after being told to stop: past this it fails at once
+
+
+class Phase(str, Enum):
+    GROUND = "ground"
+    TAKEOFF = "takeoff"
+    CHECK = "check"  # airborne, proving it does what the sticks say before going anywhere
+    AIR = "air"
+    LANDING = "landing"
+    STOPPED = "stopped"
+
+
+@dataclass
+class ResponseCheck:
+    """Move a little along each body axis, then stop. Finds reversed or dead sticks, and a drone
+    that won't stop because its flow sensor can't read the floor, before it goes near anything."""
+
+    directions: list[np.ndarray]
+    home: np.ndarray
+    stage: int = 0  # even: moving, odd: stopping
+    stage_at: float = 0.0
+    samples: list[float] = field(default_factory=list)
+    moved: float = 0.0
+    stop_at: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    results: list[dict] = field(default_factory=list)
+    retried: bool = False
+
+
+@dataclass(frozen=True)
+class DroneConfig:
+    id: str
+    pad: tuple[float, float, float]  # where it sits before takeoff, and returns to
+    yaw: float = 0.0  # radians, the heading it holds in flight
+
+
+@dataclass
+class Drone:
+    config: DroneConfig
+    link: object
+    mapper: StickMapper
+    tracked: Tracked = field(default_factory=Tracked)
+    phase: Phase = Phase.GROUND
+    goal: np.ndarray | None = None
+    path: list = field(default_factory=list)
+    leg: int = 1
+    path_version: int = -1
+    toggled_at: float = 0.0
+    landing_requested: bool = False
+    land_requested_at: float = 0.0
+    blind_landing: bool = False
+    faults: dict[str, str] = field(default_factory=dict)
+    arrived: bool = False
+    limited: bool = False
+    commanded: np.ndarray = field(default_factory=lambda: np.zeros(3))
+    overspeed_since: float | None = None
+    progress_at: float = 0.0
+    progress_best: float = math.inf
+    last_replan: float = -math.inf
+    follow_errors: deque = field(default_factory=deque)
+    follow_error: float = 0.0
+    follow_worst: float = 0.0
+    check: ResponseCheck | None = None
+    check_results: list[dict] = field(default_factory=list)
+
+    @property
+    def id(self) -> str:
+        return self.config.id
+
+    def fault(self, key: str, message: str) -> None:
+        if self.faults.get(key) != message:
+            self.faults[key] = message
+            logger.warning("[swarm] %s: %s", self.id, message)
+
+    def clear(self, key: str) -> None:
+        self.faults.pop(key, None)
+
+
+def formation_points(shape: str, count: int, center, spacing: float, z: float, turn: float = 0.0) -> list[np.ndarray]:
+    """Slots for a formation: 'line', 'ring' (spacing is the gap between neighbours) or 'grid'."""
+    if shape == "line":
+        local = [((i - (count - 1) / 2) * spacing, 0.0) for i in range(count)]
+    elif shape == "ring":
+        radius = spacing / (2 * math.sin(math.pi / count)) if count > 1 else 0.0
+        local = [(radius * math.cos(2 * math.pi * i / count), radius * math.sin(2 * math.pi * i / count)) for i in range(count)]
+    elif shape == "grid":
+        columns = math.ceil(math.sqrt(count))
+        rows = math.ceil(count / columns)
+        local = [((c - (columns - 1) / 2) * spacing, (r - (rows - 1) / 2) * spacing)
+                 for r in range(rows) for c in range(columns)][:count]
+    else:
+        raise ValueError(f"unknown formation {shape!r}")
+    cos_t, sin_t = math.cos(turn), math.sin(turn)
+    return [np.array([center[0] + x * cos_t - y * sin_t, center[1] + x * sin_t + y * cos_t, z]) for x, y in local]
+
+
+class Coordinator:
+    def __init__(self, room: Room, configs: list[DroneConfig], links: dict, limits: Limits | None = None,
+                 airframe: Airframe | None = None):
+        self.room = room
+        self.limits = limits or Limits()
+        self.airframe = airframe or Airframe()
+        self.drones = {c.id: Drone(c, links[c.id], StickMapper(self.airframe)) for c in configs}
+        self.takeoff_queue: list[str] = []
+        self.last_takeoff: str | None = None
+        self.next_takeoff = 0.0
+        self.next_landing = 0.0
+        self.moving: list[Moving] = []
+        self.now = 0.0
+        self.closest = math.inf
+        self.infeasible_ticks = 0
+        self.estopped = False
+        self.last_tick: float | None = None
+
+    # --------------------------------------------------------------- operator commands
+    def preflight(self, now: float) -> list[str]:
+        """Reasons the fleet must not take off. Empty means go."""
+        problems = []
+        drones = list(self.drones.values())
+        for d in drones:
+            if d.phase != Phase.GROUND:
+                problems.append(f"{d.id} is not on the ground ({d.phase.value})")
+            if not d.link.connected:
+                problems.append(f"{d.id} has no control link")
+            if d.tracked.age(now) > STALE_S:
+                problems.append(f"{d.id} is not being tracked")
+                continue
+            p = d.tracked.p
+            if p[2] > GROUNDED_HEIGHT + 0.1:
+                problems.append(f"{d.id} reads {p[2]:.2f} m up, expected on the floor")
+            miss = float(np.linalg.norm(p[:2] - np.array(d.config.pad[:2])))
+            if miss > 0.3:
+                problems.append(f"{d.id} is {miss:.2f} m from its pad")
+            if self.room.clearance(np.array([p[0], p[1], 1.0])) < self.limits.surface_clearance:
+                problems.append(f"{d.id} is too close to a wall or obstacle to climb")
+        for i, a in enumerate(drones):
+            for b in drones[i + 1:]:
+                gap = float(np.linalg.norm(np.array(a.config.pad[:2]) - np.array(b.config.pad[:2])))
+                if gap < self.limits.separation:
+                    problems.append(f"pads {a.id} and {b.id} are {gap:.2f} m apart, need {self.limits.separation:.2f} m")
+        return problems
+
+    def takeoff(self, now: float | None = None) -> list[str]:
+        now = self.now if now is None else now
+        problems = self.preflight(now)
+        if problems:
+            return problems
+        self.estopped = False
+        self.last_takeoff = None
+        self.takeoff_queue = list(self.drones)
+        self.next_takeoff = now
+        return []
+
+    def check_goals(self, goals: dict) -> list[str]:
+        problems = []
+        limits = self.limits
+        items = list(goals.items())
+        for drone_id, goal in items:
+            if drone_id not in self.drones:
+                problems.append(f"no drone called {drone_id}")
+                continue
+            if self.drones[drone_id].phase != Phase.AIR:
+                problems.append(f"{drone_id} isn't ready ({self.drones[drone_id].phase.value})")
+            p = np.asarray(goal, float)
+            if self.room.clearance(p) < limits.surface_clearance:
+                problems.append(f"{drone_id}'s goal {p.round(2).tolist()} is too close to a wall or obstacle")
+            if p[2] < 0.4:
+                problems.append(f"{drone_id}'s goal is only {p[2]:.2f} m up")
+        for i, (a, pa) in enumerate(items):
+            for b, pb in items[i + 1:]:
+                offset = np.asarray(pa, float) - np.asarray(pb, float)
+                gap = math.hypot(offset[0], offset[1], offset[2] / limits.vertical_stretch)
+                if gap < limits.separation:
+                    problems.append(f"goals for {a} and {b} are {gap:.2f} m apart, need {limits.separation:.2f} m")
+        return problems
+
+    def goto(self, goals: dict) -> list[str]:
+        goals = {k: np.asarray(v, float) for k, v in goals.items()}
+        problems = self.check_goals(goals)
+        if problems:
+            return problems
+        for drone_id, goal in goals.items():
+            d = self.drones[drone_id]
+            d.landing_requested = False
+            self._set_goal(d, goal)
+        return []
+
+    def formation(self, shape: str, center, spacing: float, z: float, turn: float = 0.0) -> list[str]:
+        """Send every flying drone to a formation, choosing who goes where to shorten the total flight."""
+        flying = [d for d in self.drones.values() if d.phase == Phase.AIR]
+        if not flying:
+            return ["no drones are flying"]
+        slots = formation_points(shape, len(flying), center, spacing, z, turn)
+        cost = np.array([[np.linalg.norm(d.tracked.p - slot) for slot in slots] for d in flying])
+        rows, columns = linear_sum_assignment(cost)
+        return self.goto({flying[r].id: slots[c] for r, c in zip(rows, columns)})
+
+    def hold(self) -> None:
+        for d in self.drones.values():
+            d.landing_requested = False
+            if d.phase == Phase.AIR:
+                self._set_goal(d, d.tracked.p.copy())
+        self.takeoff_queue.clear()
+
+    def land(self, now: float | None = None) -> None:
+        """Bring each flying drone back over its pad, then land them one after another."""
+        now = self.now if now is None else now
+        self.takeoff_queue.clear()
+        self.next_landing = now
+        for d in self.drones.values():
+            if d.phase == Phase.CHECK:
+                d.check = None
+                d.phase = Phase.AIR
+            if d.phase == Phase.AIR:
+                d.landing_requested = True
+                d.land_requested_at = now
+                self._set_goal(d, np.array([d.config.pad[0], d.config.pad[1], max(d.tracked.p[2], 0.7)]))
+
+    def land_here(self, now: float | None = None) -> None:
+        now = self.now if now is None else now
+        self.takeoff_queue.clear()
+        for d in self.drones.values():
+            if d.phase in (Phase.AIR, Phase.CHECK):
+                d.check = None
+                self._toggle_land(d, now)
+
+    def estop(self) -> None:
+        """Cut every motor. The drones fall."""
+        self.takeoff_queue.clear()
+        self.estopped = True
+        for d in self.drones.values():
+            d.link.command("estop")
+            d.phase = Phase.STOPPED
+            d.goal = None
+            d.path = []
+
+    def add_obstacle(self, obstacle) -> None:
+        self.room.add(obstacle)
+
+    def remove_obstacle(self, name: str) -> bool:
+        return self.room.remove(name)
+
+    # --------------------------------------------------------------- the tick
+    def tick(self, now: float, poses: dict[str, Pose], moving: list[Moving] = ()) -> None:
+        dt = 0.05 if self.last_tick is None else max(now - self.last_tick, 1e-3)
+        self.last_tick = self.now = now
+        self.moving = list(moving)
+        for drone_id, pose in poses.items():
+            if drone_id in self.drones:
+                self.drones[drone_id].tracked.update(pose)
+        self._send_takeoffs(now)
+        for d in self.drones.values():
+            self._supervise(d, now)
+        self._send_landings(now)
+        self._fly(now, dt)
+
+    def _set_goal(self, d: Drone, goal: np.ndarray, cylinders=()) -> None:
+        d.goal = np.asarray(goal, float)
+        d.arrived = False
+        d.progress_best = math.inf
+        d.progress_at = self.now
+        self._plan(d, cylinders)
+
+    def _plan(self, d: Drone, cylinders=()) -> None:
+        try:
+            d.path = plan_path(self.room, d.tracked.p.copy(), d.goal, self.limits.surface_clearance + 0.05, cylinders)
+            d.leg = 1
+            d.path_version = self.room.version
+            d.clear("path")
+        except PlanError as error:
+            d.path = []
+            d.fault("path", str(error))
+
+    def _send_takeoffs(self, now: float) -> None:
+        if self.takeoff_queue and now >= self.next_takeoff:
+            if self.last_takeoff is not None:
+                last = self.drones[self.last_takeoff]
+                if last.phase == Phase.TAKEOFF and last.tracked.p[2] < NEXT_TAKEOFF_HEIGHT:
+                    return
+            d = self.drones[self.takeoff_queue.pop(0)]
+            if d.link.command("takeoff"):
+                d.phase = Phase.TAKEOFF
+                d.toggled_at = now
+                self.last_takeoff = d.id
+                self.next_takeoff = now + TAKEOFF_STAGGER_S
+            else:
+                d.fault("takeoff", "takeoff could not be sent")
+                self.takeoff_queue.clear()
+
+    def _toggle_land(self, d: Drone, now: float, blind: bool = False) -> None:
+        if d.link.command("land"):
+            d.phase = Phase.LANDING
+            d.toggled_at = now
+            d.blind_landing = blind
+            d.goal = None
+            d.path = []
+        else:
+            d.fault("land", "landing could not be sent; the link is down")
+
+    def _send_landings(self, now: float) -> None:
+        if now < self.next_landing:
+            return
+        for d in self.drones.values():
+            if d.phase != Phase.AIR or not d.landing_requested:
+                continue
+            over_pad = np.linalg.norm(d.tracked.p[:2] - np.array(d.config.pad[:2])) < 0.25
+            slow = np.linalg.norm(d.tracked.v[:2]) < 0.25
+            late = now - d.land_requested_at > PAD_APPROACH_TIMEOUT_S
+            if (over_pad and slow) or late:
+                if late:
+                    d.fault("land", "could not reach its pad in time; landing where it is")
+                self._toggle_land(d, now)
+                self.next_landing = now + LAND_STAGGER_S
+                return
+
+    def _supervise(self, d: Drone, now: float) -> None:
+        age = d.tracked.age(now)
+        height = d.tracked.p[2]
+        if age > STALE_S and d.phase in (Phase.AIR, Phase.CHECK, Phase.TAKEOFF, Phase.LANDING):
+            d.fault("tracking", f"no pose for {age:.1f} s")
+        elif age <= STALE_S:
+            d.clear("tracking")
+        if d.link.connected:
+            d.clear("link")
+        elif d.phase in (Phase.AIR, Phase.CHECK, Phase.TAKEOFF, Phase.LANDING):
+            d.fault("link", "control link lost; its backend has centred the sticks")
+
+        if d.phase == Phase.TAKEOFF:
+            if age <= STALE_S and height > AIRBORNE_HEIGHT and abs(d.tracked.v[2]) < 0.15:
+                self._begin_check(d, now)
+            elif now - d.toggled_at > TAKEOFF_TIMEOUT_S:
+                if age <= STALE_S and height > AIRBORNE_HEIGHT:
+                    self._begin_check(d, now)
+                else:
+                    d.phase = Phase.GROUND
+                    d.fault("takeoff", "takeoff was sent but it did not climb; not sending again, the toggle would reverse it")
+                    self.takeoff_queue.clear()
+        elif d.phase == Phase.LANDING:
+            if age <= STALE_S and height < GROUNDED_HEIGHT and abs(d.tracked.v[2]) < 0.15:
+                d.phase = Phase.GROUND
+                d.landing_requested = False
+                d.blind_landing = False
+                d.clear("land")
+            elif now - d.toggled_at > LAND_TIMEOUT_S:
+                d.fault("land", "landing was sent but touchdown was not seen; check it by eye")
+                d.phase = Phase.GROUND if d.blind_landing else Phase.AIR
+                if d.phase == Phase.AIR:
+                    d.landing_requested = False
+                    self._set_goal(d, d.tracked.p.copy())
+        elif d.phase in (Phase.AIR, Phase.CHECK):
+            if age > LOST_LAND_S and d.link.connected:
+                d.fault("tracking", f"no pose for {age:.1f} s; landing it where it is")
+                self._toggle_land(d, now, blind=True)
+                return
+            if age <= STALE_S:
+                self._watch_for_runaway(d, now)
+
+    def _begin_check(self, d: Drone, now: float) -> None:
+        d.phase = Phase.CHECK
+        d.arrived = False
+        yaw = d.tracked.yaw
+        axes = [np.array([math.cos(yaw), math.sin(yaw), 0.0]), np.array([-math.sin(yaw), math.cos(yaw), 0.0])]
+        directions = []
+        for axis in axes:
+            def room_for(sign):
+                # Walls are checked further out: a drone that fails this test may coast a long way.
+                ahead = d.tracked.p + sign * axis * 0.8
+                far = d.tracked.p + sign * axis * 2.0
+                others = [np.linalg.norm(ahead[:2] - other.tracked.p[:2]) - self.limits.separation
+                          for other in self.drones.values() if other is not d and other.tracked.t is not None]
+                return min([self.room.clearance(far) - self.limits.surface_clearance, *others])
+            directions.append(axis if room_for(1.0) >= room_for(-1.0) else -axis)
+        d.check = ResponseCheck(directions, d.tracked.p.copy(), 0, now)
+        d.path = []
+        d.goal = None
+
+    def _check_step(self, d: Drone, now: float) -> np.ndarray:
+        check = d.check
+        if check.stage % 2 == 1:
+            coast = float(np.linalg.norm(d.tracked.p[:2] - check.stop_at[:2]))
+            if coast > CHECK_MAX_COAST:
+                d.check_results = check.results
+                d.check = None
+                d.fault("response", f"it drifted {coast:.2f} m after being told to stop, so it isn't "
+                                    "holding position; landing it where it is")
+                self._toggle_land(d, now)
+                return np.zeros(3)
+        direction = check.directions[check.stage // 2]
+        moving = check.stage % 2 == 0
+        length = CHECK_MOVE_S if moving else CHECK_STOP_S
+        elapsed = now - check.stage_at
+        if elapsed >= length - CHECK_SAMPLE_S:
+            check.samples.append(float(d.tracked.v @ direction))
+        if elapsed < length:
+            return direction * CHECK_SPEED if moving else np.zeros(3)
+        measured = sum(check.samples) / max(len(check.samples), 1)
+        check.samples = []
+        check.stage += 1
+        check.stage_at = now
+        if moving:
+            check.moved = measured
+            check.stop_at = d.tracked.p.copy()
+            return np.zeros(3)
+        check.results.append({"moved": round(check.moved, 3), "after_stop": round(measured, 3)})
+        problem = self._judge_check(check.moved, measured)
+        if problem and check.moved < CHECK_MIN_SPEED and check.moved > -CHECK_MIN_SPEED and not check.retried:
+            # A gust can cancel out a move this small, so give it one more go.
+            check.retried = True
+            check.stage -= 2
+            check.results.pop()
+            return np.zeros(3)
+        if problem:
+            d.check_results = check.results
+            d.check = None
+            d.fault("response", f"{problem}; landing it where it is")
+            self._toggle_land(d, now)
+            return np.zeros(3)
+        if check.stage >= 2 * len(check.directions):
+            d.check_results = check.results
+            speed = sum(r["moved"] for r in check.results) / len(check.results)
+            # Only ever raise it. A short move may not reach full speed, and believing a drone is
+            # slower than it is makes it fly too fast. Steady flight can correct it downward later.
+            d.mapper.scale = max(d.mapper.scale, min(StickMapper.GAIN_RANGE[1], speed / CHECK_SPEED))
+            home = check.home
+            d.check = None
+            d.phase = Phase.AIR
+            self._set_goal(d, home)
+            return np.zeros(3)
+        return np.zeros(3)
+
+    @staticmethod
+    def _judge_check(moved: float, after_stop: float) -> str | None:
+        if moved < -CHECK_MIN_SPEED:
+            return f"it moved the wrong way ({moved:+.2f} m/s), so a stick is reversed or the heading is wrong"
+        if moved < CHECK_MIN_SPEED:
+            return f"it barely responded to the sticks ({moved:+.2f} m/s)"
+        if after_stop > CHECK_STILL_SPEED and after_stop > CHECK_STOP_RATIO * moved:
+            return (f"it kept going after being told to stop ({moved:+.2f} then {after_stop:+.2f} m/s), "
+                    "so its flow sensor probably can't read this floor")
+        return None
+
+    def _watch_for_runaway(self, d: Drone, now: float) -> None:
+        """The drone isn't doing what it's told: sticks reversed, flow sensor lost, wind. Land it."""
+        limits = self.limits
+        speed = float(np.linalg.norm(d.tracked.v[:2]))
+        past_fence = float(np.max(np.concatenate([self.room.lo[:2] - d.tracked.p[:2], d.tracked.p[:2] - self.room.hi[:2]])))
+        if speed > OVERSPEED_FACTOR * limits.max_speed:
+            if d.overspeed_since is None:
+                d.overspeed_since = now
+        else:
+            d.overspeed_since = None
+        if past_fence > FENCE_BREACH:
+            d.fault("runaway", f"{past_fence:.2f} m past the fence; landing it")
+            self._toggle_land(d, now)
+        elif d.overspeed_since is not None and now - d.overspeed_since > 0.5:
+            d.fault("runaway", f"flying at {speed:.1f} m/s, far above the limit; landing it")
+            self._toggle_land(d, now)
+
+    # --------------------------------------------------------------- velocities
+    def _steerable(self, d: Drone, now: float) -> bool:
+        return (d.phase in (Phase.AIR, Phase.CHECK, Phase.LANDING) and d.link.connected
+                and d.tracked.age(now) <= STALE_S)
+
+    def _want(self, d: Drone, now: float) -> np.ndarray:
+        limits = self.limits
+        if d.phase == Phase.CHECK:
+            return self._check_step(d, now)
+        if d.phase == Phase.LANDING:
+            # The descent is the flight controller's. All that's left is not to drift, which a
+            # drone with no flow sensor would otherwise do, into whatever is beside it.
+            want = np.zeros(3)
+            if np.linalg.norm(d.tracked.v[:2]) > 0.1:
+                want[:2] = -0.8 * d.tracked.v[:2]
+            return want
+        if d.goal is None:
+            return np.zeros(3)
+        p = d.tracked.p
+        error = d.goal - p
+        distance = float(np.linalg.norm(error))
+        if d.path_version != self.room.version:
+            self._plan(d)
+        if distance < ARRIVED:
+            d.arrived = True
+        elif distance > 2 * ARRIVED:
+            d.arrived = False
+        if d.arrived:
+            return np.zeros(3)
+        if not d.path:
+            return np.zeros(3)
+        self._watch_progress(d, now, distance)
+        target, final = self._carrot(d, p)
+        offset = target - p
+        horizontal = float(np.linalg.norm(offset[:2]))
+        speed = limits.max_speed if not final else min(limits.max_speed, 1.0 * horizontal)
+        want = np.zeros(3)
+        if horizontal > 1e-6:
+            want[:2] = offset[:2] / horizontal * speed
+        want[2] = max(-limits.max_climb, min(limits.max_climb, 1.0 * offset[2]))
+        return want
+
+    def _carrot(self, d: Drone, p: np.ndarray) -> tuple[np.ndarray, bool]:
+        path = d.path
+        while d.leg < len(path) - 1 and np.linalg.norm(path[d.leg] - p) < LOOKAHEAD:
+            d.leg += 1
+        a, b = path[d.leg - 1], path[d.leg]
+        along = b - a
+        length = float(np.linalg.norm(along))
+        if length < 1e-6:
+            return b, d.leg == len(path) - 1
+        unit = along / length
+        at = float((p - a) @ unit) + LOOKAHEAD
+        final = d.leg == len(path) - 1
+        if at >= length:
+            return b, final
+        return a + unit * max(at, 0.0), False
+
+    def _watch_progress(self, d: Drone, now: float, distance: float) -> None:
+        """Blocked by another drone parked in the way: plan again, going around it."""
+        if distance < d.progress_best - 0.05:
+            d.progress_best = distance
+            d.progress_at = now
+            d.clear("stuck")
+            return
+        if now - d.progress_at < STUCK_S:
+            return
+        if now - d.progress_at > 15.0:
+            d.fault("stuck", f"no progress for {now - d.progress_at:.0f} s, {distance:.2f} m from its goal")
+        if now - d.last_replan < STUCK_S:
+            return
+        d.last_replan = now
+        cylinders = []
+        for other in self.drones.values():
+            if other is d or other.phase != Phase.AIR or np.linalg.norm(other.tracked.v[:2]) > 0.25:
+                continue
+            q = other.tracked.p
+            if np.linalg.norm(q[:2] - d.tracked.p[:2]) > self.limits.separation + 0.05:
+                cylinders.append(((float(q[0]), float(q[1])), self.limits.separation))
+        if cylinders:
+            # If nothing fits around the parked drones, keep the path and wait for them to move.
+            try:
+                d.path = plan_path(self.room, d.tracked.p.copy(), d.goal, self.limits.surface_clearance + 0.05, cylinders)
+                d.leg = 1
+            except PlanError:
+                pass
+
+    def _sidestep(self, d: Drone, bodies: list[Body]) -> None:
+        """Two drones meeting head on would stop nose to nose, so each keeps to its right."""
+        limits = self.limits
+        reach = 2.2 * limits.separation
+        for other in bodies:
+            if other.id == d.id:
+                continue
+            offset = other.p[:2] - d.tracked.p[:2]
+            distance = float(np.linalg.norm(offset))
+            if distance < 1e-6 or distance > reach:
+                continue
+            toward = offset / distance
+            body = next(b for b in bodies if b.id == d.id)
+            if body.want[:2] @ toward <= 0.02:
+                continue
+            strength = min(1.0, (reach - distance) / (reach - limits.separation))
+            right = np.array([toward[1], -toward[0], 0.0])
+            body.want = body.want + right * limits.max_speed * 0.8 * strength
+
+    def _fly(self, now: float, dt: float) -> None:
+        bodies = []
+        for d in self.drones.values():
+            if d.tracked.t is None or d.phase == Phase.STOPPED:
+                continue
+            if d.phase == Phase.GROUND and (d.tracked.age(now) > STALE_S or d.tracked.p[2] < 0.3):
+                continue  # on the floor: flight heights keep everyone well above it
+            steerable = self._steerable(d, now)
+            age = d.tracked.age(now)
+            extra = min(1.0, max(0.0, age - STALE_S) * 0.4)
+            velocity = d.tracked.v if age <= STALE_S else np.zeros(3)
+            position = d.tracked.now(now) if age <= STALE_S else d.tracked.p
+            want = self._want(d, now) if steerable else np.zeros(3)
+            bodies.append(Body(d.id, position, velocity, want, steerable, extra, descending=d.phase == Phase.LANDING))
+        for d in self.drones.values():
+            if self._steerable(d, now) and d.phase != Phase.LANDING:
+                self._sidestep(d, bodies)
+        result = filter_velocities(bodies, self.room, self.limits, self.moving)
+        self.closest = result.closest
+        if result.infeasible:
+            self.infeasible_ticks += 1
+        for d in self.drones.values():
+            if d.phase == Phase.STOPPED:
+                continue
+            velocity = result.velocities.get(d.id)
+            if velocity is None:
+                d.commanded = np.zeros(3)
+                d.limited = False
+                if d.link.connected and d.phase != Phase.GROUND:
+                    d.link.send_sticks(0.0, 0.0, 0.0, 0.0, TTL)
+                continue
+            if d.phase == Phase.LANDING:
+                velocity = np.array([velocity[0], velocity[1], 0.0])
+            d.commanded = velocity
+            d.limited = d.id in result.limited
+            yaw = d.tracked.yaw
+            cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
+            asked = (velocity[0] * cos_yaw + velocity[1] * sin_yaw, -velocity[0] * sin_yaw + velocity[1] * cos_yaw)
+            seen = (d.tracked.v[0] * cos_yaw + d.tracked.v[1] * sin_yaw, -d.tracked.v[0] * sin_yaw + d.tracked.v[1] * cos_yaw)
+            d.mapper.learn(now, asked[0], asked[1], seen[0], seen[1], dt)
+            self._watch_following(d, now, velocity)
+            d.link.send_sticks(*d.mapper.sticks(velocity, yaw, d.config.yaw, dt), TTL)
+
+    def _watch_following(self, d: Drone, now: float, velocity: np.ndarray) -> None:
+        """How far the drone's speed has been from what was asked, over the last few seconds."""
+        errors = d.follow_errors
+        errors.append((now, float(np.sum((velocity[:2] - d.tracked.v[:2]) ** 2))))
+        while errors and errors[0][0] < now - FOLLOW_WINDOW_S:
+            errors.popleft()
+        if now - errors[0][0] < FOLLOW_WINDOW_S * 0.9:
+            return
+        d.follow_error = math.sqrt(sum(e for _, e in errors) / len(errors))
+        d.follow_worst = max(d.follow_worst, d.follow_error)
+
+    # --------------------------------------------------------------- reporting
+    def all_arrived(self) -> bool:
+        flying = [d for d in self.drones.values() if d.phase in (Phase.AIR, Phase.CHECK)]
+        return bool(flying) and all(d.arrived for d in flying)
+
+    def all_phase(self, phase: Phase) -> bool:
+        return all(d.phase == phase for d in self.drones.values())
+
+    def json(self) -> dict:
+        now = self.now
+        return {
+            "t": round(now, 2),
+            "room": self.room.json(),
+            "limits": {"separation": self.limits.separation, "surface_clearance": self.limits.surface_clearance,
+                       "max_speed": self.limits.max_speed},
+            "closest": None if not math.isfinite(self.closest) else round(self.closest, 3),
+            "estopped": self.estopped,
+            "preflight": self.preflight(now) if self.all_phase(Phase.GROUND) else [],
+            "moving": [{"id": m.id, "p": m.p.round(3).tolist(), "radius": m.radius} for m in self.moving],
+            "drones": [{
+                "id": d.id,
+                "phase": d.phase.value,
+                "p": d.tracked.p.round(3).tolist(),
+                "v": d.tracked.v.round(3).tolist(),
+                "yaw": round(math.degrees(d.tracked.yaw), 1),
+                "pad": list(d.config.pad),
+                "pose_age": None if not math.isfinite(d.tracked.age(now)) else round(d.tracked.age(now), 3),
+                "link": d.link.connected,
+                "latency": getattr(d.link, "latency", None),
+                "goal": None if d.goal is None else d.goal.round(3).tolist(),
+                "path": [point.round(3).tolist() for point in d.path],
+                "arrived": d.arrived,
+                "limited": d.limited,
+                "commanded": d.commanded.round(3).tolist(),
+                "speed_per_stick": round(d.mapper.speed_per_stick, 2),
+                "follow_error": round(d.follow_error, 3),
+                "check": d.check_results,
+                "faults": list(d.faults.values()),
+            } for d in self.drones.values()],
+        }

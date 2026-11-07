@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { WS_BASE_URL } from "../backend";
 
-const OVERLAY_WS_URL = 'ws://localhost:8000/ws/overlays';
+const OVERLAY_WS_URL = `${WS_BASE_URL}/ws/overlays`;
 
 export interface OverlayObject {
   type: 'rect';

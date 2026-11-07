@@ -115,6 +115,7 @@ class Drone:
     follow_worst: float = 0.0
     check: ResponseCheck | None = None
     check_results: list[dict] = field(default_factory=list)
+    sticks_wrong: bool = False  # failed its check in a way that means steering it would make things worse
 
     @property
     def id(self) -> str:

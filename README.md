@@ -44,7 +44,7 @@ Nowadays, there are incredibly cheap "toy" drones available on Amazon that are b
 
 ## Raspberry Pi gateways
 
-For one Raspberry Pi per drone, see the [Pi installation and operation guide](tools/pi/README.md). It includes the backend service installer, a loopback simulator check, and the USB setup used for the two-Pi installation.
+For one Raspberry Pi per drone, see the [Pi installation and operation guide](tools/pi/README.md). It includes the backend service installer, a loopback simulator check, and the USB setup used for the three-Pi installation.
 
 ## Quick start: Hiturbo S20 on a Mac
 You need [uv](https://docs.astral.sh/uv/) and Node.js 20+. Install once while you have internet, because the drone's Wi-Fi has none:

@@ -770,7 +770,10 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                 else:
                     # Switch strategy based on mode (treat "mouse" as absolute)
                     try:
-                        if mode in ("abs", "mouse"):
+                        if mode == "linear":
+                            if not isinstance(flight_controller.model.strategy, LinearStrategy):
+                                flight_controller.model.set_strategy(LinearStrategy())
+                        elif mode in ("abs", "mouse"):
                             if not isinstance(flight_controller.model.strategy, DirectStrategy):
                                 flight_controller.model.set_strategy(DirectStrategy())
                         else:

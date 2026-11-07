@@ -1,9 +1,14 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FLEET, apiUrlForPort, type FleetDrone } from "../backend";
 
-// View-only fleet monitor: video and backend status for every drone. It never opens
-// the control websocket, so it cannot send sticks or commands. Each tile links to that
-// drone's console, which is where flying happens.
+// Fleet page: video and status for every drone, plus fleet-wide takeoff, land and E-stop.
+// Sticks stay with each drone's console (the "open console" links); this page never
+// opens the control websocket.
+//
+// S2x drones use one toggle bit for takeoff and land and report nothing back, so the
+// backend tracks a presumed state and drops a command that would reverse it. If that
+// belief is wrong (the drone ignored a takeoff, or crashed), fix it with "mark landed" /
+// "mark flying" before using the fleet buttons.
 
 type Status = "checking" | "online" | "offline";
 

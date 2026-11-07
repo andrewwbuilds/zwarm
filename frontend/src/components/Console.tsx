@@ -115,7 +115,7 @@ export function Console({ controls, sim, children }: { controls: Controls; sim: 
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <div style={{ flex: 1, position: "relative", background: "#000" }}>
-        <VideoFeed src="http://localhost:8000/mjpeg" />
+        <VideoFeed src={`${API_BASE_URL}/mjpeg`} />
         <DrawingOverlay />
       </div>
       <div className="raw" style={{ width: 400, padding: 8, overflowY: "auto" }}>

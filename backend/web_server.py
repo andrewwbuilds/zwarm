@@ -743,6 +743,12 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                 continue
 
             msg_type = data.get("type")
+            if data.get("source") == "swarm":
+                is_swarm = True
+                swarm_claim_until = time.monotonic() + SWARM_CLAIM_S
+            elif _swarm_flying() and msg_type in ("axes", "takeoff"):
+                # A console left open must not fight the swarm. Land and E-STOP still work.
+                continue
             if _flying_plan():
                 if msg_type == "axes":
                     sticks = [data.get(k, 0) for k in ("throttle", "yaw", "pitch", "roll")]

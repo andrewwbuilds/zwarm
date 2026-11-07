@@ -8,6 +8,7 @@ import { backendLabel } from './backend';
 function App() {
   const controls = useControls();
   const sim = useSim();
+  useEffect(() => { document.title = `${backendLabel()} · console`; }, []);
   if (!sim.ready) return null;
   return (
     <Console controls={controls} sim={sim}>

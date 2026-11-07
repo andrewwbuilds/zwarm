@@ -556,6 +556,7 @@ async def get_capabilities():
         "drone_type": active_drone_type,
         "commands": control_capabilities,
         "sim_url": os.getenv("SIM_URL") or None,
+        "busy": _flying_plan() or bool(plugin_manager and plugin_manager.running()),
     }
 
 

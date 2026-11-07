@@ -557,6 +557,8 @@ async def get_capabilities():
         "commands": control_capabilities,
         "sim_url": os.getenv("SIM_URL") or None,
         "busy": _flying_plan() or bool(plugin_manager and plugin_manager.running()),
+        # Presumed flight state for toggle-bit drones (S2x); None where it isn't tracked.
+        "airborne": getattr(flight_controller.model, "airborne", None) if flight_controller else None,
     }
 
 

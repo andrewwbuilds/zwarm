@@ -52,13 +52,21 @@ class S2xDroneModel(BaseRCModel):
     def update(self, dt, axes):
         self.strategy.update(self, dt, axes)
     
-    def takeoff(self):
-        """Set takeoff flag"""
-        self.takeoff_flag = True
-    
-    def land(self):
+    def takeoff(self) -> bool:
+        """Send takeoff unless the drone is already presumed airborne.
+
+        The bit is a toggle, so a second takeoff would land the drone. Returns
+        whether the command went out.
         """
-        Request the stock app's land action.
+        if self.airborne:
+            return False
+        self.takeoff_flag = True
+        self.airborne = True
+        return True
+
+    def land(self) -> bool:
+        """
+        Request the stock app's land action, unless the drone is presumed grounded.
 
         In the HiTurbo app this shares the same one-shot flight bit as takeoff,
         so the protocol adapter maps the semantic intent rather than a distinct

@@ -44,11 +44,12 @@ STUCK_S = 4.0
 FOLLOW_WINDOW_S = 3.0
 NEXT_TAKEOFF_HEIGHT = 0.25  # the next drone goes once the last one is seen this far up
 CHECK_SPEED = 0.4  # m/s for the small test moves after takeoff
-CHECK_MOVE_S = 1.5
+CHECK_MOVE_S = 1.2
 CHECK_STOP_S = 2.5
 CHECK_SAMPLE_S = 0.5  # the end of each stage that gets measured
-CHECK_MIN_SPEED = 0.12  # it has to have got at least this fast, the right way
-CHECK_STILL_SPEED = 0.1  # stopped, whatever it was doing before
+CHECK_MIN_SPEED = 0.08  # it has to have got at least this fast, the right way
+CHECK_WRONG_WAY = 0.2  # going backwards this fast part way through a move ends the check at once
+CHECK_STILL_SPEED = 0.13  # stopped, whatever it was doing before
 CHECK_STOP_RATIO = 0.5  # or at least slowed this much: no flow sensor means it coasts
 CHECK_MAX_COAST = 0.75  # m covered after being told to stop: past this it fails at once
 

@@ -177,6 +177,8 @@ class Coordinator:
                 problems.append(f"{d.id} is not on the ground ({d.phase.value})")
             if not d.link.connected:
                 problems.append(f"{d.id} has no control link")
+            if getattr(d.link, "problem", None):
+                problems.append(f"{d.id}: {d.link.problem}")
             if d.tracked.age(now) > STALE_S:
                 problems.append(f"{d.id} is not being tracked")
                 continue

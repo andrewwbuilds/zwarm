@@ -106,27 +106,26 @@ controls and requests video without issuing a takeoff command.
 
 ## Operate from the Mac
 
-After preflight passes, confirm each Pi is on its drone and start the backends:
+Turn on all three drones, wait about 20 seconds, then run one command from the repo root:
 
 ```sh
-for n in 1 2 3; do ssh zwarm-pi-0$n 'nmcli -g GENERAL.CONNECTION device show wlan0'; done
-for n in 1 2 3; do ssh zwarm-pi-0$n 'sudo systemctl start zwarm-backend'; done
+tools/pi/fleet.sh up
 ```
 
-Open one tunnel per Pi (`localhost:8001` to Pi 1, `8002` to Pi 2, `8003` to Pi 3) and keep
-the terminal open:
+It works on the three Pis in parallel: joins each Pi to its drone, runs preflight (no
+takeoff), and starts the backend. Then it opens one tunnel per Pi (`localhost:8001` to Pi 1,
+`8002` to Pi 2, `8003` to Pi 3), starts the frontend, and opens the fleet monitor. Keep that
+terminal open; it keeps the Mac awake. Ctrl-C closes the tunnels and the frontend but leaves
+the backends running, and a disconnected console centres the sticks, so a drone in the air
+hovers. A Pi whose backend is already running is left alone, so re-running `up` is safe.
+`up --no-preflight` skips preflight.
 
 ```sh
-tools/pi/fleet-tunnels.sh
+tools/pi/fleet.sh status   # drone link, backend and tunnel for each Pi
+tools/pi/fleet.sh down     # after landing: stop the backends and close the tunnels
 ```
 
-In a second terminal, run the frontend:
-
-```sh
-cd frontend
-npm ci
-npm run dev
-```
+A Pi whose drone is off reports NOT READY and the other drones still come up.
 
 - `http://localhost:5173/fleet` shows all three video feeds and backend status. It is view
   only: it never opens the control websocket, so it cannot move a drone.

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_BASE_URL } from "../backend";
 
-// Assuming your backend runs on port 8000
-const API_BASE_URL = 'http://localhost:8000';
 
 interface PluginState {
   available: string[];

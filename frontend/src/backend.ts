@@ -9,7 +9,7 @@ export interface FleetDrone {
   port: number;
 }
 
-// Local tunnel ports opened by tools/pi/fleet-tunnels.sh.
+// Local tunnel ports opened by tools/pi/fleet.sh up.
 export const FLEET: FleetDrone[] = [
   { name: "Drone 1", port: 8001 },
   { name: "Drone 2", port: 8002 },

@@ -1,0 +1,33 @@
+{
+  "_source": "Measured from the user's Hiturbo S20 over its WiFi on 2026-11-05, plus takeoff_probe.log. The simulator's tests compare against these values.",
+  "network": {"drone_ip": "172.16.10.1", "client_ip": "172.16.10.2", "ping_rtt_ms": {"min": 3.175, "avg": 11.679, "max": 27.152}, "rssi_dbm": [-38, -47], "wifi_channel": 2},
+  "udp_8080_replies": {
+    "0f": "aaff0301010a0a011901010035",
+    "28": "56342e362e31",
+    "ff53543316": "ff5354331600",
+    "27": "666f72636549"
+  },
+  "status_reply_prefix": "ff535408",
+  "status_values_seen": [102, 103, 105, 87, 88, 89, 90],
+  "status_reply_rate_to_rc": {"at_20hz": [130, 130], "at_80hz": [449, 451]},
+  "tcp_8888_heartbeat": "000102030405060708092525",
+  "tcp_8888_reply": "6e6f6163740d0a",
+  "flight_controller_frames_seen": 0,
+  "video": {
+    "source_port": 4096,
+    "chunk_bytes": 1400,
+    "chunks_per_frame": 25,
+    "first_chunk_heads": [
+      "4040a504190078050000 01a10000830000 00fd100004 00009985 000000000000 680180020000 000072a6e8deab610500",
+      "40400b05190078050000 01a10000ed0000 0063100004 00009d85 000000000000 680180020000 00003cb644dfab610500"
+    ],
+    "jpeg_bytes": {"min": 34041, "median": 34197, "max": 34357},
+    "jpeg_size": [1184, 656],
+    "advertised_size": [640, 360],
+    "fps": {"min": 15.8, "typical": 16.9, "max": 17.9},
+    "kib_per_s": {"min": 533, "max": 568},
+    "worst_frame_gap_ms": {"min": 103, "max": 146}
+  },
+  "takeoff": {"browser_single_packet_started_motors": false, "probe_single_packet_at_80hz_started_motors": true, "probe_single_packet_landed": true},
+  "lights": {"before_any_packets": "solid", "changed_by_centered_sticks": false}
+}

@@ -1,0 +1,248 @@
+import socket
+from typing import Final, List, Optional
+
+from protocols.base_protocol_adapter import BaseProtocolAdapter
+from models.wifi_uav_rc import WifiUavRcModel
+from utils.wifi_uav_variants import get_wifi_uav_capabilities
+
+
+class WifiUavRcProtocolAdapter(BaseProtocolAdapter):
+    """
+    Builds and transmits control packets for the WiFi-UAV family.
+    Packet layout derived from reverse-engineered Android app traces.
+
+    Turbodrone uses the extended WiFi-UAV command layout (`66 14 ...`). In
+    that layout the app maps takeoff and land onto the same one-key action bit,
+    while emergency stop is a separate bit.
+    """
+
+    DEFAULT_DRONE_IP: Final = "192.168.169.1"
+    DEFAULT_PORT:     Final = 8800
+
+    # ──────────────────────────────────────────────────────────
+    # Static parts (taken 1:1 from packet dumps)
+    # ──────────────────────────────────────────────────────────
+    _HEADER         = bytes([0xef, 0x02, 0x7c, 0x00, 0x02, 0x02,
+                             0x00, 0x01, 0x02, 0x00, 0x00, 0x00])
+
+    _COUNTER1_SUFFIX = bytes([0x00, 0x00, 0x14, 0x00, 0x66, 0x14])
+    _CONTROL_SUFFIX  = bytes(10)                            # 10 × 0x00
+
+    _CHECKSUM_SUFFIX = bytes([0x99]) + bytes(44) + bytes([0x32, 0x4b, 0x14, 0x2d, 0x00, 0x00])
+
+    _COUNTER2_SUFFIX = bytes([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x14, 0x00, 0x00, 0x00,
+        0xff, 0xff, 0xff, 0xff
+    ])
+
+    _COUNTER3_SUFFIX = bytes([
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x03, 0x00, 0x00, 0x00, 0x10, 0x00,
+        0x00, 0x00
+    ])
+
+    FLAG_TAKEOFF_OR_LAND = 0x01
+    FLAG_STOP = 0x02
+    FLAG_CALIBRATION = 0x04
+    FLAG_FLIP = 0x08
+
+    _SPEED_SCALES: Final[tuple[float, ...]] = (0.30, 0.60, 1.00, 0.25)
+
+    # ------------------------------------------------------------------ #
+    def __init__(self,
+                 drone_ip: str = DEFAULT_DRONE_IP,
+                 control_port: int = DEFAULT_PORT,
+                 shared_sock: Optional[socket.socket] = None,
+                 variant: str = "auto") -> None:
+        self.drone_ip = drone_ip
+        self.control_port = control_port
+        self.variant = (variant or "auto").strip().lower()
+        self.capabilities = get_wifi_uav_capabilities(self.variant)
+        self._target_ports = self._resolve_target_ports(control_port)
+
+        self.sock = shared_sock or socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._is_shared_sock = shared_sock is not None
+        self.debug_packets = False
+        self._pkt_counter = 0
+
+        # rolling 16-bit counters found in the original protocol
+        self._ctr1 = 0x0000
+        self._ctr2 = 0x0001
+        self._ctr3 = 0x0002
+
+    def set_socket(self, sock: socket.socket) -> None:
+        """Use an externally managed socket instead of the internal one."""
+        # Don't close the old socket if it was created here
+        if self.sock and not self._is_shared_sock:
+            self.sock.close()
+        
+        self.sock = sock
+        self._is_shared_sock = True
+
+    def stop(self) -> None:
+        """Close the socket if it's not shared."""
+        if self.sock and not self._is_shared_sock:
+            try:
+                self.sock.close()
+            except Exception:
+                pass # Ignore errors on shutdown
+
+    # ------------------------------------------------------------------ #
+    # BaseProtocolAdapter
+    # ------------------------------------------------------------------ #
+    def build_control_packet(self, drone_model: WifiUavRcModel) -> bytes:  # type: ignore[override]
+        # ----- counters -------------------------------------------------
+        c1 = self._ctr1.to_bytes(2, "little")
+        c2 = self._ctr2.to_bytes(2, "little")
+        c3 = self._ctr3.to_bytes(2, "little")
+
+        # advance for next call
+        self._ctr1 = (self._ctr1 + 1) & 0xFFFF
+        self._ctr2 = (self._ctr2 + 1) & 0xFFFF
+        self._ctr3 = (self._ctr3 + 1) & 0xFFFF
+
+        # ----- command / headless --------------------------------------
+        command = 0x00
+        if drone_model.takeoff_flag or drone_model.land_flag:
+            command |= self.FLAG_TAKEOFF_OR_LAND
+        if drone_model.land_flag:
+            self._last_command_intent = "LAND"
+        elif drone_model.takeoff_flag:
+            self._last_command_intent = "TAKEOFF"
+        elif drone_model.stop_flag:
+            self._last_command_intent = "STOP"
+        elif drone_model.calibration_flag:
+            self._last_command_intent = "CALIBRATE"
+        else:
+            self._last_command_intent = None
+        if drone_model.stop_flag:
+            command |= self.FLAG_STOP
+        if drone_model.calibration_flag:
+            command |= self.FLAG_CALIBRATION
+        if getattr(drone_model, "flip_flag", False):
+            command |= self.FLAG_FLIP
+        camera_tilt_state = max(0, min(2, int(getattr(drone_model, "camera_tilt_state", 0))))
+        command |= (camera_tilt_state & 0x03) << 6
+
+        headless = 0x03 if drone_model.headless_flag else 0x02
+
+        # ----- controls -------------------------------------------------
+        speed_index = max(0, min(3, int(getattr(drone_model, "speed_index", 2))))
+        if self.capabilities.transport == "fld_compat":
+            axis_controls = [
+                self._apply_speed_scale(drone_model.roll, speed_index),
+                self._apply_speed_scale(drone_model.pitch, speed_index),
+                self._apply_speed_scale(drone_model.throttle, 2),
+                self._apply_speed_scale(drone_model.yaw, speed_index),
+            ]
+            axis_labels = ("R", "P", "T", "Y")
+        else:
+            axis_controls = [
+                self._apply_speed_scale(drone_model.yaw, speed_index),
+                self._apply_speed_scale(drone_model.pitch, speed_index),
+                self._apply_speed_scale(drone_model.throttle, 2),
+                self._apply_speed_scale(drone_model.roll, speed_index),
+            ]
+            axis_labels = ("Y", "P", "T", "R")
+
+        controls: List[int] = axis_controls + [
+            command & 0xFF,
+            headless & 0xFF,
+        ]
+
+        # Stash for debug printing at send time.
+        try:
+            self._last_controls = tuple(controls[:4])
+            self._last_axis_labels = axis_labels
+            self._last_command = command & 0xFF
+            self._last_headless = headless & 0xFF
+        except Exception:
+            pass
+
+        checksum = 0
+        for b in controls:
+            checksum ^= b
+
+        # ----- assemble -------------------------------------------------
+        pkt = bytearray()
+        pkt += self._HEADER
+        pkt += c1 + self._COUNTER1_SUFFIX
+        pkt += bytes(controls)
+        pkt += self._CONTROL_SUFFIX
+        pkt.append(checksum)
+        pkt += self._CHECKSUM_SUFFIX
+        pkt += c2 + self._COUNTER2_SUFFIX
+        pkt += c3 + self._COUNTER3_SUFFIX
+
+        # one-shot flags → clear
+        drone_model.takeoff_flag = False
+        drone_model.land_flag = False
+        drone_model.stop_flag = False
+        drone_model.calibration_flag = False
+        drone_model.flip_flag = False
+        drone_model.camera_tilt_state = 0
+
+        return bytes(pkt)
+
+    def send_control_packet(self, packet: bytes):  # type: ignore[override]
+        """
+        Transmit one RC packet.
+        If the video layer has just torn the shared socket down, the send
+        will raise OSError(EBADF).  Swallow it and wait until the receiver
+        hands us the fresh socket.
+        """
+        try:
+            for port in self._target_ports:
+                self.sock.sendto(packet, (self.drone_ip, port))
+        except OSError:
+            # Socket was closed during video-reconnect window.
+            # Wait for VideoReceiverService to call set_socket(…) with the
+            # new descriptor.  Until then we just skip transmitting.
+            return
+
+        if self.debug_packets:
+            self._pkt_counter += 1
+            print(f"[wifi-uav] #{self._pkt_counter:05d}   "
+                  f"{' '.join(f'{b:02x}' for b in packet[:40])} …")
+            try:
+                controls = getattr(self, "_last_controls", None)
+                labels = getattr(self, "_last_axis_labels", None)
+                if controls and labels:
+                    decoded = " ".join(f"{label}:{value}" for label, value in zip(labels, controls))
+                    print(f"[wifi-uav] controls {decoded}")
+                command = getattr(self, "_last_command", None)
+                if command is not None:
+                    flags = []
+                    if command & self.FLAG_TAKEOFF_OR_LAND:
+                        flags.append(getattr(self, "_last_command_intent", None) or "TAKEOFF_OR_LAND")
+                    if command & self.FLAG_STOP:
+                        flags.append("STOP")
+                    if command & self.FLAG_CALIBRATION:
+                        flags.append("CALIBRATE")
+                    if command & self.FLAG_FLIP:
+                        flags.append("FLIP")
+                    tilt = (command >> 6) & 0x03
+                    if tilt:
+                        flags.append(f"TILT:{tilt}")
+                    if flags:
+                        print(f"[wifi-uav] command flags: {', '.join(flags)}")
+            except Exception:
+                pass
+
+    def toggle_debug(self) -> bool:                # type: ignore[override]
+        self.debug_packets = not self.debug_packets
+        state = "ON" if self.debug_packets else "OFF"
+        print(f"[wifi-uav] debug {state}")
+        return self.debug_packets
+
+    def _resolve_target_ports(self, control_port: int) -> tuple[int, ...]:
+        if self.capabilities.transport == "uav_dual_port":
+            return (control_port, control_port + 1)
+        return (control_port,)
+
+    def _apply_speed_scale(self, value: float, speed_index: int) -> int:
+        """Scale a raw model axis around its center using the app's speed table."""
+        scale = self._SPEED_SCALES[speed_index]
+        centered = float(value) - 128.0
+        return max(0, min(255, round(128.0 + centered * scale)))

@@ -1,0 +1,215 @@
+# Turbodrone
+Reverse-engineered API and client for controlling some of the best-selling ~$50 "toy" drones on Amazon from a computer replacing the closed-source mobile apps they come with.
+
+![S20 Drone Short Clip](docs/images/s20-drone-short-clip-small.gif)
+
+## Introduction
+Nowadays, there are incredibly cheap "toy" drones available on Amazon that are basically pared-down clones of the early DJI mavic. Only ~$50 to have a 1080p camera for FPV and recording, tiny downward-facing optical flow sensor for position and altitude hold, and a well-tuned flight profile out-of-the-box. The only problem with drones like this is that they run closed-source firmware and are locked to only being controlled by a custom mobile app. I thought it would be cool to free some of these drones from their "jail" and write an API and client for accessing the video feed and sending control commands down to the drone by reverse-engineering how the mobile apps work. That way you can turn a highly capable $50 "toy" drone into something that can be programmatically controlled and used for all sorts of applications and experiments.
+
+## Hardware
+* WiFi Camera Drones (ranked in order of recommendation):
+
+    | Brand      | Model Number(s) | Compatibility | Implementation | Motor      | Purchase Link                                               | Notes |
+    |------------|-----------------|---------------|----------------|------------|-------------------------------------------------------------|-------|
+    | Generic        | M10           | Tested    | `cooingdv` | Brushless | [Aliexpress](https://www.aliexpress.us/item/3256809708895605.html) | My current favorite. RTSP video stream is very reliable. |
+    | Plegble        | PL-515        | Tested | `s2x`      | Brushless | [Amazon](https://www.amazon.com/dp/B0D2B25YQQ) | Same airframe as the S2x models and takes the same batteries, but upgraded to brushless motors. |
+    | Karuisrc       | K417          | Tested    | `wifi_uav` | Brushless | [Amazon](https://www.amazon.com/Electric-Adjustable-AIdrones-Quadcopter-Beginners/dp/B0CYPSJ34H/) | First model to be supported with brushless motors. Build quality is great. |
+    | Loiley         | S29           | Tested    | `s2x`      | Brushed   | Can't find link anymore | Great build quality, has servo for tilting camera (_not implemented in API yet_) |
+    | Hiturbo        | S20           | Tested    | `s2x`      | Brushed   | [Amazon](https://www.amazon.com/dp/B0BBVZ849G), [Alternate Amazon Listing](https://www.amazon.com/Beginners-Foldable-Quadcopter-Gestures-Batteries/dp/B0D8LK1KJ3) | Original test platform, great build quality |
+    | Loiley         | X69           | Tested  | `x69_lg`   | Brushed   | [Amazon](https://www.amazon.com/Altitude-Adjustment-Headless-Batteries-Beginner/dp/B0F8QTBGNP) | New LG/X69 app family; RC, camera tilt, and experimental FFmpeg-backed H.265 video implemented. |
+    | FlyVista       | V88           | Tested    | `wifi_uav` | Brushed   | [Amazon](https://www.amazon.com/dp/B0D5CXY6X8) | |
+    | ?              | D16/GT3/V66   | Tested    | `wifi_uav` | Brushed   | cheapest on [Aliexpress](https://www.aliexpress.us/item/3256808590663347.html), [Amazon](https://www.amazon.com/AUHIFVAX-Intelligent-Avoidance-Christmas-Thanksgiving/dp/B0FJRVH76T) | 20% smaller DJI Neo clone. Only really good for indoor flight. |
+    | Several Brands | E58           | Tested    | Unknown    | Brushed   | [Amazon](https://www.amazon.com/Foldable-Quadcopter-Beginners-Batteries-Waypoints/dp/B09KV8L7WN/) | |
+    | Several Brands | E88           | Suspected | `cooingdv` | Brushed   | [Amazon](https://www.amazon.com/Beginners-Foldable-Quadcopter-Real-Time-Rechargable/dp/B0FKNH6Q4T) | |
+    | Several Brands | E88 Pro       | Suspected | Unknown    | Brushed   | [Amazon](https://www.amazon.com/Beginners-Foldable-Quadcopter-Real-Time-Rechargable/dp/B0FKNH6Q4T) | |
+    | Several Brands | E99           | Suspected | `cooingdv` | Brushed   | [Amazon](https://www.amazon.com/LJN53-Foldable-Drone-Dual-Cameras/dp/B0DRH9C6RF) | |
+    | Several Brands | E99 Pro       | Suspected | Unknown    | Brushed   | [Amazon](https://www.amazon.com/LJN53-Foldable-Drone-Dual-Cameras/dp/B0DRH9C6RF) | |
+    | Swifsen        | A35           | Suspected | Unknown    | Brushed   | [Amazon](https://a.co/d/bqKvloz) | Very small "toy" drone |
+    | Unknown        | LSRC-S1S      | Tested | `wifi_uav` | Brushed   | | mentioned in another reverse-engineering effort for the WiFi UAV app |
+    | Velcase        | S101          | TODO      | Unknown      | Brushed   | [Amazon](https://www.amazon.com/Foldable-Beginners-Quadcopter-Carrying-Positioning/dp/B0CH341G5F/) | lower quality build, smaller battery and props than S29 & S20 |
+    | Redrie         | X29           | Tested      | `s2x`    | Brushed   | [Amazon](https://www.amazon.com/Adults-1080P-Foldable-Altitude-Auto-Follow-Batteries/dp/B0CZQKNYL5) | Average build quality |
+
+    _**Tested** means the drone has been physically run with turbodrone to ensure its compatibility._
+
+  _**Suspected** means the APK for the drone appears to use the exact same packages and libraries as one of the tested drones._
+
+  _**Untested** means the APK has been reverse engineered and implementation code exists, but the drone has not yet been physically flown with TurboDrone._
+
+  _**TODO** means the APK operates with different byte packets and protocols and will have to be added as a new implementation in the API._
+
+* WiFi Dongle ([recommend ALFA Network AWUS036ACM](https://www.amazon.com/Network-AWUS036ACM-Long-Range-Wide-Coverage-High-Sensitivity/dp/B08BJS8FXD) or similar) 
+  * Drone broadcasts its own WiFi network so your computer will have to connect to it.
+  * Not strictly necessary because you can use your computer's built-in WiFi radio to connect to the drone's network, but nice to have that way you can stay connected to the internet while flying the drone.
+
+
+## Quick start: Hiturbo S20 on a Mac
+You need [uv](https://docs.astral.sh/uv/) and Node.js 20+. Install once while you have internet, because the drone's Wi-Fi has none:
+```
+(cd backend && uv sync)
+(cd frontend && npm ci)
+```
+
+Create `backend/.env` with your drone's Wi-Fi name:
+```
+DRONE_TYPE=s2x
+DRONE_WIFI=HITURBO_S20-xxxxxx
+```
+
+Put the drone on the ground, power it on, and run:
+```
+./fly.sh
+```
+
+This joins the drone's Wi-Fi, runs a no-fly link check, starts the backend and web client, and opens the browser. Ctrl-C stops everything and returns the Mac to its normal Wi-Fi. If you leave out `DRONE_WIFI`, join the network yourself first.
+
+| Key | Action |
+|-----|--------|
+| W / S | forward / back |
+| A / D | left / right |
+| Up / Down | climb / descend |
+| Left / Right | turn |
+| Esc | E-STOP |
+
+Before you fly:
+
+* Takeoff and Land send the same toggle, so Land on the ground takes off and Takeoff in the air lands. Press once and wait.
+* E-STOP cuts the motors at once, and the drone drops.
+* Land before pressing Ctrl-C. Quitting or losing Wi-Fi cuts the control link, and what happens next is up to the drone's flight controller.
+* Only the focused browser window flies. Switching away centers the sticks.
+
+To check the link without starting the motors, run `uv run python preflight.py` in `backend`.
+
+The person-following plugin needs the heavy YOLO dependencies, which are optional: run `uv sync --extra follow` in `backend`, then set `PLUGINS_ENABLED=true`.
+
+
+## Localization (visual SLAM)
+The S20 sends no position data, so the only source is its camera. `backend/slam` tracks the video and builds a map: it follows corners between frames, finds the camera pose from the 3D points it has triangulated, refines recent keyframes (bundle adjustment), and closes loops when the drone returns to a place it has seen.
+
+With `./fly.sh` running, in another terminal:
+```
+cd backend && uv run python -m slam live
+```
+It shows the video beside a top-down path (q quits, r restarts). Positions are in map units until you set a scale: measure a distance you flew and pass `--scale <metres per map unit>`. If your camera's field of view isn't 90 degrees, pass `--fov`.
+
+Test it without the drone: `uv run python -m slam sim --flight circle --save map.png` flies the simulator and scores the path against the exact truth.
+
+What to expect, measured in the simulator: smooth flights drift about 1% of the path. Turning on the spot loses scale (about 4% in the square test), and the camera alone cannot fix that, because a turn shows no depth. It needs a textured scene: blank walls and floors stop it tracking, and it will say so by showing "lost".
+
+## 3D mapping (photogrammetry)
+Turns the drone's camera into a 3D map of a room, three ways from the same photos: a **point cloud** (COLMAP's own 3D points, fast and accurate), a **Gaussian splat** (Brush, realistic and quick to view), and a **NeRF** (nerfstudio, slow). No localization is needed: COLMAP works out where each photo was taken.
+
+One-time setup: `brew install colmap`; unpack [Brush](https://github.com/ArthurBrussee/brush/releases) (`brush-app-aarch64-apple-darwin`) into `~/.local/share/brush-splat/v0.3.0/`; and run `tools/setup_nerf.sh` for the NeRF.
+
+With `./fly.sh` running, in `backend` in another terminal:
+```
+uv run python -m mapping capture living-room      # records EVERY frame; fly slowly, circle each area; q to finish
+uv run python -m mapping select living-room       # optional: choose photos now and look at them (images/)
+uv run python -m mapping build living-room        # chooses photos, then makes all three; add --only cloud,splat to skip the NeRF
+uv run python -m mapping view living-room cloud   # or splat, or nerf
+```
+Photos and results go in `~/Developer/datasets/room-maps/<name>/`. Try it without the drone: `uv run python -m mapping demo`.
+
+**How photos are chosen.** Capture keeps every frame untouched (about 17 a second, around 35 KB each), in `raw/`. Choosing happens afterwards, with the whole flight in view: frames are split into short groups and the sharpest of each group is kept, so a blurry moment costs one photo, not a gap. Blur is judged against neighboring frames, so a uniformly soft camera still gives photos, and similar-looking frames are all kept: that overlap is how COLMAP links photos. Only frames that are truly identical (the camera repeating itself, or a held-still hover) are dropped. `--window 2` keeps more photos, `--window 4` fewer. You can rerun `select` or `build` with different settings any time, without flying again.
+
+Timing on an M2 Max: the point cloud is seconds, the splat about 3 minutes, and the NeRF about 5 minutes per 1,000 steps (default 5,000), plus a short fly-through video. The NeRF is the weakest of the three on a toy camera's frames, since it needs many sharp views to resolve detail.
+
+Tips: fly slowly and smoothly, keep textured surfaces in view (blank walls cannot be mapped), and look at each area from several angles. The build step reports how many photos it could place and warns about gaps.
+
+## Setup
+Move to the `backend` directory
+```
+cd backend
+```
+
+Add venv
+```
+python -m venv venv
+source venv/bin/activate
+```
+
+Install the dependencies
+```
+pip install -r requirements.txt
+```
+
+_If_ you are on Windows, you will need to manually install the `curses` library.
+```
+pip install windows-curses
+```
+
+Open a new terminal window and install the dependencies for the frontend.
+_Make sure you have Node.js 20+ installed._
+```
+cd frontend
+npm install
+```
+
+Make sure WiFi Dongle is plugged in, drone is turned on, connect to the "BRAND-MODEL-XXXXXX" network before proceeding.
+
+Create a `.env` file in the `backend` directory. Add a DRONE_TYPE based on which drone you have:
+```
+# For "com.vison.macrochip" (s2x) based drones like S20 and S29:
+DRONE_TYPE=s2x
+# For WiFi UAV-based drones like V88 and D16:
+# DRONE_TYPE=wifi_uav
+# For cooingdv publisher drone apps like RC UFO and KY UFO:
+# DRONE_TYPE=cooingdv
+# For KY FPV / Jieli CTP control with first-pass RTP/JPEG video:
+# DRONE_TYPE=cooingdv_jieli
+# For WiFi_CAM native UDP apps:
+# DRONE_TYPE=wifi_cam
+# For Loiley X69 / com.lg.drone apps:
+# DRONE_TYPE=x69_lg
+```
+
+`x69_lg` supports three video modes via `X69_LG_VIDEO_MODE`:
+
+- **`rtsp`** (default): OpenCV pulls `rtsp://172.16.11.1/live/ch00_1` (HEVC 1280×720).
+  Set `X69_LG_RTSP_JPEG_QUALITY` (1–100, higher is better).
+- **`h265`**: H.265 on UDP port `1234`, reassembled and transcoded with **`ffmpeg`** on
+  `PATH`. Tune `X69_LG_OUTPUT_WIDTH`, `X69_LG_OUTPUT_FPS`, and `X69_LG_JPEG_QUALITY`
+  (FFmpeg `q:v`: lower = sharper). Alias: `udp`.
+- **`jpeg`** (experimental): Legacy UDP JPEG on ports `7070`/`7080`; often unavailable
+  on current firmware. Probe: `python turbodrone/experimental/x69/jpeg_probe.py`
+
+Launch the backend: 
+```
+uvicorn web_server:app
+```
+
+In a separate terminal, launch the frontend web client:
+```
+npm run dev
+```
+
+Open the web client which will be at `http://localhost:5173` and you should see the drone video feed and be able to control it.
+
+To control via a gaming controller, plug it in and move the sticks around for it to be detected and then push the toggle button to switch between keyboard and controller control.
+
+Make sure to fly in a safe area, preferably outdoors with little wind. And note that the "Land" button _currently_ is more of an E-stop button that will stop the drone motors immediately.
+
+
+## Status
+Reconnection logic was solved recently.
+
+Video feed: solid.
+
+Controls: improved greatly via the web client. The implementation for WiFi UAV-based drones could use some fine-tuning.
+
+Web Client: support for various inputs like keyboard, gamepad controllers, and ThinkPad TrackPoint mouse(lol).
+
+Working on adding support for more drones from [Amazon's best-selling drone list](https://www.amazon.com/best-selling-drones/s?k=best+selling+drones).
+
+
+## Contribute
+To contribute support for a new "toy" drone, download the APK the drone uses on a mirror site and start reverse engineering it by decompiling to Java files with [jadx](https://github.com/skylot/jadx).
+From there, look at the `AndroidManifest.xml` and see if you can find the classes that are entry points for the app. Look for port usage or protocol usage explicitly mentioned like TCP or UDP. Most of these apps will do the actual communication and video feed processing in native C++ libraries that will be embedded inside the APK. You can use a tool like Ghidra to decompile the native libraries and see if you can discover anything useful. For video feed processing you want to figure out what format it uses e.g. JPEG, YUV, etc. and also if it uses compression and what the byte structure looks like when its reforming an image frame from packets.
+Additionally, Wireshark is your friend for understanding the raw data packets being sent and received by the app. Watch this [video](https://x.com/marshallrichrds/status/1923165437698670818) for an overview into the reverse engineering process used for adding support for the Hiturbo S20 drone.
+
+Once you have the protocols and processing for RC and video figured out, make a small test program and add it to the `experimental` directory at that point if you'd like others to be able to try it out.
+After that, you can work on an implementation that is compatible with the existing back-end architecture; examples of this are the `s2x` and `wifi_uav` reverse-engineered implementations.
+
+
+## Experimental Support
+For drones and apps with limited support which are not yet fully integrated into Turbodrone, see the `experimental` directory.
+# dronetesting

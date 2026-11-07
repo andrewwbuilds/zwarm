@@ -854,14 +854,10 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     flight_controller.model.set_speed_index(data.get("speed_index", data.get("value", 2)))
                 except Exception:
                     pass
-            elif msg_type == "takeoff":
+            elif msg_type in ("takeoff", "land"):
                 try:
-                    flight_controller.model.takeoff()
-                except Exception:
-                    pass
-            elif msg_type == "land":
-                try:
-                    flight_controller.model.land()
+                    if getattr(flight_controller.model, msg_type)() is False:
+                        logger.info("[Flight] %s ignored: it would reverse the presumed flight state", msg_type)
                 except Exception:
                     pass
             elif msg_type in ("estop", "emergency_stop"):

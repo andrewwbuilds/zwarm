@@ -68,6 +68,7 @@ class FlightController:
         self.yaw_dir      = max(-1.0, min(1.0, yaw))
         self.pitch_dir    = max(-1.0, min(1.0, pitch))
         self.roll_dir     = max(-1.0, min(1.0, roll))
+        self.axes_deadline = None
         self.last_control_source = source
 
         # Optional immediate debug of inbound commands

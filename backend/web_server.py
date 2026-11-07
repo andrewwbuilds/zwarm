@@ -722,6 +722,56 @@ def calibrate_sim(body: dict = Body(default={})):
     return {"report": "\n".join(calibrate.calibrate(flight_min=minutes))}
 
 
+def _flight_command(action: str) -> dict:
+    """Send takeoff or land once. Toggle-bit models drop a command that would reverse the flight."""
+    if flight_controller is None:
+        raise HTTPException(status_code=503, detail="flight controller not running")
+    if action == "takeoff" and _swarm_flying():
+        raise HTTPException(status_code=409, detail="the swarm coordinator is flying this drone")
+    if _flying_plan():
+        runner.stop(f"pilot sent {action}")
+    model = flight_controller.model
+    sent = getattr(model, action)() is not False
+    if not sent:
+        logger.info("[Flight] %s ignored: drone presumed %s", action,
+                    "airborne" if getattr(model, "airborne", False) else "grounded")
+    return {"action": action, "sent": sent, "airborne": getattr(model, "airborne", None)}
+
+
+@app.post("/flight/takeoff")
+def flight_takeoff():
+    return _flight_command("takeoff")
+
+
+@app.post("/flight/land")
+def flight_land():
+    return _flight_command("land")
+
+
+@app.post("/flight/estop")
+def flight_estop():
+    """Cut the motors now. Never guarded; marks the drone grounded."""
+    if flight_controller is None:
+        raise HTTPException(status_code=503, detail="flight controller not running")
+    if _flying_plan():
+        runner.stop("pilot sent estop")
+    flight_controller.model.emergency_stop()
+    return {"action": "estop", "sent": True, "airborne": getattr(flight_controller.model, "airborne", None)}
+
+
+@app.post("/flight/assume")
+def flight_assume(body: dict = Body(...)):
+    """Correct the presumed flight state, e.g. after a takeoff the drone ignored. Sends nothing."""
+    model = flight_controller.model if flight_controller else None
+    if model is None or not hasattr(model, "airborne"):
+        raise HTTPException(status_code=409, detail="this drone type does not track flight state")
+    if not isinstance(body.get("airborne"), bool):
+        raise HTTPException(status_code=400, detail="airborne must be true or false")
+    model.airborne = body["airborne"]
+    logger.info("[Flight] pilot set presumed state to %s", "airborne" if model.airborne else "grounded")
+    return {"airborne": model.airborne}
+
+
 @app.websocket("/ws/overlays")
 async def websocket_overlay_endpoint(websocket: WebSocket):
     await overlay_manager.connect(websocket)

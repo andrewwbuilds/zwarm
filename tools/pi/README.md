@@ -85,7 +85,8 @@ cd ~/zwarm/backend
 ```
 
 Current pairing (HITURBO S20, open networks). Each Pi saves the link as `drone-link` with
-autoconnect priority 100, so it rejoins its drone after a reboot instead of home Wi-Fi:
+autoconnect priority 100 and unlimited retries, so it rejoins its drone whenever that drone
+is broadcasting and falls back to home Wi-Fi while the drone is off:
 
 | Pi | Drone | SSID |
 |---|---|---|

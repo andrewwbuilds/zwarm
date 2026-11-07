@@ -733,7 +733,9 @@ async def websocket_overlay_endpoint(websocket: WebSocket):
 
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket) -> None:
+    global swarm_claim_until
     await websocket.accept()
+    is_swarm = False
     try:
         while True:
             data = await websocket.receive_json()

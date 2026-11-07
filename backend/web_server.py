@@ -787,7 +787,10 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                     pitch    = float(data.get("pitch", 0))
                     roll     = float(data.get("roll", 0))
                     
-                    flight_controller.set_axes_from("frontend", throttle, yaw, pitch, roll)
+                    flight_controller.set_axes_from("swarm" if is_swarm else "frontend", throttle, yaw, pitch, roll)
+                    ttl = data.get("ttl")
+                    if ttl is not None:
+                        flight_controller.expire_axes_after(float(ttl))
                     _apply_camera_tilt_command(flight_controller.model, data)
             elif msg_type == "set_profile":
                 try:

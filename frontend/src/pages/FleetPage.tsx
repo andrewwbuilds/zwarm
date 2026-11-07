@@ -142,18 +142,82 @@ export default function FleetPage() {
     document.title = "Fleet monitor";
   }, []);
 
+  const online = FLEET.filter((d) => states[d.port]?.status === "online");
+
+  const run = async (label: string, targets: FleetDrone[], path: string) => {
+    setBusy(true);
+    const results = await Promise.all(targets.map(async (d) => {
+      try {
+        const res = await post(d.port, path);
+        return `${d.name}: ${res.sent === false ? "skipped (state says it would reverse)" : "sent"}`;
+      } catch (e) {
+        return `${d.name}: FAILED (${(e as Error).message})`;
+      }
+    }));
+    setMessage(`${label}: ${results.join(" · ")}`);
+    setBusy(false);
+    refresh();
+  };
+
+  const takeoffAll = () => {
+    const targets = online.filter((d) => states[d.port].airborne !== true);
+    const skipped = online.filter((d) => states[d.port].airborne === true).map((d) => d.name);
+    if (targets.length === 0) {
+      setMessage("Take off all: no online drone is presumed on the ground.");
+      return;
+    }
+    const names = targets.map((d) => d.name).join(", ");
+    const note = skipped.length ? `\n\nSkipping ${skipped.join(", ")}: presumed in the air already.` : "";
+    if (!window.confirm(`Take off ${names}?\n\nProps clear, drones spaced apart, nobody close.${note}`)) return;
+    run("Take off all", targets, "/flight/takeoff");
+  };
+
+  const landAll = () => {
+    const targets = online.filter((d) => states[d.port].airborne !== false);
+    if (targets.length === 0) {
+      setMessage("Land all: no online drone is presumed in the air.");
+      return;
+    }
+    run("Land all", targets, "/flight/land");
+  };
+
+  const estopAll = () => run("E-STOP all", online, "/flight/estop");
+
+  const assume = async (drone: FleetDrone, airborne: boolean) => {
+    try {
+      await post(drone.port, "/flight/assume", { airborne });
+      setMessage(`${drone.name}: marked ${airborne ? "flying" : "landed"} (nothing sent to the drone)`);
+    } catch (e) {
+      setMessage(`${drone.name}: could not update state (${(e as Error).message})`);
+    }
+    refresh();
+  };
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${Math.min(FLEET.length, 3)}, 1fr)`,
-        height: "100vh",
-        background: "#000",
-      }}
-    >
-      {FLEET.map((d) => (
-        <DroneTile key={d.port} drone={d} />
-      ))}
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#000" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: "#1a1a1a", color: "#ddd", fontFamily: "monospace", fontSize: 13 }}>
+        <button style={button("#2a7")} disabled={busy || online.length === 0} onClick={takeoffAll}>Take off all</button>
+        <button style={button("#27c")} disabled={busy || online.length === 0} onClick={landAll}>Land all</button>
+        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={message}>
+          {message || `${online.length}/${FLEET.length} drones online`}
+        </span>
+        <button style={button("#c22")} disabled={online.length === 0} onClick={estopAll}
+          title="Cuts the motors on every drone at once. Drones in the air will drop.">
+          E-STOP all
+        </button>
+      </div>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "grid",
+          gridTemplateColumns: `repeat(${Math.min(FLEET.length, 3)}, 1fr)`,
+        }}
+      >
+        {FLEET.map((d) => (
+          <DroneTile key={d.port} drone={d} state={states[d.port] ?? INITIAL} onAssume={assume} />
+        ))}
+      </div>
     </div>
   );
 }

@@ -105,14 +105,21 @@ controls and requests video without issuing a takeoff command.
 
 ## Operate from the Mac
 
-After preflight passes, start the assigned Pi's backend:
+After preflight passes, confirm each Pi is on its drone and start the backends:
 
 ```sh
-ssh zwarm-pi-01 'sudo systemctl start zwarm-backend'
-ssh -N -L 8000:127.0.0.1:8000 zwarm-pi-01
+for n in 1 2 3; do ssh zwarm-pi-0$n 'nmcli -g GENERAL.CONNECTION device show wlan0'; done
+for n in 1 2 3; do ssh zwarm-pi-0$n 'sudo systemctl start zwarm-backend'; done
 ```
 
-Keep that tunnel open. In a separate Mac terminal, run the frontend:
+Open one tunnel per Pi (`localhost:8001` to Pi 1, `8002` to Pi 2, `8003` to Pi 3) and keep
+the terminal open:
+
+```sh
+tools/pi/fleet-tunnels.sh
+```
+
+In a second terminal, run the frontend:
 
 ```sh
 cd frontend

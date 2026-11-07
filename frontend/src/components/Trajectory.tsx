@@ -3,8 +3,9 @@ import type { SimState } from "../hooks/useSim";
 import { block, drop, num } from "../ui";
 import { Calibration } from "./Calibration";
 import { PROGRAMS } from "../programs";
+import { API_BASE_URL } from "../backend";
 
-const API = "http://localhost:8000";
+const API = API_BASE_URL;
 const KEY = "turbodrone.plan";
 const EXAMPLE = `# x forward, y left, z up (m); headings deg, + is left
 takeoff

@@ -19,7 +19,7 @@ from utils.logging_config import bootstrap_runtime, configure_logging
 bootstrap_runtime()
 
 from services.flight_controller import FlightController
-from control.strategies import DirectStrategy, IncrementalStrategy
+from control.strategies import DirectStrategy, IncrementalStrategy, LinearStrategy
 from services.video_receiver import VideoReceiverService
 from models.s2x_rc import S2xDroneModel as S2xRcModel
 from models.debug_rc import DebugRcModel

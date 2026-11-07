@@ -12,42 +12,78 @@ import { FLEET, apiUrlForPort, type FleetDrone } from "../backend";
 
 type Status = "checking" | "online" | "offline";
 
-function DroneTile({ drone }: { drone: FleetDrone }) {
-  const base = apiUrlForPort(drone.port);
-  const [status, setStatus] = useState<Status>("checking");
-  const [droneType, setDroneType] = useState<string>("");
-  // A failed MJPEG <img> never retries, so remount it each time the backend comes back.
-  const [videoKey, setVideoKey] = useState(0);
+interface DroneState {
+  status: Status;
+  droneType: string;
+  airborne: boolean | null;
+}
+
+const INITIAL: DroneState = { status: "checking", droneType: "", airborne: null };
+
+async function post(port: number, path: string, body?: unknown): Promise<{ sent?: boolean; detail?: string }> {
+  const r = await fetch(`${apiUrlForPort(port)}${path}`, {
+    method: "POST",
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    signal: AbortSignal.timeout(3000),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data?.detail ?? `HTTP ${r.status}`);
+  return data;
+}
+
+function useFleetState() {
+  const [states, setStates] = useState<Record<number, DroneState>>(
+    () => Object.fromEntries(FLEET.map((d) => [d.port, INITIAL])),
+  );
+
+  const refresh = useCallback(async () => {
+    const entries = await Promise.all(
+      FLEET.map(async (d): Promise<[number, DroneState]> => {
+        try {
+          const r = await fetch(`${apiUrlForPort(d.port)}/capabilities`, { signal: AbortSignal.timeout(1500) });
+          if (!r.ok) return [d.port, { ...INITIAL, status: "offline" }];
+          const data = await r.json();
+          const airborne = typeof data?.airborne === "boolean" ? data.airborne : null;
+          return [d.port, { status: "online", droneType: data?.drone_type ?? "", airborne }];
+        } catch {
+          return [d.port, { ...INITIAL, status: "offline" }];
+        }
+      }),
+    );
+    setStates(Object.fromEntries(entries));
+  }, []);
 
   useEffect(() => {
-    let stop = false;
-    let last: Status = "checking";
-    const poll = async () => {
-      let next: Status = "offline";
-      try {
-        const r = await fetch(`${base}/capabilities`, { signal: AbortSignal.timeout(1500) });
-        if (r.ok) {
-          const data = await r.json();
-          next = "online";
-          if (!stop) setDroneType(data?.drone_type ?? "");
-        }
-      } catch {
-        next = "offline";
-      }
-      if (stop) return;
-      if (next === "online" && last !== "online") setVideoKey((k) => k + 1);
-      last = next;
-      setStatus(next);
-    };
-    poll();
-    const id = setInterval(poll, 2000);
-    return () => {
-      stop = true;
-      clearInterval(id);
-    };
-  }, [base]);
+    refresh();
+    const id = setInterval(refresh, 1000);
+    return () => clearInterval(id);
+  }, [refresh]);
 
-  const color = status === "online" ? "#3c3" : status === "offline" ? "#e44" : "#aaa";
+  return { states, refresh };
+}
+
+function flightLabel(s: DroneState): string {
+  if (s.status !== "online") return "";
+  if (s.airborne === null) return "flight state not tracked";
+  return s.airborne ? "presumed IN AIR" : "presumed on ground";
+}
+
+function DroneTile({ drone, state, onAssume }: {
+  drone: FleetDrone;
+  state: DroneState;
+  onAssume: (drone: FleetDrone, airborne: boolean) => void;
+}) {
+  const base = apiUrlForPort(drone.port);
+  // A failed MJPEG <img> never retries, so remount it each time the backend comes back.
+  const [videoKey, setVideoKey] = useState(0);
+  const [wasOnline, setWasOnline] = useState(false);
+  if ((state.status === "online") !== wasOnline) {
+    setWasOnline(state.status === "online");
+    if (state.status === "online") setVideoKey((k) => k + 1);
+  }
+
+  const color = state.status === "online" ? "#3c3" : state.status === "offline" ? "#e44" : "#aaa";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, border: "1px solid #333" }}>

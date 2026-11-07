@@ -394,6 +394,7 @@ class Coordinator:
                 d.phase = Phase.GROUND
                 d.landing_requested = False
                 d.blind_landing = False
+                d.sticks_wrong = False
                 d.clear("land")
             elif now - d.toggled_at > LAND_TIMEOUT_S:
                 d.fault("land", "landing was sent but touchdown was not seen; check it by eye")

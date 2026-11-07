@@ -86,8 +86,11 @@ cd ~/zwarm/backend
 
 Current pairing (HITURBO S20, open networks). Each Pi saves the link as `drone-link` with
 autoconnect priority 100 and unlimited retries. If a drone powers off, the Pi falls back to
-home Wi-Fi and stays there: NetworkManager does not leave a working connection when the drone
-returns. Bring the link back by hand with `sudo nmcli connection up drone-link` on that Pi:
+home Wi-Fi, and NetworkManager never leaves a working connection on its own. A keeper timer
+(`tools/pi/drone-link/install.sh`, installed on all three Pis) checks every 15 s and rejoins
+the drone once it broadcasts again, then resets that backend's presumed flight state to
+grounded, since a drone whose network vanished lost power. Stop
+`zwarm-drone-link-keeper.timer` to keep a Pi on home Wi-Fi on purpose:
 
 | Pi | Drone | SSID |
 |---|---|---|

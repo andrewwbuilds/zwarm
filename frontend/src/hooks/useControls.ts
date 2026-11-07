@@ -41,7 +41,7 @@ export function useControls() {
 
   // Open WS once on mount, close on unmount
   useEffect(() => {
-    ws.current = new WebSocket("ws://localhost:8000/ws");
+    ws.current = new WebSocket(`${WS_BASE_URL}/ws`);
     return () => {
       ws.current?.close();
       ws.current = null;

@@ -1,0 +1,23 @@
+#!/bin/sh
+# Rejoin the drone's Wi-Fi once the drone is broadcasting again.
+#
+# When a drone powers off, NetworkManager falls back to home Wi-Fi and never leaves a
+# working connection on its own, so the Pi stays off the drone after it comes back.
+# A drone whose network vanished lost power, so on rejoin the backend's presumed flight
+# state is reset to grounded; otherwise a stale "airborne" would turn Land into Takeoff.
+# Stop zwarm-drone-link-keeper.timer to keep the Pi on home Wi-Fi on purpose.
+set -eu
+
+nmcli -g connection.id connection show drone-link >/dev/null 2>&1 || exit 0
+[ "$(nmcli -g GENERAL.CONNECTION device show wlan0 2>/dev/null)" = drone-link ] && exit 0
+
+ssid=$(nmcli -g 802-11-wireless.ssid connection show drone-link)
+nmcli -g SSID device wifi list ifname wlan0 --rescan yes 2>/dev/null | grep -qxF "$ssid" || exit 0
+
+echo "Drone $ssid is broadcasting; rejoining"
+nmcli connection up drone-link >/dev/null
+
+if curl -s -m 3 -o /dev/null -X POST -H 'Content-Type: application/json' \
+     -d '{"airborne":false}' http://127.0.0.1:8000/flight/assume; then
+  echo "Backend flight state reset to grounded"
+fi

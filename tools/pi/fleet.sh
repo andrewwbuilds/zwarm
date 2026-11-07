@@ -72,11 +72,12 @@ start_backend() {
 prepare_pi() {
   local host=$1 run_preflight=$2
   remote "$host" true || { echo "unreachable over USB"; return 1; }
+  connect_drone "$host" || return 1
   if remote "$host" 'systemctl is-active -q zwarm-backend'; then
-    echo "backend: already running, drone link left as is"
+    # Preflight would fight the running backend for the video port.
+    echo "backend: already running, preflight skipped"
     return 0
   fi
-  connect_drone "$host" || return 1
   if [ "$run_preflight" = yes ]; then preflight "$host" || return 1; fi
   start_backend "$host" || return 1
 }

@@ -150,8 +150,9 @@ def formation_points(shape: str, count: int, center, spacing: float, z: float, t
 
 class Coordinator:
     def __init__(self, room: Room, configs: list[DroneConfig], links: dict, limits: Limits | None = None,
-                 airframe: Airframe | None = None):
+                 airframe: Airframe | None = None, visible=None):
         self.room = room
+        self.visible = visible  # whether the tracker can see a given point; None means it always can
         self.limits = limits or Limits()
         self.airframe = airframe or Airframe()
         self.drones = {c.id: Drone(c, links[c.id], StickMapper(self.airframe)) for c in configs}

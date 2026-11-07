@@ -1,0 +1,8 @@
+[Unit]
+Description=ZWARM USB receive-path watchdog
+After=NetworkManager.service zwarm-usb-startup-recovery.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/zwarm-usb-watchdog
+TimeoutStartSec=60

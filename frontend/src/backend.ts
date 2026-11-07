@@ -9,12 +9,14 @@ export interface FleetDrone {
   port: number;
 }
 
-// Local tunnel ports opened by tools/pi/fleet.sh up.
-export const FLEET: FleetDrone[] = [
-  { name: "Drone 1", port: 8001 },
-  { name: "Drone 2", port: 8002 },
-  { name: "Drone 3", port: 8003 },
-];
+// Local tunnel ports opened by tools/pi/fleet.sh up. `?ports=8011,8012` points the
+// fleet page at other backends, such as simulators, without touching the real drones.
+const DEFAULT_PORTS = [8001, 8002, 8003];
+const portsParam = new URLSearchParams(window.location.search).get("ports");
+const fleetPorts = portsParam
+  ? portsParam.split(",").map(Number).filter((p) => Number.isInteger(p) && p > 0)
+  : DEFAULT_PORTS;
+export const FLEET: FleetDrone[] = fleetPorts.map((port, i) => ({ name: `Drone ${i + 1}`, port }));
 
 function resolve(param: string | null): string {
   if (param && /^\d+$/.test(param)) return `http://localhost:${param}`;

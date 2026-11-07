@@ -1,0 +1,139 @@
+# Raspberry Pi drone gateways
+
+Verified on two Raspberry Pi 4s running Raspberry Pi OS Lite 64-bit (Debian 13
+Trixie), Python 3.13.5, with one independent drone connection per Pi.
+
+## Current installation
+
+- Pi 1: `molt`, USB address `10.12.194.1/28`, Mac address `10.12.194.2/28`.
+- Pi 2: `clawdbot-pi`, USB address `10.12.195.1/28`, Mac address `10.12.195.2/28`.
+- Mac SSH aliases: `zwarm-pi-01` and `zwarm-pi-02`, login user `andrew`.
+- Repository on each Pi: `/home/andrew/zwarm`, backend environment: `backend/.venv`.
+- Each backend listens on `127.0.0.1:8000` on its Pi; use an SSH tunnel from the Mac.
+- `zwarm-backend.service` is installed for manual operation. It is not started or
+  enabled at boot by the installer. A drone Wi-Fi connection is still required.
+
+USB management works independently of the Mac's current internet connection.
+These links do not give the Pis internet access. Installing/updating packages
+requires an internet route or a temporary proxy carried over SSH. No proxy
+settings are stored in the backend service.
+
+The current Mac has static USB addresses with no router or DNS configured. The
+Pis have distinct, fixed USB MAC addresses, `USB Gadget (shared)` profiles with
+the addresses above, and the automatic ICS watcher disabled. A local dnsmasq
+snippet suppresses router and DNS advertisements. Wi-Fi is available for drones.
+On a different Mac, recreate the USB IP settings and authorize its SSH public key.
+
+Pi 1 also has a `ZWARM Ethernet direct` profile using IPv4/IPv6 link-local
+addresses. Its original Ethernet profile is retained. To use Ethernet with a
+DHCP router again, explicitly activate that original profile.
+
+## Install or update the backend
+
+With internet available on the Pi, install the system libraries and
+[uv](https://docs.astral.sh/uv/getting-started/installation/):
+
+```sh
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends git curl libgl1 libglib2.0-0t64
+curl -LsSf https://astral.sh/uv/install.sh | sh
+git clone https://github.com/andrewwbuilds/zwarm.git ~/zwarm
+cd ~/zwarm
+bash tools/pi/install-backend.sh
+backend/.venv/bin/python tools/pi/check-backend.py
+```
+
+The installer uses the system Python (3.13 or newer required), creates the locked
+virtual environment, preserves an existing `backend/.env`, and installs a systemd
+service for the user running the installer. It backs up an existing service file.
+It does not start, enable, or restart the service. The simulator check verifies
+the actual FastAPI capabilities endpoint and a complete JPEG through the video
+pipeline, using only loopback sockets and temporary ports; it cleans up afterwards.
+
+For subsequent updates, stop the backend after landing, run `git pull --ff-only`,
+then rerun the installer and simulator check. Existing environments can be synced
+offline if all required packages are already cached.
+
+## Connect a drone
+
+Power on one drone at a time to identify its SSID. On its assigned Pi:
+
+```sh
+sudo nmcli device wifi list ifname wlan0
+sudo nmcli --ask device wifi connect 'ACTUAL-DRONE-SSID' ifname wlan0 name drone-link
+sudo nmcli connection modify drone-link \
+  ipv4.never-default yes ipv4.ignore-auto-dns yes \
+  ipv6.never-default yes ipv6.ignore-auto-dns yes
+sudo nmcli connection up drone-link
+```
+
+Check the assigned network and verify that the drone IP is routed over `wlan0`:
+
+```sh
+ip -4 address show wlan0
+ip -4 route get 172.16.10.1
+cd ~/zwarm/backend
+.venv/bin/python preflight.py
+```
+
+The default `backend/.env` selects S20/S2x at `172.16.10.1` with plugins disabled.
+Change the type/IP if the actual airframe differs. Stop any running backend before
+preflight because both receive video on the same UDP port. Preflight sends centered
+controls and requests video without issuing a takeoff command.
+
+## Operate from the Mac
+
+After preflight passes, start the assigned Pi's backend:
+
+```sh
+ssh zwarm-pi-01 'sudo systemctl start zwarm-backend'
+ssh -N -L 8000:127.0.0.1:8000 zwarm-pi-01
+```
+
+Keep that tunnel open. In a separate Mac terminal, run the frontend:
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5173`. The current frontend addresses `localhost:8000` and
+controls one backend at a time. Close the Pi 1 tunnel and open the same local-port
+tunnel to `zwarm-pi-02` to switch the console. Both Pi backends can run independently;
+a fleet coordinator and shared position feedback are separate work.
+
+Inspect and stop the backend with:
+
+```sh
+ssh zwarm-pi-01 'sudo systemctl status zwarm-backend --no-pager'
+ssh zwarm-pi-01 'sudo journalctl -u zwarm-backend -n 50 --no-pager'
+ssh zwarm-pi-01 'sudo systemctl stop zwarm-backend'
+```
+
+Land before stopping the backend or shutting down the Pi. On S20, takeoff and land
+share a toggle; a repeated command can reverse the intended action.
+
+## USB recovery and shutdown
+
+Both installed Pis have `zwarm-usb-startup-recovery.service`. It checks for the
+observed receive-path stall at startup and attempts at most two `g_ether` reloads.
+It is a workaround, not a fix for the underlying driver. A reboot test passed on
+both Pis; ongoing reliability beyond that test has not been established. Upstream
+reports describe similar symptoms: [issue 27](https://github.com/raspberrypi/rpi-usb-gadget/issues/27)
+and [proposed recovery](https://github.com/raspberrypi/rpi-usb-gadget/pull/31).
+
+If USB fails, use Ethernet to inspect `ip -s link show usb0` and the service logs.
+With no backend running, `sudo modprobe -r g_ether; sudo modprobe g_ether` reloads
+the USB network driver. This disconnects USB temporarily. Ethernet or a local
+console is needed to issue it when USB is already unreachable.
+
+Before disconnecting USB power:
+
+```sh
+ssh zwarm-pi-01 'sudo poweroff'
+ssh zwarm-pi-02 'sudo poweroff'
+```
+
+Private keys, passwords, local environment files, and recordings are not stored
+in this repository. Configuration backups remain on the Mac and on each Pi.

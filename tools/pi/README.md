@@ -25,9 +25,16 @@ the addresses above, and the automatic ICS watcher disabled. A local dnsmasq
 snippet suppresses router and DNS advertisements. Wi-Fi is available for drones.
 On a different Mac, recreate the USB IP settings and authorize its SSH public key.
 
-Pi 1 also has a `ZWARM Ethernet direct` profile using IPv4/IPv6 link-local
-addresses. Its original Ethernet profile is retained. To use Ethernet with a
-DHCP router again, explicitly activate that original profile.
+Pis 1 and 3 also have a `ZWARM Ethernet direct` profile using IPv4/IPv6 link-local
+addresses. On Pi 1 the original Ethernet profile is retained. To use Ethernet with a
+DHCP router again, explicitly activate that original profile. Link-local IPv6
+addresses change between boots; find the current one from the Mac with
+`ping6 -c 2 -I <ethernet-interface> ff02::1`.
+
+All three Pis currently join the home Wi-Fi on `wlan0` for internet access
+(`netplan-wlan0-...` on Pis 1 and 2, `home-wifi` on Pi 3). Connecting a drone takes
+over `wlan0`, so the Pi loses internet while it is on the drone network. While a Pi
+is on the home Wi-Fi, you can SSH to its home address even when USB is down.
 
 ## Install or update the backend
 

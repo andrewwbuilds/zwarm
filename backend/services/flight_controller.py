@@ -19,6 +19,8 @@ class FlightController:
         self.yaw_dir = 0
         self.pitch_dir = 0
         self.roll_dir = 0
+        # When set, the sticks centre themselves at this time unless refreshed first.
+        self.axes_deadline = None
 
         # Logging / diagnostics
         self.last_control_source = "init"

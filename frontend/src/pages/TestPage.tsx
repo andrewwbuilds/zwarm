@@ -1,5 +1,6 @@
 import StaticDrawingOverlay from "../components/StaticDrawingOverlay";
 import { VideoFeed } from "../components/VideoFeed";
+import { API_BASE_URL } from "../backend";
 
 export default function TestPage() {
   return (

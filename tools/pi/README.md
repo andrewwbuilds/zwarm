@@ -84,6 +84,19 @@ cd ~/zwarm/backend
 .venv/bin/python preflight.py
 ```
 
+Current pairing (HITURBO S20, open networks). Each Pi saves the link as `drone-link` with
+autoconnect priority 100, so it rejoins its drone after a reboot instead of home Wi-Fi:
+
+| Pi | Drone | SSID |
+|---|---|---|
+| `zwarm-pi-01` | 1 | `HITURBO_S20-8be411` |
+| `zwarm-pi-02` | 2 | `HITURBO_S20-d06410` |
+| `zwarm-pi-03` | 3 | `HITURBO_S20-de9b28` |
+
+Every drone hands out `172.16.10.2` to its client, so all three Pis show the same `wlan0`
+address on separate networks. An S20 blinks its lights while no controller is sending
+packets, which is normal after preflight ends.
+
 The default `backend/.env` selects S20/S2x at `172.16.10.1` with plugins disabled.
 Change the type/IP if the actual airframe differs. Stop any running backend before
 preflight because both receive video on the same UDP port. Preflight sends centered

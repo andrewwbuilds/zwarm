@@ -223,6 +223,8 @@ class Coordinator:
                 problems.append(f"{drone_id}'s goal {p.round(2).tolist()} is too close to a wall or obstacle")
             if p[2] < 0.4:
                 problems.append(f"{drone_id}'s goal is only {p[2]:.2f} m up")
+            if self.visible is not None and not self.visible(p):
+                problems.append(f"{drone_id}'s goal {p.round(2).tolist()} is outside what the cameras can see")
         for i, (a, pa) in enumerate(items):
             for b, pb in items[i + 1:]:
                 offset = np.asarray(pa, float) - np.asarray(pb, float)

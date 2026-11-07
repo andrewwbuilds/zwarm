@@ -1,0 +1,27 @@
+{
+  "fence": {"lo": [-2.0, -1.5, 0.0], "hi": [2.0, 1.5, 2.2]},
+  "obstacles": [
+    {"name": "table", "lo": [0.4, -0.5, 0.0], "hi": [1.1, 0.3, 0.75]}
+  ],
+  "drones": [
+    {"id": "1", "marker": 1, "backend": "http://localhost:8001", "pad": [-1.2, -0.8], "yaw_deg": 0},
+    {"id": "2", "marker": 2, "backend": "http://localhost:8002", "pad": [-1.2, 0.0], "yaw_deg": 0},
+    {"id": "3", "marker": 3, "backend": "http://localhost:8003", "pad": [-1.2, 0.8], "yaw_deg": 0}
+  ],
+  "tracking": {
+    "marker_m": 0.07,
+    "mount_height_m": 0.05,
+    "cameras": [
+      {"source": 0, "calibration": "camera-0.json"}
+    ],
+    "anchors": {
+      "marker_m": 0.15,
+      "positions": {
+        "40": [-1.5, -1.0, 0.0],
+        "41": [1.5, -1.0, 0.0],
+        "42": [1.5, 1.0, 0.0],
+        "43": [-1.5, 1.0, 0.0]
+      }
+    }
+  }
+}

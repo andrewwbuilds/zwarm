@@ -120,7 +120,7 @@ function DroneTile({ drone, state, onAssume }: {
           />
         ) : (
           <div style={{ color: "#777", fontFamily: "monospace", padding: 12 }}>
-            {status === "offline" ? `No backend on localhost:${drone.port}. Is the tunnel open and the backend started?` : "Checking…"}
+            {state.status === "offline" ? `No backend on localhost:${drone.port}. Is the tunnel open and the backend started?` : "Checking…"}
           </div>
         )}
       </div>

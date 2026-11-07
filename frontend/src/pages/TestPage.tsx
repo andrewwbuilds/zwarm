@@ -7,7 +7,7 @@ export default function TestPage() {
     <div>
       <p>static video feed, 640x480</p>
       <div style={{ position: "relative", width: 640, height: 480 }}>
-        <VideoFeed src="http://localhost:8000/mjpeg" />
+        <VideoFeed src={`${API_BASE_URL}/mjpeg`} />
         <StaticDrawingOverlay />
       </div>
     </div>

@@ -480,6 +480,7 @@ class Coordinator:
         if problem:
             d.check_results = check.results
             d.check = None
+            d.sticks_wrong = check.moved < -CHECK_MIN_SPEED
             d.fault("response", f"{problem}; landing it where it is")
             self._toggle_land(d, now)
             return np.zeros(3)

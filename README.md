@@ -137,6 +137,19 @@ Timing on an M2 Max: the point cloud is seconds, the splat about 3 minutes, and 
 
 Tips: fly slowly and smoothly, keep textured surfaces in view (blank walls cannot be mapped), and look at each area from several angles. The build step reports how many photos it could place and warns about gaps.
 
+## Shared memory, search and commands (simulator tested)
+`backend/swarm/hub.py` gives the fleet one shared memory. Drones can't talk to each other, so whatever one camera sees goes into a SQLite database on the Mac, and the coordinator flies every drone around it. Say `find the backpack` and the drones share out the floor, confirm any find with a close look, and report back.
+
+Try it without drones, from `backend`:
+```
+uv run python -m swarm.talk --speed 4         # type "take off", then "find the backpack"
+uv run python -m swarm.hub_bench              # the fixed test set
+uv run python -m unittest tests.test_swarm_hub tests.test_swarm_yolo_eyes
+```
+Real cameras use `swarm/yolo_eyes.py`, which needs `uv sync --inexact --extra follow` and reads pictures through `swarm/frames.py`. A camera that isn't 45 degrees down sets `camera_tilt_deg` on its drone in the swarm file, read with `eyes.camera_tilts`.
+
+Limits: YOLO only recognises the labels in `eyes.LABELS`, so a plain box or a wall is invisible to it. It hasn't been measured on real footage from a tilted camera. In simulation, a person known only from the cameras can still reach a drone (30 of 40 flights clean), so keep people out of the flying space. Only `talk` and the bench run the hub today: `swarm/server.py` still calls the coordinator directly.
+
 ## Setup
 Move to the `backend` directory
 ```

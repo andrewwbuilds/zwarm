@@ -232,6 +232,13 @@ class WholePitch(unittest.TestCase):
         self.assertEqual(f.client.calls, calls)
         self.assertTrue(f.run(90.0, lambda s: all(d["phase"] == "ground" for d in s["drones"])), "not everyone landed")
 
+        # The map builds now that everyone is down.
+        f.run(0.2)
+        f.zw.missions.settle()
+        self.assertEqual(f.capture.calls, ["start", "stop", "build"])
+        self.assertEqual(f.http.get("/zwarm/map").json()["state"], "done")
+        self.assertEqual(len(f.http.get("/zwarm/map/points").json()), 2)
+
         # The whole flight, from the simulator's truth.
         truth = f.state()["sim"]
         self.assertEqual((truth["collisions"], truth["contacts"], truth["crashed"]), ([], [], []), truth)

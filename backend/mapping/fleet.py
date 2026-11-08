@@ -613,7 +613,9 @@ class FleetCapture:
                     index = counts.get(key, 0)
                     started = frame.t if started is None else started
                     t_ms = carried_ms + max(0, int((frame.t - started) * 1000))
-                    (raw / raw_name(index, t_ms)).write_bytes(frame.jpeg)
+                    name = raw_name(index, t_ms)
+                    (raw / name).write_bytes(frame.jpeg)
+                    self._save_pose(drone, raw.parent / "poses.jsonl", name)
                     counts[key] = index + 1
                     with self.lock:
                         self.saved[key] = index + 1

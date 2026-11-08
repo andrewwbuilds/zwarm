@@ -74,7 +74,7 @@ uv run python -m swarm fly one-drone.json
 
 Then open the console and, with someone ready on E-STOP, go through these in order:
 
-1. **Take off.** After climbing, it makes two small test moves on its own, about 0.4 m each. It lands itself if it moves the wrong way, doesn't respond, or won't stop. If it does, read the fault before trying again.
+1. **Take off.** After climbing, it makes two small test moves on its own, about 0.3 m each. It lands itself if it moves the wrong way, doesn't respond, or won't stop. If it does, read the fault before trying again.
 2. **Hold** for a minute. Watch the position on the console against the real drone. The uncertainty should stay under about 0.1 m.
 3. **Move** 1 m and back.
 4. **Land.**

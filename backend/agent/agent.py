@@ -188,6 +188,7 @@ class _Turn:
         self.spoken_count = spoken_count  # how many sentences the operator had said when an event's turn began
         self.plan: dict | None = None
         self.records: list[dict] = []
+        self.read_findings = False  # their words came from a vision model, so nothing moves in the same turn
 
 
 class Agent:

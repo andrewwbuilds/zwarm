@@ -697,6 +697,9 @@ class Coordinator:
             steerable = self._steerable(d, now)
             age = d.tracked.age(now)
             extra = min(1.0, max(0.0, age - STALE_S) * 0.4)
+            extra = max(extra, min(1.0, 2 * d.tracked.sigma - self.limits.pose_error))
+            if d.unknown_air:
+                extra = max(extra, 0.5)
             velocity = d.tracked.v if age <= STALE_S else np.zeros(3)
             if age <= STALE_S:
                 position = d.tracked.now(now)

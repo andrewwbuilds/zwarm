@@ -498,11 +498,12 @@ class Coordinator:
         moving = check.stage % 2 == 0
         length = CHECK_MOVE_S if moving else CHECK_STOP_S
         elapsed = now - check.stage_at
-        along = float(d.tracked.v @ direction)
-        check.recent.append(along)
-        del check.recent[:-8]  # 0.4 s at 20 Hz: enough that one noisy pose can't trigger this
-        along = sum(check.recent) / len(check.recent)
-        if moving and elapsed > 0.8 and along < -CHECK_WRONG_WAY:
+        # Judged by how far sightings say it went. A speed estimate would need steady frames, and
+        # part of it echoes the command, which would hide sticks that do nothing.
+        along = float(d.tracked.seen_p @ direction)
+        if not check.samples or check.samples[-1][1] != along:
+            check.samples.append((now, along))
+        if moving and elapsed > 0.8 and along - check.samples[0][1] < -CHECK_WRONG_WAY:
             # Don't wait for the end of the move: every correction would now make it worse.
             d.check_results = check.results
             d.check = None

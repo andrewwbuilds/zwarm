@@ -254,6 +254,8 @@ class StopWordsTests(unittest.TestCase):
 
     def test_naming_one_drone_is_refused(self):
         self.assertEqual(self.verb("drone a, land"), "refused")
+        self.assertEqual(self.verb("drone a, stop and land"), "refused")
+        self.assertEqual(self.verb("a, bring it down"), "refused")
 
 
 class DirectCommandTests(unittest.TestCase):

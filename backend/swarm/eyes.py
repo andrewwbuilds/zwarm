@@ -253,10 +253,11 @@ class SimEyes:
         for key, walker in enumerate(self.walkers, start=len(self.items)):
             moving = walker.where(now)
             center = np.array([moving.p[0], moving.p[1], walker.height / 2])
-            points = [center, np.array([moving.p[0], moving.p[1], cam[2]])]
-            if self._visible(cam, yaw, points):
+            points = [np.array([moving.p[0], moving.p[1], z]) for z in (0.0, walker.height / 2, walker.height)]
+            if self._visible(cam, yaw, tilt, points):
+                foot = self._foot(cam, center, 0.0, moving.radius)
                 size = (2 * moving.radius, 2 * moving.radius, walker.height)
-                seen = self._report(drone_id, key, cam, yaw, walker.label, center, size, walker.confidence)
+                seen = self._report(drone_id, key, cam, yaw, tilt, walker.label, center, size, walker.confidence, foot)
                 if seen is not None:
                     found.append(seen)
         if self.rng.random() < self.false_rate:

@@ -242,6 +242,10 @@ class Hub:
         self.mapped: dict[int, Obstacle] = {}
         self.now = 0.0
         self.think_errors = 0
+        self.lock = threading.RLock()  # the flight loop and whoever gives commands are different threads
+        self.poses: dict[str, deque] = {drone_id: deque(maxlen=POSE_HISTORY) for drone_id in self.co.drones}
+        # A tracker that needs certain things kept in view can overrule the way a drone is turned.
+        self.limit_heading = lambda drone, yaw: yaw
         self._sync_obstacles()
 
     # ---------------------------------------------------------------- the loop

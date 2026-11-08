@@ -355,7 +355,7 @@ def analyze(jpegs: list[bytes], prompt: str | None = None, *, model_list: list[s
                     sleep(BACKOFF_S * 2 ** attempt)
                     continue
                 break  # a 404 or 400 won't change, and a model still failing after retries gets replaced
-            except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:
+            except (urllib.error.URLError, http.client.HTTPException, TimeoutError, OSError, ValueError) as error:
                 trouble = f"{model} couldn't be reached ({type(error).__name__})"
                 break  # a hung model isn't worth waiting on twice while the fallback is fast
             texts = _texts(reply)

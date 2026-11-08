@@ -161,8 +161,8 @@ export interface Api {
   state(): Promise<ZwarmState>;
   events(after: number): Promise<LogEvent[]>;
   chat(text: string): Promise<ChatReply>;
-  approve(planId: string): Promise<void>;
-  reject(planId: string): Promise<void>;
+  approve(planId: string): Promise<Decision>;
+  reject(planId: string): Promise<Decision>;
   findings(): Promise<Finding[]>;
   setFinding(id: string, status: FindingStatus): Promise<void>;
   photo(id: string): Promise<Blob>;

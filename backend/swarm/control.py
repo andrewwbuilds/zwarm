@@ -20,6 +20,7 @@ class Pose:
     sigma: float = 0.0  # how far off this may be, in metres, when the tracker knows
     v: object = None  # velocity, when the tracker worked it out itself
     fix_age: float = 0.0  # seconds since a real sighting, when poses can be carried forward between them
+    seen_p: object = None  # where the last real sighting put it, free of anything assumed from commands
 
 
 class Tracked:

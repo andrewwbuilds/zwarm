@@ -428,6 +428,8 @@ class Sweep:
         taken += [order.goal for other_id, order in hub.orders.items() if other_id != d.id]
         for q in taken:
             distance[np.linalg.norm(coverage.candidates[:, :2] - np.asarray(q, float)[:2], axis=1) < KEEP_AWAY] = math.inf
+        for q in self.banned:
+            distance[np.linalg.norm(coverage.candidates[:, :2] - q[:2], axis=1) < 0.3] = math.inf
         index = int(np.argmin(distance))
         if not math.isfinite(distance[index]):
             return None

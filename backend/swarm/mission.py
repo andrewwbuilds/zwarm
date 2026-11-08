@@ -966,8 +966,8 @@ class MissionManager:
         if was_kind == "map" and self.capture_name is not None:
             name, self.capture_name = self.capture_name, None
             if self.flew:
-                self.later(self._stop_capture_and_build, name)
-                text += " Building the 3D map from the photos."
+                self.build_when_down = name
+                text += " The 3D map builds once the drones have landed." if self._anyone_up() else " Building the 3D map from the photos."
             else:
                 self.later(self._drop_capture)
                 text += " Nothing flew, so no map will be built."

@@ -186,7 +186,7 @@ class FlightController:
     def _control_loop(self):
         """Background thread for sending control updates"""
         prev_time = time.time()
-        
+
         while self.running:
             now = time.time()
             dt = now - prev_time

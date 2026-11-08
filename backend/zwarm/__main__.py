@@ -1,4 +1,4 @@
-"""Run Zwarm. `python -m zwarm sim`, `python -m zwarm fly swarm.json` or `python -m zwarm preflight swarm.json`."""
+"""Run Zwarm. `python -m zwarm sim`, `python -m zwarm fly swarm.json`, `python -m zwarm preflight swarm.json` or `python -m zwarm markers`."""
 
 from __future__ import annotations
 

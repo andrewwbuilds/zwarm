@@ -198,7 +198,8 @@ class Search:
                 free.append(d)
             elif order is None or order.stage == "done":
                 if view is not None and order is not None:
-                    arrived_at = self.dwell.setdefault(d.id, now)
+                    looks = int(self.coverage.counts[view.cells].sum())
+                    arrived_at, looks_then = self.dwell.setdefault(d.id, (now, looks))
                     if now - arrived_at < DWELL_S:
                         claimed[view.cells] = True
                         continue

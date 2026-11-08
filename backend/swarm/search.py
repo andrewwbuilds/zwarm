@@ -46,16 +46,12 @@ class Coverage:
         self.open = np.ones(len(self.cells), bool)
         self.candidates = np.zeros((0, 3))
         self.candidate_yaws = np.zeros(0)
-        self.sees = np.zeros((0, len(self.cells)), bool)
+        self.tilts = tuple(sorted(set(tilts) or {DEFAULT_TILT}))
+        self.sees: dict[float, np.ndarray] = {}  # camera tilt -> which viewpoint sees which floor patch
         self.clearance_needed = 0.38
 
-    def _view(self, p, yaw) -> np.ndarray:
-        offset = self.cells - np.asarray(p, float)
-        flat = np.hypot(offset[:, 0], offset[:, 1])
-        bearing = (np.arctan2(offset[:, 1], offset[:, 0]) - yaw + math.pi) % (2 * math.pi) - math.pi
-        elevation = np.arctan2(offset[:, 2], flat)
-        mask = ((np.linalg.norm(offset, axis=1) <= RELIABLE_REACH) & (np.abs(bearing) <= HFOV / 2 - EDGE_MARGIN)
-                & (np.abs(elevation) <= VFOV / 2))
+    def _view(self, p, yaw, tilt: float = DEFAULT_TILT) -> np.ndarray:
+        mask = in_view(p, yaw, self.cells, reach=RELIABLE_REACH, margin=EDGE_MARGIN, tilt=tilt)
         if mask.any():
             lines = self.cells[mask]
             clear = np.ones(len(lines), bool)

@@ -722,7 +722,11 @@ class RobustnessTests(unittest.TestCase):
         f.missions.settle()
         self.assertEqual(f.missions.errors, 0)
         self.assertIn("disk full", next(text for kind, text, _ in f.events if kind == "fault"))
-        self.assertEqual(f.missions.state, "running")
+        f.run(0.2)
+        self.assertEqual(f.missions.state, "failed")  # flying on with nothing being saved would only spend the battery
+        self.assertIn("disk full", f.missions.reason)
+        self.assertEqual(f.hub.orders, {})
+        capture.build.assert_not_called()
 
     def test_a_slow_capture_doesnt_hold_the_lock(self):
         release = threading.Event()

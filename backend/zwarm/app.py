@@ -467,6 +467,7 @@ def fly(path, data_dir: Path | None = None, need_model: bool = True, north_yaw_d
     north = float(raw.get("north_yaw_deg", 0.0)) if north_yaw_deg is None else north_yaw_deg
     zw = compose(runtime.co, runtime.clock, runtime.get_poses, runtime.frames, eyes, Path(data_dir or DATA_ROOT) / "flights" / time.strftime("%Y%m%d-%H%M%S"),
                  close=eyes.stop, tilts={d.id: math.radians(d.camera_tilt_deg) for d in config.drones}, anchors=config.anchors, north_yaw_deg=north,
-                 flight_limit_s=float(raw.get("flight_limit_s", 270.0)), runtime=runtime, findings_path=Path(data_dir or DATA_ROOT) / "findings.sqlite", **parts)
+                 flight_limit_s=float(raw.get("flight_limit_s", 270.0)), runtime=runtime, findings_path=Path(data_dir or DATA_ROOT) / "findings.sqlite",
+                 maps_path=Path(data_dir or DATA_ROOT) / "maps", **parts)
     return zw, readiness
 

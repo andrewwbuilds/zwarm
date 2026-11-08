@@ -11,8 +11,9 @@ floor and low surfaces, and a thing is only inspected from where it is actually 
 Work lives in a pool. A drone holds a piece only while it flies to it or looks at it, so when a drone
 drops out its piece is free again and the next free drone takes it.
 
-tick() runs on the flight loop. Anything that may be slow (whoever listens to events, map capture, the
-inspector) runs on a background thread instead, and a failure there can't reach the flight loop.
+tick() runs on the flight loop and has to keep running: the composition must call it after hub.tick.
+It also feeds the inspector, so nothing else should call inspector.tick. Whoever listens to events and
+map capture run on a background thread, so being slow or failing there can't reach the flight loop.
 """
 
 from __future__ import annotations

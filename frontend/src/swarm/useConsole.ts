@@ -115,5 +115,5 @@ export function useConsole(api: Api): ConsoleData {
     }
   }, [api]);
 
-  return { state, link, events, lastEvent: lastEvent.current, findings, mapStatus, setFindingStatus };
+  return { state, link, events, findings, mapStatus, setFindingStatus };
 }

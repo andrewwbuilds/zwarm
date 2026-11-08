@@ -6,6 +6,9 @@
 Needs NVIDIA_API_KEY and the network, so it isn't part of the unit tests. The photos are simulated
 (see swarm.inspect_fixtures): these numbers don't show how the model does on real drone video.
 Pass --folder with a folder holding its own labels.json to score real frames the same way.
+
+--demo runs the whole inspector instead: three simulated cameras hover over swarm.sim_cameras'
+demo room, and the score says which photos really had staged damage in view. It also needs the key.
 """
 
 from __future__ import annotations

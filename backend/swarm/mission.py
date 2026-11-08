@@ -603,6 +603,7 @@ class MissionManager:
         self.findings = findings
         self.capture = capture
         self.flight_limit_s = flight_limit_s
+        self.build_when_down: str | None = None  # a finished map whose photos wait for the drones to land
         self.on_event = on_event
         self.inspector = inspector if inspector is not None else self._default_inspector()
         self.regions = Regions(hub.co.room, north_yaw_deg)

@@ -22,6 +22,17 @@ from swarm.coordinator import Coordinator, DroneConfig, Phase
 from swarm.room import Obstacle, Room
 from swarm.safety import Limits
 from swarm.sim_fleet import Conditions, SimFleet
+from swarm.tracking import (
+    DEFAULT_TILT_DEG,
+    Anchor,
+    DroneOptics,
+    InsideOutTracker,
+    Lens,
+    anchors_in_view,
+    anchors_section,
+    load_anchors,
+    tag_grid,
+)
 
 logger = logging.getLogger(__name__)
 

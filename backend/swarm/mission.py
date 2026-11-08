@@ -508,6 +508,7 @@ class Survey:
             if task is None:
                 continue
             order = hub.orders.get(d.id)
+            manager.give_up_if_slow(d, order, now)
             if order is None or order.stage == "failed":
                 hub.orders.pop(d.id, None)
                 task.tries += 1

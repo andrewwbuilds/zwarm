@@ -542,6 +542,8 @@ class Survey:
         free = [d for d in flying if self.held_by(d.id) is None]
         busy = [d.tracked.p for d in hub.co.drones.values()
                 if d not in free and d.phase in (Phase.AIR, Phase.CHECK, Phase.TAKEOFF, Phase.LANDING)]
+        # In the air but not working: lost its link or tracking. It may stay parked there until the battery runs out.
+        parked = [d for d in hub.co.drones.values() if d not in flying and d.phase == Phase.AIR and not d.landing_requested]
         waiting = [t for t in self.tasks if t.state == "waiting"]
         pairs = sorted(((float(np.linalg.norm(t.view.p[:2] - d.tracked.p[:2])), i, j) for i, d in enumerate(free) for j, t in enumerate(waiting)))
         given_drones, given_tasks = set(), set()

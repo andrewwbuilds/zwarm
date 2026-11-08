@@ -556,6 +556,21 @@ video_keepalive = None  # legacy; no longer used
 # ───────────────────────────────────────────────────────────────
 # Plugin Management
 # ───────────────────────────────────────────────────────────────
+@app.get("/stabilizer")
+def stabilizer_status():
+    if stabilizer_service is None:
+        raise HTTPException(status_code=503, detail="flight controller not running")
+    return stabilizer_service.status()
+
+
+@app.post("/stabilizer")
+def stabilizer_set(body: dict = Body(...)):
+    if stabilizer_service is None:
+        raise HTTPException(status_code=503, detail="flight controller not running")
+    stabilizer_service.stabilizer.set_enabled(bool(body.get("enabled")))
+    return stabilizer_service.status()
+
+
 @app.get("/capabilities")
 async def get_capabilities():
     return {

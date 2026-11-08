@@ -455,8 +455,7 @@ def build_splat(folder: Path, steps: int = SPLAT_STEPS) -> Path:
 
 # ---------------------------------------------------------------- the part everyone else calls
 class FleetCapture:
-    def __init__(self, frames, root, drones=None, max_photos: int | None = None, clock: Callable[[], float] = time.monotonic,
-                 on_event=None):
+    def __init__(self, frames, root, drones=None, max_photos: int | None = None, on_event=None):
         self.frames = frames
         self.root = Path(root)
         self.drones = list(drones) if drones is not None else None

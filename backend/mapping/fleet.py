@@ -506,7 +506,8 @@ class FleetCapture:
             self.name, self.state, self.step, self.error = name, "capturing", None, None
             self.saved, self.result, self.splat = {}, None, None
             self.stopping = threading.Event()
-            self.capture_thread = threading.Thread(target=self._capture, args=(name, self.stopping), daemon=True, name="map-capture")
+            self.capture_thread = threading.Thread(target=self._capture, args=(name, self.stopping, self.capture_thread),
+                                                   daemon=True, name="map-capture")
             self.capture_thread.start()
         return self.status()
 

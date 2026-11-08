@@ -458,6 +458,8 @@ class Agent:
             return "There's no plan waiting for approval, and nothing was started. Ask again and I'll make one."
         asked = spoken_mission(text)
         if asked and asked[0] in ("start_mission", "focus_region") and _WORK_CLAIMS.search(final or "") and not self.box.mission_active():
+            if actions:
+                return _result_words(actions[-1]["result"])  # the tool said why, and saying it again wouldn't help
             return "Nothing was started, so no drone is working on that. Say it again if you still want it."
         return final
 

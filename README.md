@@ -150,7 +150,7 @@ uv run python -m swarm.read_range           # how far a tag reads
 SWARM_E2E=1 uv run python -m unittest tests.test_swarm_floor_e2e   # through real backends
 ```
 
-Limits: it only avoids obstacles listed in the swarm file or reported by the fleet. Lens, sharpness, exposure and stick response on the real drone are all unmeasured, so simulated accuracy may not carry over.
+Limits: it only avoids obstacles listed in the swarm file or reported by the fleet, and on floor tags it goes around listed ones instead of over them, since furniture hides tags. Lens, sharpness, exposure and stick response on the real drone are all unmeasured, so simulated accuracy may not carry over.
 
 ### One map from every drone (simulator tested)
 `backend/mapping/fleet.py` saves every drone's video, chooses up to 240 photos across them, and places them all with COLMAP. A map mission starts the capture and the build by itself. The build runs in the background at low priority and never touches the flight loop.

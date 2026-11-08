@@ -213,10 +213,10 @@ class Search:
             avoid += [o.goal for other_id, o in hub.orders.items() if other_id != d.id]
             view = None
             if hint is not None:
-                view = self.coverage.standoff(d.tracked.p, hint.p, avoid=avoid)
+                view = self.coverage.standoff(d.tracked.p, hint.p, avoid=avoid, tilt=hub.tilt_of(d.id))
                 self.hint = None
             if view is None:
-                view = self.coverage.best(d.tracked.p, d.tracked.yaw, claimed, avoid, banned=self.banned)
+                view = self.coverage.best(d.tracked.p, d.tracked.yaw, claimed, avoid, banned=self.banned, tilt=hub.tilt_of(d.id))
             if view is None:
                 continue
             if len(view.cells):

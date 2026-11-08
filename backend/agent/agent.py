@@ -179,7 +179,7 @@ class _Turn:
 
 class Agent:
     def __init__(self, client, hub, missions, findings=None, capture=None, on_event=None, auto_approve: bool = False,
-                 lock=None, observe_every_s: float = OBSERVE_EVERY_S, clock=time.monotonic):
+                 lock=None, observe_every_s: float = OBSERVE_EVERY_S, turn_budget_s: float = TURN_BUDGET_S, clock=time.monotonic):
         self.client = client
         self.hub = hub
         self.box = Toolbox(hub, missions, findings, capture, lock)

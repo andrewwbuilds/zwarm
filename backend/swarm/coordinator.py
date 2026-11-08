@@ -360,6 +360,10 @@ class Coordinator:
         d.landing_requested = d.land_here_wanted = d.blind_landing = d.check_held = False
         d.check = None
 
+    def _face_home(self, d: Drone) -> None:
+        """Forget the last mission's heading. Turning to it during the next takeoff check can lose every tag."""
+        d.config = replace(d.config, yaw=self.home_yaw[d.id])
+
     def reset_to_pads(self) -> list[str]:
         """The operator has put the landed drones back on their pads."""
         problems = [f"{d.id} is {d.phase.value}" for d in self.drones.values()

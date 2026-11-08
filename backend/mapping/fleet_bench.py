@@ -330,7 +330,7 @@ def main() -> int:
     fleet.HFOV_DEG = args.hfov
     started = time.perf_counter()
     result = fleet.build_map(folder, args.cap, fleet.LocalRunner(), lambda s: print(f"  {time.perf_counter() - started:6.1f} s  {s}", flush=True),
-                             shared_camera=args.shared_camera)
+                             shared_camera=args.shared_camera, fix_lens=args.fix_lens)
     report = {key: result[key] for key in ("photos", "by_drone", "registered", "registered_by_drone", "points", "error_px",
                                            "masked", "seconds", "warnings")}
     report["models"] = [{k: m[k] for k in ("registered", "points", "by_drone")} for m in result["models"]]

@@ -589,6 +589,26 @@ class JoiningTests(unittest.TestCase):
         result = self.build({"1": 40, "2": 14})
         self.assertEqual((result["joined_maps"], result["registered"]), (1, 40))
 
+    def test_a_side_model_of_the_same_photos_isnt_a_second_map(self):
+        self.add_model(0, "1", 40, (-3, 3))
+        self.add_model(1, "1", 40, (-3, 3), seed=0, first=22)
+        result = self.build({"1": 40})
+        self.assertEqual((result["joined_maps"], result["registered"]), (1, 40))
+        self.assertEqual([w for w in result["warnings"] if "tracked" in w or "split" in w], [])
+
+    def test_without_tracking_a_side_model_of_the_same_photos_isnt_a_split(self):
+        self.add_model(0, "1", 40, (-3, 3))
+        self.add_model(1, "1", 40, (-3, 3), seed=0, first=22)
+        result = self.build({"1": 40}, keep_tracked=False)
+        self.assertEqual(result["registered"], 40)
+        self.assertEqual([w for w in result["warnings"] if "split" in w], [])
+
+    def test_a_small_agreeing_side_model_isnt_called_wrong(self):
+        self.add_model(0, "1", 40, (-3, 3))
+        self.add_model(1, "2", 14, (-1, 1))
+        result = self.build({"1": 40, "2": 14})
+        self.assertEqual([w for w in result["warnings"] if "disagrees" in w], [])
+
     def test_a_warped_map_is_left_out_and_named_when_another_one_is_good(self):
         self.add_model(0, "1", 50, (-3, 3), warp=1.0)
         self.add_model(1, "2", 30, (-3, 3))

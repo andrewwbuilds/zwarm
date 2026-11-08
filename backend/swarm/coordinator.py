@@ -508,8 +508,8 @@ class Coordinator:
             d.check_results = check.results
             d.check = None
             d.sticks_wrong = True
-            d.fault("response", f"it moved the wrong way ({along:+.2f} m/s), so a stick is reversed or the "
-                                "heading is wrong; landing it where it is")
+            d.fault("response", f"it moved the wrong way ({along - check.samples[0][1]:+.2f} m), so a stick is reversed "
+                                "or the heading is wrong; landing it where it is")
             self._toggle_land(d, now)
             return np.zeros(3)
         if elapsed >= length - CHECK_SAMPLE_S:

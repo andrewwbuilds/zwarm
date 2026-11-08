@@ -499,6 +499,9 @@ class InsideOutTracker:
         self.seen: dict[str, tuple[str, ...]] = {k: () for k in drones}
         self.seen_at: dict[str, float] = {k: -math.inf for k in drones}
         self.frames: dict[str, int] = {k: 0 for k in drones}
+        self.frame_at: dict[str, float] = {k: -math.inf for k in drones}
+        self.small: dict[str, np.ndarray] = {}  # the last frame, very small, to compare the next one with
+        self.changes: dict[str, deque] = {k: deque(maxlen=64) for k in drones}
         self.stopping = threading.Event()
         self.threads: list[threading.Thread] = []
 

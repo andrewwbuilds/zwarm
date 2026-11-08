@@ -335,7 +335,7 @@ class Agent:
             # A finding's words came from a vision model, so they may be read but can't move anything.
             allowed = READ_ONLY if any(kind == "finding" for kind, _, _ in batch) else OBSERVE_TOOLS
             with self._state:
-                turn = _Turn(self._epoch, allowed)
+                turn = _Turn(self._epoch, allowed, spoken_count=self._spoken)
             messages = [{"role": "system", "content": self._system()},
                         {"role": "user", "content": OBSERVE_PROMPT.format(events=events)}]
             final = ""

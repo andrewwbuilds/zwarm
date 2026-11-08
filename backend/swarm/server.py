@@ -72,11 +72,17 @@ class Runtime:
     def run(self) -> None:
         due = time.monotonic()
         while not self.stopping.is_set():
-            with self.lock:
-                if self.advance is not None:
-                    self.advance(TICK_S)
-                now = self.clock()
-                self.co.tick(now, self.get_poses(), self.get_moving(now))
+            try:
+                with self.lock:
+                    if self.advance is not None:
+                        self.advance(TICK_S)
+                    now = self.clock()
+                    self.co.tick(now, self.get_poses(), self.get_moving(now))
+            except Exception:
+                # If this thread died, nothing would fly the drones at all, and no stop button would do anything.
+                self.errors += 1
+                if self.errors == 1 or self.errors % 200 == 0:
+                    logger.exception("[swarm] a flight tick failed (%d so far)", self.errors)
             due += TICK_S
             late = time.monotonic() - due
             if late > TICK_S:

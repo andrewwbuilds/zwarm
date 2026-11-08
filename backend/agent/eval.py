@@ -151,7 +151,7 @@ class FakeMissions:
         self.region = region
         return self.status()
 
-    def stop(self):
+    def stop(self, then=None):
         self.calls.append(("stop",))
         self.state = "stopped"
         return self.status()

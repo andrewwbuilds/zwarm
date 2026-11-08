@@ -520,9 +520,7 @@ class Survey:
                 elif now - task.arrived >= VIEW_DWELL_S:
                     hub.orders.pop(d.id, None)
                     task.state, task.holder = "done", None
-        for d in flying:
-            if self.held_by(d.id) is None:
-                self._give_work(d, now, flying)
+        self._share_out(now, flying)
         if all(t.state in ("done", "skipped") for t in self.tasks):
             self.state = "done"
 

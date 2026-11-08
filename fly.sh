@@ -61,6 +61,59 @@ trap cleanup EXIT
 trap 'exit 130' INT TERM
 
 : > "$LOG"
+if (( swarm )); then
+  mode=${1:-sim}
+  (( $# )) && shift
+  args=("$@")
+  if [[ $mode == fly || $mode == preflight ]]; then
+    if [[ -z $args[1] ]]; then
+      echo "Which swarm file? ./fly.sh --swarm $mode swarm.json" >&2
+      exit 1
+    fi
+    args[1]=$(cd "$start_dir" && print -r -- ${args[1]:A})
+  fi
+  if curl -sf -m 1 -o /dev/null http://localhost:8010/zwarm/state; then
+    echo "Something is already answering on port 8010. Stop it first." >&2
+    exit 1
+  fi
+  if [[ $mode == preflight ]]; then
+    cd backend && exec uv run --frozen --offline python -m zwarm preflight "${args[@]}"
+  fi
+  (cd backend && exec uv run --frozen --offline python -m zwarm "$mode" "${args[@]}") >> "$LOG" 2>&1 &
+  pids+=($!)
+  zwarm_pid=$!
+  # Takes a few seconds in the simulator and longer for real drones, which get checked first.
+  for i in {1..120}; do
+    curl -sf -m 1 -o /dev/null http://localhost:8010/zwarm/state && break
+    kill -0 $zwarm_pid 2>/dev/null || break
+    sleep 0.5
+  done
+  if ! curl -sf -m 1 -o /dev/null http://localhost:8010/zwarm/state; then
+    cat "$LOG" >&2
+    echo "Zwarm did not start. The reason is above, and in $LOG." >&2
+    exit 1
+  fi
+  if ! curl -sf -m 1 -o /dev/null http://localhost:5173; then
+    (cd frontend && exec node_modules/.bin/vite --strictPort) >> "$LOG" 2>&1 &
+    pids+=($!)
+    for i in {1..40}; do
+      curl -sf -m 1 -o /dev/null http://localhost:5173 && break
+      sleep 0.5
+    done
+  fi
+  if ! curl -sf -m 1 -o /dev/null http://localhost:5173; then
+    echo "The web client did not start. See $LOG." >&2
+    exit 1
+  fi
+  command -v open >/dev/null && open http://localhost:5173/swarm
+  grep -E "SIMULATED|REAL DRONES|WARNING" "$LOG"
+  echo "Console: http://localhost:5173/swarm. Land first, then press Ctrl-C here to quit."
+  while kill -0 $zwarm_pid 2>/dev/null; do
+    sleep 1
+  done
+  echo "Zwarm stopped. See $LOG." >&2
+  exit 1
+fi
 if (( sim )); then
   export DRONE_TYPE=s2x DRONE_IP=127.0.0.1 SIM_URL=http://localhost:8090
   echo "Starting the simulated S20. Nothing here talks to a real drone."

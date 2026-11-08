@@ -516,6 +516,9 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
         rotation, scale, offset = level_map(main["cameras"], xyz)
         level = scale * xyz @ rotation.T + offset if len(xyz) else xyz
         served = [main]
+        where = np.array([c for c, _ in main["cameras"].values()]) * scale @ rotation.T + offset
+    keep = inside_flight(level, where) if len(level) else np.zeros(0, bool)
+    level, rgb = level[keep], rgb[keep]
     write_ply(folder / "cloud.ply", level.astype(np.float32), rgb)
     np.save(folder / "points.npy", np.hstack([level, rgb]).astype(np.float32))
     try:

@@ -596,6 +596,66 @@ class RunnerTests(unittest.TestCase):
             local.assert_called_once()
 
 
+class SshRoundTripTests(unittest.TestCase):
+    """SshRunner through real shells, with stand-ins for ssh, rsync and colmap. No network and no real host."""
+
+    def write_tool(self, folder: Path, name: str, body: str) -> None:
+        path = folder / name
+        path.write_text("#!/bin/sh\n" + body)
+        path.chmod(0o755)
+
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        base = Path(self.tmp.name)
+        self.remote, tools = base / "remote home", base / "tools"
+        self.remote.mkdir()
+        tools.mkdir()
+        self.write_tool(tools, "ssh", 'while [ "$1" = "-o" ]; do shift 2; done\nshift\ncd "$FAKE_REMOTE" && exec sh -c "$*"\n')
+        self.write_tool(tools, "rsync", 'src=""; dst=""\nfor last; do src="$dst"; dst="$last"; done\n'
+                                        'src=$(echo "$src" | sed "s#^ubuntu@gpu-box:#$FAKE_REMOTE/#")\n'
+                                        'dst=$(echo "$dst" | sed "s#^ubuntu@gpu-box:#$FAKE_REMOTE/#")\n'
+                                        # cp, not the real rsync: that finds this script on PATH for its server side, and loops.
+                                        'case "$src" in\n'
+                                        '  */) mkdir -p "$dst" && cp -R "$src." "$dst" ;;\n'
+                                        '  *) cp "$src" "$dst" ;;\n'
+                                        'esac\n')
+        self.write_tool(tools, "colmap", 'echo "$@" >> "$FAKE_REMOTE/colmap_calls.txt"\n'
+                                         'if [ "$1" = "mapper" ]; then\n'
+                                         '  while [ $# -gt 0 ]; do [ "$1" = "--output_path" ] && out="$2"; shift; done\n'
+                                         '  mkdir -p "$out/0" && echo model > "$out/0/cameras.bin"\nfi\n')
+        env = {"FAKE_REMOTE": str(self.remote), "PATH": f"{tools}:{os.environ['PATH']}"}
+        patcher = mock.patch.dict(os.environ, env)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.folder = base / "maps with a space" / "m"
+        (self.folder / "images" / "1").mkdir(parents=True)
+        (self.folder / "images" / "1" / "00001.jpg").write_bytes(b"photo")
+        (self.folder / "mask.png").write_bytes(b"mask")
+
+    def test_photos_go_out_steps_run_there_and_the_model_comes_back(self):
+        steps = []
+
+        def plan(root, threads, gpu):
+            return colmap_steps(root, 640, 360, threads, gpu, True)
+        SshRunner("ubuntu@gpu-box").run(self.folder, plan, steps.append)
+        self.assertEqual((self.remote / "zwarm-maps/m/images/1/00001.jpg").read_bytes(), b"photo")
+        self.assertEqual((self.remote / "zwarm-maps/m/mask.png").read_bytes(), b"mask")
+        calls = (self.remote / "colmap_calls.txt").read_text().splitlines()
+        self.assertEqual([c.split()[0] for c in calls if not c.startswith("-")], ["feature_extractor", "exhaustive_matcher", "mapper"])
+        self.assertIn("--image_path zwarm-maps/m/images", calls[1] if calls[0].startswith("-") else calls[0])
+        self.assertEqual((self.folder / "colmap/sparse/0/cameras.bin").read_text(), "model\n")
+        self.assertEqual(steps, ["sending photos", "features", "matching", "mapper", "fetching the model"])
+
+    def test_a_failing_remote_step_raises_so_the_build_can_fall_back(self):
+        self.write_tool(Path(os.environ["PATH"].split(":")[0]), "colmap", 'echo "Unknown option" >&2\nexit 3\n')
+
+        def plan(root, threads, gpu):
+            return colmap_steps(root, 640, 360, threads, gpu, False)
+        with self.assertRaisesRegex(StepFailed, "Unknown option"):
+            SshRunner("ubuntu@gpu-box").run(self.folder, plan, lambda step: None)
+
+
 class ConstantsTests(unittest.TestCase):
     def test_a_build_leaves_cores_for_the_flight_loop(self):
         with mock.patch("mapping.fleet.os.cpu_count", return_value=18):

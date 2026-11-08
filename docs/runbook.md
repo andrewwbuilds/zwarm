@@ -352,15 +352,15 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 
 | Symptom | Likely cause | Change | Direction |
 |---|---|---|---|
-| "not seen to climb", but it's hovering with tags in view | Slow climb or first read | `backend/swarm/coordinator.py:34` `TAKEOFF_TIMEOUT_S` | Raise, 8 to 12 |
-| Same, and it hovers low | Lower than the height it counts as flying | `backend/swarm/coordinator.py:37` `AIRBORNE_HEIGHT` | Lower, 0.4 to 0.3. Must stay above `GROUNDED_HEIGHT` |
-| Next drone waits too long to go | Last one not read high enough yet | `backend/swarm/coordinator.py:48` `NEXT_TAKEOFF_HEIGHT` | Lower, 0.25 to 0.15 |
-| "barely responded to the sticks" | Real speed per stick is lower than the estimate | `backend/swarm/control.py:71` `speed_per_stick` | Lower, 5.0 to 2.5, which means bigger sticks for the same speed |
-| Same, still | Small sticks fall in the drone's deadband | `backend/swarm/control.py:75` `deadband` | Raise, 0.06 to 0.1 |
-| Same, and it visibly moved a little | Bar set too high for this drone | `backend/swarm/coordinator.py:53` `CHECK_MIN_SPEED` | Lower, 0.08 to 0.05 |
-| "kept going after being told to stop" on a good floor | Coasts longer than assumed | `backend/swarm/coordinator.py:55` `CHECK_STILL_SPEED` **safety** | Raise, 0.13 to 0.2 |
-| "drifted X m after being told to stop" on a good floor | Same | `backend/swarm/coordinator.py:57` `CHECK_MAX_COAST` **safety** | Raise, 0.75 to 1.0, only with room to spare |
-| "moved the wrong way" with the nose right and tags right | A gust. Or a reversed axis, if it repeats | `backend/swarm/coordinator.py:54` `CHECK_WRONG_WAY` **safety** | Raise, 0.2 to 0.3. If it repeats, check the signs at `backend/swarm/control.py:149` |
+| "not seen to climb", but it's hovering with tags in view | Slow climb or first read | `backend/swarm/coordinator.py:35` `TAKEOFF_TIMEOUT_S` | Raise, 8 to 12 |
+| Same, and it hovers low | Lower than the height it counts as flying | `backend/swarm/coordinator.py:38` `AIRBORNE_HEIGHT` | Lower, 0.4 to 0.3. Must stay above `GROUNDED_HEIGHT` |
+| Next drone waits too long to go | Last one not read high enough yet | `backend/swarm/coordinator.py:56` `NEXT_TAKEOFF_HEIGHT` | Lower, 0.25 to 0.15 |
+| "barely responded to the sticks" | Real speed per stick is lower than the estimate | `backend/swarm/control.py:84` `speed_per_stick` | Lower, 5.0 to 2.5, which means bigger sticks for the same speed |
+| Same, still | Small sticks fall in the drone's deadband | `backend/swarm/control.py:88` `deadband` | Raise, 0.06 to 0.1 |
+| Same, and it visibly moved a little | Bar set too high for this drone | `backend/swarm/coordinator.py:61` `CHECK_MIN_SPEED` | Lower, 0.08 to 0.05 |
+| "kept going after being told to stop" on a good floor | Coasts longer than assumed | `backend/swarm/coordinator.py:63` `CHECK_STILL_SPEED` **safety** | Raise, 0.13 to 0.2 |
+| "drifted X m after being told to stop" on a good floor | Same | `backend/swarm/coordinator.py:65` `CHECK_MAX_COAST` **safety** | Raise, 0.75 to 1.0, only with room to spare |
+| "moved the wrong way" with the nose right and tags right | A gust. Or a reversed axis, if it repeats | `backend/swarm/coordinator.py:62` `CHECK_WRONG_WAY` **safety** | Raise, 0.2 to 0.3. If it repeats, check the signs at `backend/swarm/control.py:149` |
 
 ### Flying
 

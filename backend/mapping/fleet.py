@@ -539,19 +539,21 @@ class FleetCapture:
                     if frame is None or seen.get(drone) == frame.number or counts.get(key, 0) >= MAX_FRAMES_PER_DRONE:
                         continue
                     seen[drone] = frame.number
-                    raw = folder / drone_folder(drone) / "raw"
-                    if drone not in made:
-                        raw.mkdir(parents=True, exist_ok=True)
-                        made.add(drone)
-                    index = counts.get(drone, 0)
-                    (raw / raw_name(index, max(0, int((frame.t - started) * 1000)))).write_bytes(frame.jpeg)
-                    counts[drone] = index + 1
+                    raw = folder / key / "raw"
+                    raw.mkdir(parents=True, exist_ok=True)
+                    index = counts.get(key, 0)
+                    started = frame.t if started is None else started
+                    t_ms = carried_ms + max(0, int((frame.t - started) * 1000))
+                    (raw / raw_name(index, t_ms)).write_bytes(frame.jpeg)
+                    counts[key] = index + 1
                     with self.lock:
-                        self.saved[drone] = index + 1
+                        self.saved[key] = index + 1
                 except Exception as error:  # a full disk loses frames, nothing more
-                    logger.warning("[map] couldn't save a frame from %s: %s", drone, error)
+                    message = f"Couldn't save a frame from drone {drone}: {error}"
                     with self.lock:
-                        self.error = f"Couldn't save a frame from drone {drone}: {error}"
+                        repeated, self.error = self.error == message, message
+                    if not repeated:  # this loop runs 50 times a second
+                        logger.warning("[map] %s", message)
 
     def stop(self) -> dict:
         """Stop saving frames. Safe to call when nothing is capturing."""

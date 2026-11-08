@@ -422,6 +422,8 @@ class Sweep:
             return None
         hub = self.manager.hub
         distance = np.linalg.norm(coverage.candidates[:, :2] - d.tracked.p[:2], axis=1)
+        if distance.min() < AT_EDGE_M:
+            return None  # a position error can leave it just outside, and it shouldn't keep trying to get in
         taken = [other.tracked.p for other in hub.co.drones.values() if other is not d and other.phase != Phase.GROUND]
         taken += [order.goal for other_id, order in hub.orders.items() if other_id != d.id]
         for q in taken:

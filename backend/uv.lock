@@ -1589,6 +1589,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.162.0" },
     { name = "numpy", specifier = ">=2.5.4" },
     { name = "opencv-python", specifier = ">=5.0.0.93" },
+    { name = "pupil-apriltags", marker = "sys_platform == 'darwin'", specifier = ">=1.0.4" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
     { name = "python-multipart", specifier = ">=0.0.33" },
     { name = "scipy", specifier = ">=1.18.1" },

@@ -43,6 +43,7 @@ class Detection:
     size: tuple[float, float, float]
     confidence: float
     age: float = 0.0  # seconds between the picture being taken and this report
+    foot: tuple[float, float] | None = None  # (bearing, elevation) of the nearest point where it meets the floor
 
 
 class Eyes(Protocol):

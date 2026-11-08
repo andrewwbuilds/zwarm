@@ -37,7 +37,7 @@ The swarm has three jobs: explore, map and inspect.
 
 The model gets checked tools and named regions, never sticks, raw coordinates or E-stop. Takeoff waits for a person to press Approve. Stop, hold, land and E-stop skip the model and work with it down. [ADR 0002](docs/decisions/0002-zwarm-architecture.md) says why.
 
-`backend/zwarm/` puts the flight loop, missions, the agent, findings, the shared map and video behind one API on port 8010, for the console at `/swarm`. This is a fork of Turbodrone, and [its README follows below](#turbodrone), with the S20 quick start and a section for each part of the swarm.
+`backend/zwarm/` puts the flight loop, missions, the agent, findings, the shared map and video behind one API on port 8010, for the console at `/swarm`. The rest of this page has the single-drone quick start and a section for each part of the swarm.
 
 ## Run it in the simulator
 You need [uv](https://docs.astral.sh/uv/), Node.js 20+, `brew install colmap` for the map, and `NVIDIA_API_KEY` in `backend/.env`.

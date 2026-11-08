@@ -80,7 +80,7 @@ def cmd_fly(args) -> int:
         print("Refusing to fly: fix what's listed above. `python -m zwarm preflight FILE` repeats this check.")
         return 2
     print(f"REAL DRONES on http://localhost:{args.port}. Console: http://localhost:5173/swarm. Ctrl-C lands anything in the air, then quits.", flush=True)
-    _serve(build(zw), args.port)
+    _serve(zw, build(zw), args.port)
     return 0
 
 

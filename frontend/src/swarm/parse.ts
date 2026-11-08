@@ -184,7 +184,7 @@ export function parseState(raw: unknown): ZwarmState {
     estopped: raw.estopped === true || drones.some((d) => d.phase === "stopped"),
     flightLimitS: num(raw.flight_limit_s) ?? num(missionRecord.flight_limit_s) ?? DEFAULT_FLIGHT_LIMIT_S,
     mission,
-    drones: list(raw.drones).map((d) => parseDrone(d, record(missionRecord.flight_s))).filter((d) => d !== null),
+    drones,
     room: parseRoom(raw.room),
     coverage: parseCoverage(raw.coverage),
     things: list(raw.things).map(parseThing).filter((t) => t !== null),

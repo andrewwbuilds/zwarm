@@ -231,8 +231,9 @@ class Search:
 
 
 class Hub:
-    def __init__(self, coordinator: Coordinator, memory: Memory, eyes, report=None):
+    def __init__(self, coordinator: Coordinator, memory: Memory, eyes, report=None, tilts: dict | None = None):
         self.co = coordinator
+        self.tilts = tilts or {}  # drone id -> camera tilt in radians, where it differs from DEFAULT_TILT
         self.memory = memory
         self.eyes = eyes
         self.on_report = report

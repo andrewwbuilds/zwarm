@@ -553,6 +553,16 @@ class Survey:
             d, task = free[i], waiting[j]
             taken = [*busy, *(order.goal for other_id, order in hub.orders.items() if other_id != d.id)]
             if any(np.linalg.norm(task.view.p[:2] - np.asarray(q)[:2]) < KEEP_AWAY for q in taken):
+                in_the_way = [q.id for q in parked if np.linalg.norm(task.view.p[:2] - q.tracked.p[:2]) < KEEP_AWAY]
+                if not in_the_way:
+                    task.blocked_since = None
+                    continue
+                task.blocked_since = now if task.blocked_since is None else task.blocked_since
+                if now - task.blocked_since > VIEW_BLOCKED_S:
+                    task.state = "skipped"
+                    given_tasks.add(j)
+                    self.manager.say("mission", f"Skipped {task.text}, because {_names(in_the_way)} is hovering there and not answering.",
+                                     event="view_skipped", drones=in_the_way)
                 continue
             given_drones.add(i)
             given_tasks.add(j)

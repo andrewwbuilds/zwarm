@@ -573,29 +573,39 @@ class InsideOutTracker:
 
     def stop(self) -> None:
         self.stopping.set()
-        self.thread.join(timeout=2.0)
+        for thread in self.threads:
+            thread.join(timeout=2.0)
 
-    def sees(self, point) -> bool:
-        return in_view(self.camera, point, self.width, self.height)
 
-    def run(self) -> None:
-        capture = cv2.VideoCapture(self.source)
-        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        marker_detector = detector()
-        if not capture.isOpened():
-            self.error = f"could not open camera {self.source}"
-            logger.error("[tracking] %s", self.error)
-            return
-        while not self.stopping.is_set():
-            ok, frame = capture.read()
-            t = self.clock()
-            if not ok:
-                self.error = f"camera {self.source} stopped delivering frames"
-                self.stopping.wait(0.1)
+def fit_focal(frames: list[list[tuple[Anchor, np.ndarray]]], width: int = VIDEO_WIDTH, height: int = VIDEO_HEIGHT,
+              guess_fov_deg: float = DEFAULT_FOV_DEG) -> dict:
+    """The focal length that best explains tags at known spacing, from frames showing two or more.
+
+    Tags that all lie flat only pin down focal length when seen at an angle, which a tilted camera does.
+    Corners that disagree with the room file's spacing show up here as a large remaining error.
+    """
+    from scipy.optimize import minimize_scalar
+
+    usable = [seen for seen in frames if len(seen) >= 2]
+    if not usable:
+        raise ValueError("no frame showed two or more known tags together; hold the drone about 1 m up over the grid")
+    guess = (width / 2) / math.tan(math.radians(guess_fov_deg) / 2)
+
+    def error_at(focal: float) -> float:
+        lens = Lens.from_focal(focal, width, height)
+        total, count = 0.0, 0
+        for seen in usable:
+            world = np.concatenate([anchor.corners() for anchor, _ in seen])
+            pixels = np.concatenate([quad for _, quad in seen])
+            found, rvecs, tvecs, _ = cv2.solvePnPGeneric(world, pixels, lens.matrix, lens.distortion, flags=cv2.SOLVEPNP_IPPE)
+            if not found:
                 continue
-            self.error = None
-            self.height, self.width = frame.shape[:2]
-            self.frames += 1
-            self.last_frame = t
-            self.store.add(t, read_markers(frame, self.camera, self.marker_size, marker_detector))
-        capture.release()
+            rvec, tvec = cv2.solvePnPRefineLM(world, pixels, lens.matrix, lens.distortion, rvecs[0], tvecs[0])
+            projected, _ = cv2.projectPoints(world, rvec, tvec, lens.matrix, lens.distortion)
+            total += float(np.sum((projected.reshape(-1, 2) - pixels) ** 2))
+            count += len(pixels)
+        return total / max(count, 1)
+
+    result = minimize_scalar(error_at, bounds=(guess * 0.5, guess * 1.8), method="bounded", options={"xatol": 0.5})
+    return {"focal_px": round(float(result.x), 1), "error_px": round(math.sqrt(float(result.fun)), 2), "frames": len(usable),
+            "error_at_guess_px": round(math.sqrt(error_at(guess)), 2), "width": width, "height": height}

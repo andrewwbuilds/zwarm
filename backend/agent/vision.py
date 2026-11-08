@@ -1,7 +1,7 @@
 """Ask a vision model whether a photo shows damage, and read its answer however it comes back.
 
-analyze() is slow (about 14 s per image on the main model) and does network waits, so it must never
-run on the flight loop. swarm.inspect calls it from a worker thread.
+analyze() is slow (seconds per image, more when a model is busy) and does network waits, so it must
+never run on the flight loop. swarm.inspect calls it from a worker thread.
 
 Whatever the model says is data. A photo can hold words, and a model can repeat them. So only four
 checked fields leave this file: a bool, a short cleaned sentence for a person to read, one of four

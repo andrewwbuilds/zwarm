@@ -45,6 +45,26 @@ MOVER_RADIUS = 0.35
 DWELL_S = 1.0
 
 
+def _action(method):
+    """One thing someone can ask for: takes the lock, keeps a record, and always answers."""
+
+    @functools.wraps(method)
+    def run(self, *args, **kwargs):
+        with self.lock:
+            shown = ", ".join([*(repr(a) for a in args), *(f"{k}={v!r}" for k, v in kwargs.items())])
+            self.memory.note(self.now, "action", f"{method.__name__}({shown})")
+            try:
+                reply = method(self, *args, **kwargs)
+            except Exception:
+                logger.exception("[hub] %s failed", method.__name__)
+                reply = "That failed inside the hub, and it may not have finished. Check the log."
+            self.memory.note(self.now, "reply", reply)
+            self.memory.commit()
+            return reply
+
+    return run
+
+
 def _angle(a: float, b: float) -> float:
     return (a - b + math.pi) % (2 * math.pi) - math.pi
 

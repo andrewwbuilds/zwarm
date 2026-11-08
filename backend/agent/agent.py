@@ -323,6 +323,10 @@ class Agent:
             self._turn_lock.release()
 
     # ---------------------------------------------------------------- stop-type commands
+    def halt(self, verb: str) -> dict:
+        """A stop-type command from a button instead of a sentence. Ends the mission and drops any plan or turn in progress."""
+        return self._answer(self._direct(Command(verb)))
+
     def _direct(self, command: Command) -> dict:
         if command.verb == "refused":
             return {"reply": command.problem, "plan": None, "tool_calls": []}

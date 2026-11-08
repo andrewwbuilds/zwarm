@@ -1,0 +1,486 @@
+/* Operator console. The look comes from a cyanotype floor plan: Prussian blue paper, chalk lines,
+   and real safety colours kept for the things that can stop a drone. */
+
+.zw-root {
+  --zw-deep: #0a2340;
+  --zw-ground: #0f2f52;
+  --zw-raise: #1a4570;
+  --zw-line: #3f6a90;
+  --zw-chalk: #eef5f7;
+  --zw-soft: #b4c9d8;
+  --zw-yellow: #ffd100;
+  --zw-red: #e01b12;
+  --zw-fault: #ff9c8f;
+  --zw-go: #4be3a4;
+  --zw-display: "DIN Condensed", "DIN Alternate", Bahnschrift, "Arial Narrow", sans-serif;
+  --zw-figures: "DIN Alternate", Bahnschrift, "Avenir Next", sans-serif;
+  --zw-body: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --zw-call: "SF Mono", Menlo, Consolas, monospace;
+
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--zw-deep);
+  color: var(--zw-chalk);
+  font: 500 15px/1.35 var(--zw-body);
+}
+
+.zw-root *, .zw-root *::before, .zw-root *::after { box-sizing: border-box; }
+.zw-root h2, .zw-root h3, .zw-root p, .zw-root ul, .zw-root ol { margin: 0; padding: 0; }
+.zw-root button { font: inherit; color: inherit; cursor: pointer; }
+.zw-root button:disabled { cursor: default; }
+.zw-root :focus-visible { outline: 3px solid var(--zw-yellow); outline-offset: 2px; }
+
+/* The dead-backend banner. Hard to miss on purpose. */
+.zw-banner {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 18px;
+  padding: 12px 20px;
+  background: repeating-linear-gradient(-45deg, var(--zw-yellow) 0 22px, #000 22px 44px);
+}
+.zw-banner strong, .zw-banner span {
+  padding: 2px 10px;
+  background: var(--zw-yellow);
+  color: #000;
+}
+.zw-banner strong { font: 700 30px/1.1 var(--zw-display); }
+.zw-banner span { font-weight: 600; }
+
+.zw-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(350px, 1.05fr) minmax(0, 2.1fr) minmax(380px, 1.1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas:
+    "brand mission safety"
+    "talk plan drones";
+}
+
+/* Brand and the simulated-or-real badge */
+.zw-brand {
+  grid-area: brand;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+}
+.zw-brand h1 {
+  margin: 0;
+  font: 700 46px/1 var(--zw-display);
+  letter-spacing: 0.01em;
+}
+.zw-badge {
+  padding: 6px 12px 4px;
+  font: 700 22px/1 var(--zw-display);
+  letter-spacing: 0.03em;
+}
+.zw-badge-sim { background: var(--zw-yellow); color: #000; }
+.zw-badge-real { background: var(--zw-red); color: #fff; }
+
+/* Mission headline over the plan */
+.zw-mission {
+  grid-area: mission;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 24px;
+  background: var(--zw-ground);
+  min-width: 0;
+}
+.zw-mission h2 {
+  font: 700 44px/1.02 var(--zw-display);
+  overflow-wrap: anywhere;
+}
+.zw-mission-sub { color: var(--zw-soft); font-size: 15px; }
+.zw-mission-sub b { color: var(--zw-yellow); font-weight: 600; }
+.zw-percent {
+  flex: none;
+  text-align: right;
+  font: 700 66px/0.9 var(--zw-figures);
+  font-variant-numeric: tabular-nums;
+}
+.zw-percent small {
+  display: block;
+  margin-top: 2px;
+  color: var(--zw-soft);
+  font: 500 14px/1.2 var(--zw-body);
+}
+
+/* Flight controls */
+.zw-safety {
+  grid-area: safety;
+  display: grid;
+  grid-template-columns: 1fr 1fr 120px;
+  grid-template-rows: 1fr auto;
+  gap: 6px 8px;
+  padding: 10px 12px 8px;
+  background: var(--zw-deep);
+}
+.zw-big {
+  min-height: 76px;
+  border: 3px solid var(--zw-chalk);
+  border-radius: 4px;
+  background: var(--zw-chalk);
+  color: var(--zw-deep) !important;
+  font: 700 36px/1 var(--zw-display) !important;
+}
+.zw-big:hover { background: #fff; }
+.zw-big:active { transform: translateY(2px); }
+
+/* The one loud thing on the page: a mushroom button on a yellow plate, as on a machine. */
+.zw-estop {
+  grid-row: 1 / span 2;
+  grid-column: 3;
+  align-self: stretch;
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: var(--zw-yellow);
+  box-shadow: inset 0 0 0 3px #000;
+  touch-action: manipulation;
+}
+.zw-estop span {
+  width: 94px;
+  height: 94px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, #ff5a4c 0, var(--zw-red) 46%, #a50d06 100%);
+  box-shadow: 0 5px 0 #6d0803, 0 7px 10px rgb(0 0 0 / 45%);
+  color: #fff;
+  font: 700 27px/1 var(--zw-display);
+  letter-spacing: 0.01em;
+}
+.zw-estop:hover span { filter: brightness(1.1); }
+.zw-estop:active span { transform: translateY(4px); box-shadow: 0 1px 0 #6d0803; }
+.zw-estop-on { background: #000; box-shadow: inset 0 0 0 3px var(--zw-yellow); }
+.zw-estop-on span { font-size: 22px; transform: translateY(4px); box-shadow: 0 1px 0 #6d0803; }
+
+.zw-safety-note {
+  grid-column: 1 / span 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 22px;
+  color: var(--zw-soft);
+  font-size: 13px;
+  line-height: 1.2;
+}
+.zw-safety-note > :last-child { margin-left: auto; }
+.zw-safety-failed { color: var(--zw-fault); font-weight: 700; }
+.zw-link {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--zw-chalk);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Conversation */
+.zw-talk {
+  grid-area: talk;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--zw-raise);
+}
+.zw-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.zw-said { font-size: 18px; font-weight: 700; margin-top: 10px !important; }
+.zw-reply { font-size: 17px; }
+.zw-report { font-size: 15px; color: var(--zw-chalk); }
+.zw-tool {
+  display: flex;
+  flex-direction: column;
+  padding-left: 12px;
+  border-left: 3px solid var(--zw-line);
+  font-size: 12.5px;
+  color: var(--zw-soft);
+}
+.zw-tool code { font: 600 13px/1.35 var(--zw-call); color: #9fe0ff; overflow-wrap: anywhere; }
+.zw-tool-refused { border-left-color: var(--zw-yellow); }
+.zw-tool-refused code, .zw-tool-refused span { color: var(--zw-yellow); }
+.zw-note { font-size: 14px; color: var(--zw-yellow); }
+.zw-note-finding { color: var(--zw-yellow); font-weight: 600; }
+.zw-note-fault { color: var(--zw-fault); font-weight: 700; }
+
+.zw-examples { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: auto 0; }
+.zw-examples p { font: 700 30px/1.05 var(--zw-display); margin-bottom: 6px !important; }
+.zw-example {
+  padding: 7px 12px;
+  border: 1px solid var(--zw-line);
+  border-radius: 3px;
+  background: transparent;
+  text-align: left;
+  font-size: 15px !important;
+}
+.zw-example:hover { background: var(--zw-raise); }
+
+.zw-plan {
+  flex: none;
+  margin: 0 12px 10px;
+  padding: 12px 14px;
+  border: 3px solid var(--zw-yellow);
+  background: var(--zw-ground);
+  max-height: 46%;
+  overflow-y: auto;
+}
+.zw-plan h2 { font: 700 26px/1.1 var(--zw-display); color: var(--zw-yellow); }
+.zw-plan p { font-size: 16px; margin-top: 4px !important; }
+.zw-plan ol { margin: 6px 0 0 20px !important; font-size: 14px; color: var(--zw-soft); }
+.zw-plan-buttons { display: flex; gap: 10px; margin-top: 10px; }
+.zw-plan-buttons .zw-btn { flex: 1; min-height: 50px; font: 700 26px/1 var(--zw-display); }
+
+.zw-btn {
+  padding: 8px 16px;
+  border: 2px solid var(--zw-chalk);
+  border-radius: 3px;
+  background: transparent;
+  font-weight: 700;
+}
+.zw-btn:hover:not(:disabled) { background: var(--zw-raise); }
+.zw-btn:disabled { opacity: 0.55; }
+.zw-btn-go { background: var(--zw-go); border-color: var(--zw-go); color: var(--zw-deep) !important; }
+.zw-btn-go:hover:not(:disabled) { background: #7cf0bf; }
+.zw-btn-small { padding: 3px 10px; font-size: 13px; }
+
+.zw-agent {
+  flex: none;
+  padding: 0 18px 5px;
+  color: var(--zw-soft);
+  font-size: 13px;
+}
+.zw-agent-off { color: var(--zw-yellow); font-weight: 600; }
+.zw-dots::after {
+  content: "...";
+  display: inline-block;
+  width: 1.2em;
+  overflow: hidden;
+  vertical-align: bottom;
+  animation: zw-dots 1.2s steps(4) infinite;
+}
+@keyframes zw-dots { from { width: 0; } to { width: 1.2em; } }
+
+.zw-command {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+.zw-command input {
+  flex: 1;
+  min-width: 0;
+  height: 62px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--zw-chalk);
+  color: var(--zw-deep);
+  font: 600 19px/1 var(--zw-body);
+}
+.zw-command input::placeholder { color: #557089; }
+.zw-mic {
+  flex: none;
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--zw-chalk);
+  border-radius: 50%;
+  background: transparent;
+}
+.zw-mic:hover:not(:disabled) { background: var(--zw-raise); }
+.zw-mic:disabled { opacity: 0.4; }
+.zw-mic-on {
+  background: var(--zw-chalk);
+  color: var(--zw-deep) !important;
+  animation: zw-listening 1.1s ease-in-out infinite;
+}
+.zw-mic-on:hover:not(:disabled) { background: var(--zw-chalk); }
+@keyframes zw-listening {
+  50% { box-shadow: 0 0 0 9px rgb(238 245 247 / 28%); }
+}
+.zw-mic-error { padding: 0 18px 10px; color: var(--zw-yellow); font-size: 13.5px; }
+
+/* The plan: map above, findings and 3D below */
+.zw-plan-area {
+  grid-area: plan;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  grid-template-rows: minmax(0, 1fr) clamp(190px, 29vh, 300px);
+  grid-template-areas: "map map" "findings cloud";
+  background: var(--zw-ground);
+}
+.zw-map-wrap { grid-area: map; position: relative; min-height: 0; min-width: 0; }
+.zw-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.zw-findings {
+  grid-area: findings;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-top: 1px solid var(--zw-raise);
+}
+.zw-findings h2, .zw-3d h2 { font: 700 23px/1.1 var(--zw-display); margin-bottom: 5px !important; }
+.zw-findings ul { flex: 1; min-height: 0; overflow-y: auto; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.zw-finding { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; }
+.zw-finding-dismissed { opacity: 0.55; }
+.zw-photo {
+  width: 112px;
+  height: 84px;
+  padding: 0;
+  border: 1px solid var(--zw-line);
+  background: var(--zw-deep);
+  overflow: hidden;
+  font-size: 12px !important;
+  color: var(--zw-soft) !important;
+}
+.zw-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.zw-finding-summary { font-size: 14.5px; line-height: 1.28; }
+.zw-finding-summary b, .zw-dialog b { text-transform: capitalize; margin-right: 3px; }
+.zw-sev-high { color: var(--zw-fault); }
+.zw-sev-med { color: var(--zw-yellow); }
+.zw-sev-low { color: var(--zw-soft); }
+.zw-finding-meta { color: var(--zw-soft); font-size: 12.5px; }
+.zw-finding-buttons { display: flex; gap: 6px; margin-top: 4px; }
+.zw-finding-verdict { display: flex; gap: 10px; align-items: baseline; font-size: 13px; font-weight: 700; margin-top: 3px !important; }
+
+.zw-dialog {
+  max-width: min(90vw, 900px);
+  padding: 14px;
+  border: 3px solid var(--zw-chalk);
+  background: var(--zw-deep);
+  color: var(--zw-chalk);
+  font-size: 19px;
+}
+.zw-dialog::backdrop { background: rgb(5 18 34 / 72%); }
+.zw-dialog img { display: block; width: 100%; max-height: 70vh; object-fit: contain; margin-bottom: 10px; }
+.zw-dialog form { margin-top: 10px; text-align: right; }
+
+.zw-3d {
+  grid-area: cloud;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-top: 1px solid var(--zw-raise);
+  border-left: 1px solid var(--zw-raise);
+}
+.zw-3d header { display: flex; justify-content: space-between; align-items: center; }
+.zw-3d-view { flex: 1; min-height: 0; position: relative; background: var(--zw-deep); display: grid; place-items: center; }
+.zw-cloud { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+.zw-cloud:active { cursor: grabbing; }
+.zw-3d-status { color: var(--zw-soft); font-size: 12.5px; margin-top: 3px !important; }
+
+/* Drones */
+.zw-drones {
+  grid-area: drones;
+  min-height: 0;
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  overflow-y: auto;
+  border-top: 1px solid var(--zw-raise);
+}
+.zw-drone {
+  min-height: 200px;
+  display: grid;
+  grid-template-columns: minmax(0, 52%) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  padding: 10px 12px;
+  border-left: 6px solid var(--zw-drone, var(--zw-chalk));
+  border-bottom: 1px solid var(--zw-raise);
+}
+.zw-video {
+  position: relative;
+  align-self: start;
+  aspect-ratio: 4 / 3;
+  background: #000;
+}
+.zw-video canvas { width: 100%; height: 100%; display: block; object-fit: cover; }
+.zw-video span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  background: rgb(10 35 64 / 70%);
+  color: var(--zw-soft);
+  text-align: center;
+  font-size: 13px;
+}
+.zw-drone-info { min-width: 0; display: flex; flex-direction: column; gap: 5px; overflow: hidden; }
+.zw-drone-foot { grid-column: 1 / -1; min-height: 0; overflow-y: auto; }
+.zw-drone-info header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 8px; }
+.zw-drone-info h3 { font: 700 26px/1 var(--zw-display); color: var(--zw-drone, var(--zw-chalk)); }
+.zw-drone-info header span { font-size: 13.5px; color: var(--zw-soft); text-align: right; }
+.zw-task { font-size: 15px; line-height: 1.25; }
+.zw-flight { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font-size: 13px; color: var(--zw-soft); }
+.zw-flight strong { font: 700 28px/1 var(--zw-figures); color: var(--zw-chalk); font-variant-numeric: tabular-nums; }
+.zw-flight-bar { flex-basis: 100%; height: 8px; background: var(--zw-raise); }
+.zw-flight-bar i { display: block; height: 100%; background: var(--zw-chalk); }
+.zw-flight-low strong { color: var(--zw-yellow); }
+.zw-flight-low i { background: var(--zw-yellow); }
+.zw-flight-over strong { color: var(--zw-fault); }
+.zw-flight-over i { background: var(--zw-red); }
+.zw-track { font-size: 14px; color: var(--zw-soft); }
+.zw-track b { font-weight: 700; }
+.zw-track-good b { color: var(--zw-go); }
+.zw-track-fair b { color: var(--zw-chalk); }
+.zw-track-poor b { color: var(--zw-yellow); }
+.zw-track-lost b { color: var(--zw-fault); }
+.zw-fault { color: var(--zw-fault); font-size: 13.5px; font-weight: 700; }
+.zw-empty { padding: 12px; color: var(--zw-soft); font-size: 14.5px; }
+
+.zw-panel-crash { padding: 12px; color: var(--zw-fault); display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+/* Narrow screens: one column that scrolls, with the flight controls stuck to the top. */
+@media (max-width: 1100px) {
+  .zw-root { height: auto; min-height: 100dvh; overflow: visible; }
+  .zw-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "safety" "brand" "mission" "talk" "plan" "drones";
+  }
+  .zw-safety { position: sticky; top: 0; z-index: 5; box-shadow: 0 2px 0 var(--zw-raise); grid-template-columns: 1fr 1fr 96px; }
+  .zw-estop span { width: 84px; height: 84px; font-size: 24px; }
+  .zw-big { min-height: 62px; font-size: 28px !important; }
+  .zw-talk { min-height: 58vh; }
+  .zw-plan-area {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 70vw auto 320px;
+    grid-template-areas: "map" "findings" "cloud";
+  }
+  .zw-3d { border-left: 0; }
+  .zw-findings ul { overflow: visible; }
+  .zw-drones { overflow: visible; grid-auto-rows: auto; }
+  .zw-mission h2 { font-size: 34px; }
+  .zw-percent { font-size: 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zw-mic-on, .zw-dots::after { animation: none; }
+}

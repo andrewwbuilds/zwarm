@@ -740,6 +740,17 @@ class MissionManager:
                 self._finish("stopped", f"{self.kind.capitalize()} mission stopped. {then}", now)
             return self.status()
 
+    def preview(self, kind: str, region: str = "all", target: str | None = None) -> None:
+        """Raise MissionError if this mission couldn't be planned. Changes nothing, so a plan can be refused before anything takes off."""
+        with self.hub.lock:
+            kind = str(kind).strip().lower()
+            if kind not in KINDS:
+                raise MissionError(f'I can {", ".join(KINDS[:-1])} or {KINDS[-1]}, not "{kind}".')
+            self._check_no_build_running(kind)
+            work_for = {"explore": self._plan_sweep, "map": self._plan_sweep, "inspect": self._plan_survey,
+                        "search": self._plan_search}[kind]
+            work_for(kind, self.regions.resolve(region), target, self.hub.now)
+
     def status(self) -> dict:
         with self.hub.lock:
             now = self.hub.now

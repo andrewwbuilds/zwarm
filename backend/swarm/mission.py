@@ -891,6 +891,9 @@ class MissionManager:
         self.started_at, self.ended_at = now, None
         self.out.clear()
         self.bad_since.clear()
+        self.nobody_since = None
+        self.capture_failed = None
+        self.hub.co.resume_checks()  # asking for work is what lets a held check carry on
         self.flew = {d.id for d in self.crew(now)}
         if kind == "map":
             self.coverage.set_region(region)

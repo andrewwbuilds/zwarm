@@ -24,7 +24,7 @@ _ESTOP = re.compile(r"(emergency stop|e stop|estop|kill (the )?motors|cut (the )
 _TAKEOFF = re.compile(r"(take ?off|lift off|launch)")
 # Said before a landing: "stop and land", "stop mapping and land", "wrap it up and bring them home".
 _WORK = r"(?:(?:the )?(?:mission|mapping|map|exploring|exploration|inspecting|inspection|searching|search|scanning|work)|everything|that|this|it)"
-_THEN = rf"(?:(?:stop|finish|end|wrap up|wrap it up|finish up)(?: {_WORK})?(?: and| then)? )?"
+_THEN = rf"(?:(?:stop|end|wrap up|wrap it up)(?: {_WORK})?(?: and| then)? )?"  # not "finish": that may mean do the work first
 _THEM = r"(?:them|them all|all of them|it|everyone|everybody|everything|all|the drones|all the drones|all drones|the fleet|the swarm|the team)"
 _LAND_HERE = re.compile(rf"{_THEN}(?:land (?:here|now|where you are|right here|right now)|put {_THEM} down (?:here|right here|where they are|right where they are))")
 _LAND = re.compile(rf"{_THEN}(?:land|come back|come home|go home|return|return home|return to base|come down|get down|go down|touch down"

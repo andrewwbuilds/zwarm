@@ -509,7 +509,6 @@ class PlansAreCheckedBeforeTakeoff(unittest.TestCase):
     def test_a_mission_that_cant_be_planned_offers_no_plan(self):
         fleet = FakeFleet("ground")
         self.refusing(fleet)
-        from tests.test_agent import Scripted
         agent = fleet.agent(Scripted(use(call("start_mission", kind="inspect", region="north", target="couch")), say("Which?")))
         result = agent.handle("inspect the couch on the north side")
         self.assertIsNone(result["plan"])

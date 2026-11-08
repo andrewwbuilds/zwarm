@@ -176,7 +176,17 @@ def build_app(runtime: Runtime) -> FastAPI:
         await asyncio.to_thread(runtime.shut_down)
 
     app = FastAPI(title="Swarm", lifespan=lifespan)
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+    @app.middleware("http")
+    async def only_local_pages_can_act(request: Request, call_next):
+        # CORS only stops a page reading the answer. A plain form POST from any website would still run.
+        # curl and scripts send no Origin, and the runbook's emergency commands rely on that.
+        origin = request.headers.get("origin")
+        if request.method not in ("GET", "HEAD", "OPTIONS") and origin and not re.match(LOCAL_ORIGIN, origin):
+            return JSONResponse({"detail": f"Requests from {origin[:80]} aren't allowed to control the fleet."}, status_code=403)
+        return await call_next(request)
+
+    app.add_middleware(CORSMiddleware, allow_origin_regex=LOCAL_ORIGIN, allow_methods=["*"], allow_headers=["*"])
 
     def answer(problems: list[str]) -> dict:
         if problems:

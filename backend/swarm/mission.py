@@ -910,8 +910,11 @@ class MissionManager:
         if kind == "map":
             self.coverage.set_region(region)
             self.coverage.forget_region()  # the floor has to be seen again while the photos are being saved
-            self.capture_name = time.strftime("map-%Y%m%d-%H%M%S")
-            self.later(self._start_capture, self.capture_name)
+            if self.build_when_down:
+                self.capture_name, self.build_when_down = self.build_when_down, None  # still saving: same map, more photos
+            else:
+                self.capture_name = time.strftime("map-%Y%m%d-%H%M%S")
+                self.later(self._start_capture, self.capture_name)
         self._install(plan, now)
         self.progress_said = int(self._share_seen() * 4)
         if kind == "inspect":

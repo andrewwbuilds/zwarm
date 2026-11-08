@@ -43,8 +43,13 @@ def read_ply(path: Path) -> tuple[np.ndarray, np.ndarray]:
     return record["p"].copy(), record["c"].copy()
 
 
-def write_viewer(ply: Path, html: Path) -> int:
+def write_viewer(ply: Path, html: Path, z_up: bool = False) -> int:
+    """z_up is for a map already levelled so +z is up, rather than in COLMAP's own axes."""
     xyz, rgb = read_ply(ply)
     blob = xyz.astype("<f4").tobytes() + rgb.astype("u1").tobytes()
-    html.write_text(PAGE.replace("__COUNT__", str(len(xyz))).replace("__DATA__", base64.b64encode(blob).decode()))
+    page = PAGE
+    if z_up:
+        page = page.replace("camera.up.set(0, -1, 0);  // COLMAP's y axis points down", "camera.up.set(0, 0, 1);")
+        page = page.replace("camera.position.set(c.x, c.y - r * 0.3, c.z - r * 2.2);", "camera.position.set(c.x - r * 1.6, c.y, c.z + r * 1.4);")
+    html.write_text(page.replace("__COUNT__", str(len(xyz))).replace("__DATA__", base64.b64encode(blob).decode()))
     return len(xyz)

@@ -497,7 +497,7 @@ class Toolbox:
         if self.missions is not None:
             try:
                 with self.lock:
-                    self.missions.stop()
+                    self.missions.stop(reply)
                 if verb == "land":
                     act()
             except Exception:

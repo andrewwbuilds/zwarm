@@ -591,7 +591,7 @@ def tracked_pose_of(hub, max_age_s: float = 0.5) -> Callable:
 
 # ---------------------------------------------------------------- the part everyone else calls
 class FleetCapture:
-    def __init__(self, frames, root, drones=None, max_photos: int | None = None, on_event=None, pose_of=None):
+    def __init__(self, frames, root, drones=None, max_photos: int | None = None, on_event=None, pose_of=None, flying=None):
         """pose_of(drone) -> tracked (x, y, z) or None, optional and called off the flight loop.
 
         With it, a finished map is checked against the tracked positions and placed in room coordinates.

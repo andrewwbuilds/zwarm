@@ -161,6 +161,7 @@ class SimVideo:
         self.pending: deque = deque()
         self.rendered = 0
         self.culled = 0
+        self.last_culled: dict = {}
         self.lens = Lens.from_fov(horizontal_fov_deg=self.video.fov_deg)
 
     def step(self) -> None:

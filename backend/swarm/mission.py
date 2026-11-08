@@ -264,6 +264,8 @@ class RegionCoverage(Coverage):
             return []
         wanted = self.regions.mask(name, self.cells) & self.open & self.anywhere
         inside = self.regions.mask(name, self.all_candidates)
+        if not inside.any():
+            inside = np.ones(len(self.all_candidates), bool)  # nowhere to hold in the region, so look in from outside
         sees = next(iter(self.all_sees.values()))
         views = []
         while wanted.any() and len(views) < limit:

@@ -13,6 +13,8 @@ from pathlib import Path
 import numpy as np
 
 FLOOR_CLEARANCE = 0.25  # the floor is a surface too, but takeoff and landing have to reach it
+SEEN_PREFIX = "seen-"  # the hub's name for what a camera found, as against what the swarm file lists
+TALLER_M = 10.0  # past the fence, so a drone pushed inside a full-height obstacle only ever leaves sideways
 
 
 @dataclass(frozen=True)

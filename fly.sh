@@ -10,7 +10,13 @@
 # No drone? Fly the simulated one with the same backend and web client:
 #
 #   ./fly.sh --sim [--scene room|garage|backyard|field|gym|course] [--firmware s20]
+#
+# The swarm and its operator console, on port 8010 and at /swarm:
+#
+#   ./fly.sh --swarm                 the simulator
+#   ./fly.sh --swarm fly swarm.json  real drones, once tools/pi/fleet.sh has the tunnels up
 setopt pipefail
+start_dir=$PWD
 cd "${0:A:h}" || exit 1
 
 LOG=fly.log

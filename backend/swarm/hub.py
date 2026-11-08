@@ -225,7 +225,7 @@ class Search:
                 claimed[view.cells] = True
         for d in free:
             hint = hub.memory.things.get(self.hint) if self.hint is not None else None
-            avoid = [other.tracked.p for other in flying if other is not d]
+            avoid = [other.tracked.p for other in hub.co.drones.values() if other is not d and other.phase == Phase.AIR]
             avoid += [o.goal for other_id, o in hub.orders.items() if other_id != d.id]
             view = None
             if hint is not None:

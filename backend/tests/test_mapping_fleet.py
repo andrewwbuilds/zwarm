@@ -14,9 +14,9 @@ import numpy as np
 
 from mapping import fleet
 from mapping.curate import raw_name
-from mapping.fleet import (FleetCapture, LocalRunner, MapError, SshRunner, build_map, colmap_steps, level_map, motion_scores,
-                           photos_by_drone, pick_by_motion, pick_runner, pool_photos, read_cameras, safe_name, share_budget,
-                           static_mask, window_for)
+from mapping.fleet import (FleetCapture, LocalRunner, MapError, SshRunner, build_map, check_against_room, colmap_steps, level_map,
+                           motion_scores, photos_by_drone, pick_by_motion, pick_runner, pool_photos, read_cameras, read_tracked,
+                           safe_name, share_budget, static_mask, window_for)
 from mapping.reconstruct import StepFailed
 from swarm.frames import Frame
 

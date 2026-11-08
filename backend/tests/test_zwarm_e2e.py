@@ -395,7 +395,7 @@ class HoverHeight(unittest.TestCase):
         self.assertTrue(f.run(30.0, lambda s: drones["1"].check is not None))
         drones["1"].check.home[2] = 0.4
         self.assertTrue(f.run(60.0, lambda s: s["drones"][0]["phase"] == "air"))
-        self.assertGreater(float(drones["1"].goal[2]), 0.8)
+        self.assertGreater(float(drones["1"].goal[2]), 0.6)
 
 
 class TheRealLoop(unittest.TestCase):

@@ -1133,7 +1133,7 @@ class MissionManager:
 
     def _why_out(self, d, now: float) -> str:
         if d.phase == Phase.GROUND:
-            return "has landed"
+            return "looks to be on the floor" if "down" in d.faults else "has landed"
         if d.phase == Phase.STOPPED:
             return "has had its motors cut"
         if d.phase == Phase.LANDING or d.landing_requested:

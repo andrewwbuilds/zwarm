@@ -441,7 +441,8 @@ class Hub:
         self.co.land(self.now)
         return "Coming back to the pads to land."
 
-    def _do_land_here(self, c) -> str:
+    @_action
+    def land_here(self) -> str:
         self._stop_search()
         self.orders.clear()
         self.co.land_here(self.now)

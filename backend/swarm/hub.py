@@ -168,7 +168,7 @@ class Search:
             self.found_at = thing.p.copy()
             hub.report(f"Found the {self.label} at {_where(thing.p)}, seen by {_names(thing.seen_by)}.")
             return
-        if now - self.close_started > CLOSE_TIMEOUT_S or (looked and now - self.dwell[closer.id] > 8.0):
+        if now - self.close_started > CLOSE_TIMEOUT_S or settled_for > 8.0:
             hub.report(f"I couldn't confirm the {self.label} near {_where(thing.p)}. Still searching.")
             self.banned.append(thing.p.copy())
             hub.memory.forget(thing.id)

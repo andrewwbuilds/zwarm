@@ -460,6 +460,134 @@ class RoomFitTests(unittest.TestCase):
             self.assertFalse((root / "m" / "drones" / "2" / "poses.jsonl").exists())
 
 
+class JoiningTests(unittest.TestCase):
+    """build_map's last stage, with fake COLMAP models written to disk. Each case says what the operator is told."""
+
+    def world_to_camera(self, yaw: float) -> np.ndarray:
+        t = np.radians(45.0)
+        forward = np.array([np.cos(yaw) * np.cos(t), np.sin(yaw) * np.cos(t), -np.sin(t)])
+        right = np.array([np.sin(yaw), -np.cos(yaw), 0.0])
+        return np.array([right, np.cross(forward, right), forward])
+
+    def setUp(self):
+        self.tmp = TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.folder = Path(self.tmp.name)
+        self.sources, self.lines = {}, {}
+        self.models = {}
+
+    def add_model(self, index: int, drone: str, count: int, x_range, warp: float = 0.0, scale: float = 0.25) -> None:
+        """A model of one drone's flight. warp folds its map, so it no longer matches the tracked positions."""
+        rng = np.random.default_rng(index)
+        where = np.column_stack([np.linspace(*x_range, count), rng.uniform(-2, 2, count), np.ones(count)])
+        placed = where.copy()
+        if warp:
+            placed[:, 0] = np.abs(where[:, 0] - np.mean(x_range)) * warp
+        camera_lines, tracked_lines = [], []
+        for i in range(count):
+            name, raw = f"{drone}/{i + 1:05d}.jpg", f"{drone}-{i}.jpg"
+            self.sources[name] = raw
+            r = self.world_to_camera(i * 0.7)
+            q = cv2.Rodrigues(r)[0].ravel()
+            angle = float(np.linalg.norm(q))
+            axis = q / angle if angle > 1e-9 else np.zeros(3)
+            w, xyz = np.cos(angle / 2), axis * np.sin(angle / 2)
+            t = -r @ (scale * placed[i])
+            camera_lines.append(f"{i + 1} {w} {xyz[0]} {xyz[1]} {xyz[2]} {t[0]} {t[1]} {t[2]} 1 {name}\n")
+            tracked_lines.append(json.dumps({"frame": raw, "p": where[i].tolist()}))
+        folder = self.folder / "colmap" / "sparse" / str(index)
+        folder.mkdir(parents=True)
+        self.lines[str(index)] = (camera_lines, scale * where)
+        self.models[str(index)] = count
+        drone_dir = self.folder / "drones" / drone
+        (drone_dir / "raw").mkdir(parents=True, exist_ok=True)
+        (drone_dir / "raw" / raw_name(0, 0)).write_bytes(jpeg(index))
+        (drone_dir / "poses.jsonl").write_text("\n".join(tracked_lines) + "\n")
+
+    def build(self, pooled: dict, keep_tracked: bool = True) -> dict:
+        def fake_pool(folder, cap):
+            for drone, count in pooled.items():
+                (folder / "images" / drone).mkdir(parents=True, exist_ok=True)
+                (folder / "images" / drone / "00001.jpg").write_bytes(jpeg(1, size=(320, 180)))
+            (folder / "photos.json").write_text(json.dumps(self.sources))
+            return dict(pooled)
+
+        def fake_text(model: Path, out: Path) -> None:
+            out.mkdir(parents=True, exist_ok=True)
+            camera_lines, floor = self.lines[model.name]
+            (out / "images.txt").write_text("".join(line + "\n" for line in camera_lines))
+            points = "".join(f"{i} {p[0]} {p[1]} 0.0 10 20 30 0.5 1 1 2 2\n" for i, p in enumerate(floor))
+            (out / "points3D.txt").write_text(points)
+
+        def fake_analyze(path: Path):
+            return fleet.Model(path, self.models[path.name], self.models[path.name], 0.8)
+
+        if not keep_tracked:
+            for path in self.folder.glob("drones/*/poses.jsonl"):
+                path.unlink()
+        sparse_backup = {name: True for name in self.models}
+
+        class KeepModels(LocalRunner):
+            def run(runner, folder, plan, on_step):
+                for name in sparse_backup:
+                    (folder / "colmap" / "sparse" / name).mkdir(parents=True, exist_ok=True)
+
+        with mock.patch("mapping.fleet.run"), mock.patch("mapping.fleet.pool_photos", fake_pool), \
+                mock.patch("mapping.fleet.to_text", fake_text), mock.patch("mapping.fleet.analyze", fake_analyze), \
+                mock.patch("mapping.fleet.static_mask", return_value=None):
+            return build_map(self.folder, 240, KeepModels())
+
+    def test_a_clean_single_map_is_placed_in_the_room_with_no_warnings(self):
+        self.add_model(0, "1", 40, (-3, 3))
+        result = self.build({"1": 40})
+        self.assertTrue(result["in_room"])
+        self.assertEqual((result["joined_maps"], result["registered"]), (1, 40))
+        self.assertLess(result["room_fit_m"], 0.05)
+        self.assertEqual([w for w in result["warnings"] if "tracked" in w or "split" in w], [])
+
+    def test_separate_maps_are_joined_by_tracked_position_and_the_operator_is_told(self):
+        self.add_model(0, "1", 40, (-3, 0))
+        self.add_model(1, "2", 30, (0, 3))
+        result = self.build({"1": 40, "2": 30})
+        self.assertEqual((result["joined_maps"], result["registered"]), (2, 70))
+        self.assertEqual(result["registered_by_drone"], {"1": 40, "2": 30})
+        self.assertTrue(any("joined using tracked" in w for w in result["warnings"]))
+        cloud = np.load(self.folder / "points.npy")
+        self.assertLess(cloud[:, 0].min(), -2.5)  # both halves of the room, in metres
+        self.assertGreater(cloud[:, 0].max(), 2.5)
+
+    def test_a_tiny_side_model_stays_out_of_the_map(self):
+        self.add_model(0, "1", 40, (-3, 3))
+        self.add_model(1, "2", 14, (-1, 1))
+        result = self.build({"1": 40, "2": 14})
+        self.assertEqual((result["joined_maps"], result["registered"]), (1, 40))
+
+    def test_a_warped_map_is_left_out_and_named_when_another_one_is_good(self):
+        self.add_model(0, "1", 50, (-3, 3), warp=1.0)
+        self.add_model(1, "2", 30, (-3, 3))
+        result = self.build({"1": 50, "2": 30})
+        self.assertEqual((result["joined_maps"], result["registered"]), (1, 30))
+        self.assertEqual(result["registered_by_drone"], {"2": 30})
+        self.assertTrue(any("disagrees" in w and "left out" in w for w in result["warnings"]))
+        self.assertTrue(any("Drone 1 barely joined" in w for w in result["warnings"]))
+
+    def test_a_warped_map_alone_is_still_served_with_a_warning(self):
+        self.add_model(0, "1", 50, (-3, 3), warp=1.0)
+        result = self.build({"1": 50})
+        self.assertFalse(result["in_room"])
+        self.assertEqual(result["registered"], 50)
+        self.assertTrue(any("Don't trust its shape" in w for w in result["warnings"]))
+
+    def test_without_tracking_a_split_shows_the_largest_map_and_says_so(self):
+        self.add_model(0, "1", 40, (-3, 0))
+        self.add_model(1, "2", 30, (0, 3))
+        result = self.build({"1": 40, "2": 30}, keep_tracked=False)
+        self.assertFalse(result["in_room"])
+        self.assertEqual((result["joined_maps"], result["registered"]), (1, 40))
+        self.assertIsNone(result["room_fit_m"])
+        self.assertTrue(any("split into 2 separate maps" in w for w in result["warnings"]))
+
+
 class BuildStateTests(unittest.TestCase):
     RESULT = {"photos": 3, "by_drone": {"1": 3}, "registered": 3, "registered_by_drone": {"1": 3}, "points": 2,
               "models": [{"folder": "0", "registered": 3, "points": 2, "by_drone": {"1": 3}}], "warnings": [], "seconds": {}, "runner": "local"}

@@ -616,7 +616,8 @@ class MissionManager:
     def crew(self, now: float) -> list:
         """Drones that can take work right now."""
         co = self.hub.co
-        return [d for d in co.drones.values() if d.phase == Phase.AIR and not d.landing_requested and co._steerable(d, now)]
+        return [d for d in co.drones.values() if d.phase == Phase.AIR and not d.landing_requested and d.id not in self.limited
+                and co._steerable(d, now)]
 
     def taking_off(self) -> bool:
         co = self.hub.co

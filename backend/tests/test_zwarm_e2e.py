@@ -356,6 +356,13 @@ class StopButtons(unittest.TestCase):
         self.assertEqual(f.phases(), {"stopped"})
         self.assertEqual(f.http.post("/estop").status_code, 200)  # the console sends it to both hostnames
 
+    def test_a_button_sent_to_both_hostnames_counts_once(self):
+        f = Flight(self)
+        f.http.post("/hold")
+        f.http.post("/hold")
+        presses = [e for e in f.http.get("/zwarm/events").json() if e["text"] == "HOLD button"]
+        self.assertEqual(len(presses), 1)
+
     def test_a_button_drops_a_waiting_plan(self):
         f = Flight(self)
         plan = f.say("take off")["plan"]

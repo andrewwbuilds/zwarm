@@ -493,7 +493,8 @@ def floor_focus(seed):
 
 MISSIONS = {m.__name__: m for m in (
     explore_region, explore_all_furniture, lost_drone, focus_moves_all, map_with_focus, stop_midway, operator_hold,
-    inspect_thing, inspect_region, inspect_lost_drone, flight_limit, search_region, floor_explore, floor_lost_drone, floor_focus,
+    inspect_thing, inspect_region, inspect_lost_drone, flight_limit, search_region, demo_room_inspect, demo_room_map,
+    floor_explore, floor_lost_drone, floor_focus,
 )}
 FAST = [name for name in MISSIONS if not name.startswith("floor_")]
 

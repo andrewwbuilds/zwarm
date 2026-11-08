@@ -128,6 +128,7 @@ def cmd_check(args) -> int:
     """Everything except flying: links, video, and which tags each drone can see. Sends no flight command."""
     import numpy as np
 
+    from swarm.frames import StreamFrames
     from swarm.links import BackendLink
     from swarm.server import SwarmFile
     from swarm.tracking import CameraModel, CameraWorker, PoseStore

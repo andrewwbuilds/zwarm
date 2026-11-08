@@ -61,5 +61,28 @@ class GuardTests(unittest.TestCase):
                 reconstruct(images, Path(tmp) / "colmap")
 
 
+
+class StopRunningTests(unittest.TestCase):
+    def test_a_step_still_going_is_killed_and_reported(self):
+        failed = []
+
+        def step():
+            try:
+                run(["sleep", "30"], Path(folder) / "sleep.log")
+            except StepFailed as error:
+                failed.append(error)
+
+        with TemporaryDirectory() as folder:
+            worker = threading.Thread(target=step)
+            worker.start()
+            time.sleep(0.2)
+            started = time.monotonic()
+            stop_running()
+            worker.join(5.0)
+            self.assertFalse(worker.is_alive())
+            self.assertLess(time.monotonic() - started, 2.0)
+            self.assertEqual(len(failed), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -363,6 +363,7 @@ def main(argv=None) -> int:
     parser.add_argument("--model", default="", help="try only this model")
     parser.add_argument("--thinking", choices=("off", "on", "none"), default=None,
                         help="chat_template_kwargs to send. Left out: what the client does by default. none: send nothing.")
+    parser.add_argument("--repeat", type=int, default=1, help="run the set this many times, since the model varies")
     parser.add_argument("--json", default="", help="write every result to this file")
     args = parser.parse_args(argv)
 

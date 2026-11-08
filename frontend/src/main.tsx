@@ -14,6 +14,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/" element={<App />} />
         <Route path="/test" element={<TestPage />} />
         <Route path="/fleet" element={<FleetPage />} />
+        <Route path="/swarm" element={<SwarmPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

@@ -509,6 +509,8 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
         level, rgb = np.vstack([c[0] for c in clouds]), np.vstack([c[1] for c in clouds])
         rotation, scale, offset = joined[0]["fit"]["rotation"], joined[0]["fit"]["scale"], joined[0]["fit"]["offset"]
         served = joined
+        where = np.vstack([np.array([c for c, _ in part["cameras"].values()]) * part["fit"]["scale"] @ part["fit"]["rotation"].T
+                           + part["fit"]["offset"] for part in joined])
     else:
         xyz, rgb = main["cloud"]
         rotation, scale, offset = level_map(main["cameras"], xyz)

@@ -70,8 +70,8 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
               {big ? "Smaller" : "Enlarge"}
             </button>
           )}
-          <button type="button" className="zw-btn zw-btn-small" disabled={building} onClick={() => void build()}>
-            {building ? "Building" : "Build map"}
+          <button type="button" className="zw-btn zw-btn-small" disabled={building || capturing || built} onClick={() => void build()}>
+            {building ? "Building" : capturing ? "Saving photos" : built ? "Built" : "Build map"}
           </button>
         </span>
       </header>

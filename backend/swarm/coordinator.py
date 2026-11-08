@@ -315,7 +315,10 @@ class Coordinator:
             if d.phase == Phase.AIR:
                 d.landing_requested = True
                 d.land_requested_at = now
-                self._set_goal(d, np.array([d.config.pad[0], d.config.pad[1], max(d.tracked.p[2], 0.7)]))
+                self._go_to_pad(d)
+
+    def _go_to_pad(self, d: Drone) -> None:
+        self._set_goal(d, np.array([d.config.pad[0], d.config.pad[1], max(d.tracked.p[2], 0.7)]))
 
     def land_here(self, now: float | None = None) -> None:
         now = self.now if now is None else now

@@ -1,4 +1,29 @@
-# Zwarm
+<h1 align="center">zwarm</h1>
+
+<p align="center">
+  <b>Sentence-directed missions for a swarm of cheap Wi-Fi camera drones.</b><br>
+  One person talks. NVIDIA Nemotron plans. Three drones explore, map and inspect.
+</p>
+
+<p align="center">
+  <img alt="status: simulator tested, not yet flown on real drones" src="https://img.shields.io/badge/status-simulator%20tested%20%C2%B7%20not%20yet%20flown-DAA520?style=for-the-badge">
+</p>
+
+<p align="center">
+  <img alt="drones: 3 Hiturbo S20" src="https://img.shields.io/badge/drones-3%20%C3%97%20Hiturbo%20S20-0969da">
+  <img alt="planner: NVIDIA Nemotron" src="https://img.shields.io/badge/planner-NVIDIA%20Nemotron-76B900">
+  <img alt="gateways: Raspberry Pi" src="https://img.shields.io/badge/gateways-Raspberry%20Pi-C51A4A">
+  <img alt="positioning: 25 AprilTags" src="https://img.shields.io/badge/positioning-25%20AprilTags-1a7f37">
+  <img alt="3D map: COLMAP" src="https://img.shields.io/badge/3D%20map-COLMAP-412991">
+  <img alt="backend: Python 3.13 and FastAPI" src="https://img.shields.io/badge/backend-Python%203.13%20%C2%B7%20FastAPI-3776AB">
+  <img alt="console: React 19 and Vite" src="https://img.shields.io/badge/console-React%2019%20%C2%B7%20Vite-bc4c00">
+  <img alt="license: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-656d76">
+</p>
+
+---
+
+## What it is
+
 One person talks to a swarm of cheap drones, and NVIDIA Nemotron turns the sentences into coordinated missions. It flies three Hiturbo S20 toy drones, each on its own Raspberry Pi, from one Mac. The drones send back only video and a Wi-Fi signal byte, so each one works out its position by reading printed tags on the floor through its own camera.
 
 The swarm has three jobs: explore, map and inspect.

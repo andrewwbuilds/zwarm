@@ -699,6 +699,21 @@ class TalkingTests(unittest.TestCase):
         fleet, client, agent = fleet_agent("flying", Reply("m"))
         self.assertIn("did nothing", agent.handle("hello")["reply"])
 
+    def test_a_refused_action_cannot_be_reported_as_progress(self):
+        for claim in ("I've prepared an explore mission. Press Approve in the console.", "Exploring has started.", "All drones are now moving."):
+            fleet, client, agent = fleet_agent("all_stopped", use(call("start_mission", kind="explore", region="north")), say(claim))
+            reply = agent.handle("explore the north side")["reply"]
+            self.assertNotIn(claim, reply)
+            self.assertIn("No drone is available", reply)
+
+    def test_a_plain_refusal_keeps_the_models_words(self):
+        fleet, client, agent = fleet_agent("all_stopped", use(call("start_mission", kind="explore", region="north")), say("Every drone has stopped, so I can't."))
+        self.assertEqual(agent.handle("explore the north side")["reply"], "Every drone has stopped, so I can't.")
+
+    def test_a_success_keeps_the_models_words(self):
+        fleet, client, agent = fleet_agent("mapping", use(call("focus_region", region="north")), say("Moved to the north."))
+        self.assertEqual(agent.handle("focus north")["reply"], "Moved to the north.")
+
     def test_the_model_runs_out_of_rounds(self):
         fleet, client, agent = fleet_agent("mapping", *[use(call("get_status")) for _ in range(20)])
         result = agent.handle("how is it going")

@@ -771,9 +771,13 @@ class FleetCapture:
     def build(self, name: str | None = None, splat: bool | None = None) -> dict:
         """Build a map in the background and return straight away. A failure shows up in status()['error'].
 
-        Ends any capture of the same map first. Asking again during a build changes nothing.
+        Ends any capture of the same map first. Asking again during a build changes nothing. A name with no
+        frames saved raises MapError and changes nothing, so a mistyped name can't cost the map being served.
         """
-        name = safe_name(name if name is not None else (self.name or ""))
+        name = name if name is not None else self.name
+        if not name:
+            raise MapError("There are no photos to build from yet. Run a map mission first.")
+        name = safe_name(name)
         if splat is None:
             splat = os.environ.get("MAP_SPLAT", "") == "1"
         if self.status()["state"] == "capturing" and self.name == name:

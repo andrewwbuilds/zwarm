@@ -548,8 +548,7 @@ class Agent:
             if turn.epoch != self._epoch:
                 raise Refused(STOPPED)
             if turn.plan is None:
-                self._plan_count += 1
-                turn.plan = {"id": f"plan-{self._plan_count}", "created": self.clock()}
+                turn.plan = {"id": f"plan-{secrets.token_hex(6)}", "created": self.clock()}  # not guessable by another page in the browser
             turn.plan["steps"] = steps
             turn.plan["summary"] = _capital(", then ".join(s["text"] for s in steps)) + "."
             self._plan = turn.plan

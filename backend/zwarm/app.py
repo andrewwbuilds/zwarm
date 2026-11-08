@@ -321,11 +321,10 @@ def build(zw: Zwarm) -> FastAPI:
     @app.post("/zwarm/map/build")
     def build_map():
         try:
+            zw.agent.box.check("build_map", {})  # the same rules as asking for it out loud
             return plain(zw.capture.build())
-        except MapError as error:
+        except (Refused, MapError) as error:
             raise HTTPException(status_code=409, detail=str(error))
-        except ValueError as error:
-            raise HTTPException(status_code=409, detail=f"There are no photos to build from yet: {error}")
 
     @app.get("/zwarm/map")
     def map_status():

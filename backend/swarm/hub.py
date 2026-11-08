@@ -334,7 +334,7 @@ class Hub:
 
     # ---------------------------------------------------------------- moving and turning
     def aim(self, d, yaw: float) -> None:
-        d.config = replace(d.config, yaw=_angle(yaw, 0.0))
+        d.config = replace(d.config, yaw=_angle(self.limit_heading(d, yaw), 0.0))
 
     def order(self, d, goal, face: float | None, now: float) -> None:
         self.orders[d.id] = Order(np.asarray(goal, float), face, "turn", now)

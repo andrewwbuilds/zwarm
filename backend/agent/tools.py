@@ -333,6 +333,9 @@ class Toolbox:
             raise Refused("focus_region needs a region.")
         region = region_name(args["region"])
         if not self.mission_active():
+            if self.flying() and getattr(self.missions, "refocusable", lambda: False)() is True:
+                self._need_drones()
+                return {"region": region}
             last = self.mission_status().get("kind")
             hint = f" The last mission was {last}. To do more of it, call start_mission with kind {last} and that region." if last else ""
             raise Refused(f"No mission is running, so there is nothing to refocus. Use start_mission with that region.{hint}")

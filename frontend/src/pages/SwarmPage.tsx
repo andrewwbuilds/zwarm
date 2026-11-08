@@ -6,7 +6,7 @@ import MapPanel from "../swarm/MapPanel";
 import PanelBoundary from "../swarm/PanelBoundary";
 import RoomMap from "../swarm/RoomMap";
 import SafetyPanel from "../swarm/SafetyPanel";
-import { clock, missionTitle } from "../swarm/format";
+import { missionLine, missionTitle } from "../swarm/format";
 import { httpApi, resolveApiBase } from "../swarm/http";
 import { mockApi } from "../swarm/mock";
 import type { Api, Mission } from "../swarm/types";

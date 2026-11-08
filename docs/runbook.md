@@ -75,7 +75,7 @@ Edit `real.json`:
 - **`fence`:** measure the room. Keep `lo` and `hi` at least 0.5 m inside every wall and 0.5 m below the ceiling. Keep x `hi` no further than the last tag row, because a drone facing north past it sees nothing. Drones stay another 0.28 m inside this box.
 - **`pad`:** mark each with tape and measure from the grid. The tracker takes the drone's start position from this number, because a drone on the floor can't see the floor. Pads must be at least 0.5 m apart.
 - **`yaw_deg`:** the way the nose points on the pad. 0 is north. Leave it at 0 and set every drone down nose north.
-- **`obstacles`:** anything solid inside the fence, for example `{"name": "couch", "lo": [0.8, 1.3, 0], "hi": [1.4, 2.4, 0.9]}`. The drones can't avoid what isn't listed until a camera spots it.
+- **`obstacles`:** anything solid inside the fence, for example `{"name": "couch", "lo": [0.8, 1.3, 0], "hi": [1.4, 2.4, 0.9]}`. The drones can't avoid what isn't listed until a camera spots it. On this flight each listed thing counts as floor to ceiling, so drones go around it and never over it, and don't count a tag it hides. Furniture hides floor tags, and a drone over it loses its position (**sim**). Leave at least 0.7 m between it and the fence or anything else, or there's no way past.
 - Leave `limits.max_speed` at 0.3 for now.
 
 ### 4. Charge everything

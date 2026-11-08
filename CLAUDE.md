@@ -10,7 +10,7 @@ Host software for cheap Wi-Fi camera drones with closed firmware (fork of turbod
 - `backend/models/`, `backend/protocols/`: one RC model and protocol adapter per drone family.
 - `backend/sim/`: simulated S20. `config.py` tags every value with its source. `stability.py` is the drift benchmark.
 - `backend/swarm/`: multi-drone coordination. `hub.py` is the shared memory and the actions (plain methods; `commands.py` only parses fixed phrases into them), `memory.py` is SQLite, `eyes.py` and `yolo_eyes.py` are the cameras, `search.py` shares out the floor. `backend/slam/`, `backend/mapping/`: localization and photogrammetry.
-- `frontend/`: Vite and React console. `?backend=` picks the backend per tab.
+- `frontend/`: Vite and React console. `?backend=` picks the backend per tab. `/swarm` (`src/pages/SwarmPage.tsx`, `src/swarm/`) is the operator console; `?api=` picks its backend and `?mock=1` fakes one.
 - `tools/pi/`: Pi install, fleet scripts and watchdogs. `docs/research/`: reverse-engineering notes.
 
 ## Commands

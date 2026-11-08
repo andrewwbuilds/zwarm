@@ -1281,7 +1281,7 @@ class MissionManager:
             return words[d.phase]
         if d.landing_requested:
             return "flying back to its pad to land"
-        if d.id in self.out:
+        if self.active and d.id in self.out:
             return self.out[d.id]
         if self.active and self.work is not None:
             ask = getattr(self.work, "task_text", None)

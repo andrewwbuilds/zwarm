@@ -483,8 +483,10 @@ class Coordinator:
             d.land_here_wanted = False
             d.goal = None
             d.path = []
+            d.clear("land_link")
         else:
-            d.fault("land", "landing could not be sent; the link is down")
+            # Nothing went out, so a retry can't reverse anything. Not a failed landing either.
+            d.fault("land_link", "landing could not be sent; the link is down")
 
     def _send_landings(self, now: float) -> None:
         if now < self.next_landing:

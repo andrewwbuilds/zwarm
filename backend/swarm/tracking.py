@@ -470,7 +470,7 @@ class Estimator:
 
     def pose(self, now: float) -> Pose:
         return Pose(now, tuple(float(v) for v in self.p), self.yaw, sigma=max(self.sigma_xy, 0.5 * self.sigma_z),
-                    v=self.v.copy(), fix_age=now - self.fix_at)
+                    v=self.v.copy(), fix_age=now - self.fix_at, seen_p=None if self.last_fix is None else self.last_fix.p)
 
 
 @dataclass(frozen=True)

@@ -344,7 +344,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
     started = time.time()
     names = args.missions or list(MISSIONS)
-    jobs = [(n, s) for n in names for s in range(args.first_seed, args.first_seed + args.seeds)]
+    jobs = [(n, s, args.max_speed) for n in names for s in range(args.first_seed, args.first_seed + args.seeds)]
     with multiprocessing.get_context("spawn").Pool(args.workers) as pool:
         results = pool.map(_job, jobs, chunksize=1)
     print(f"{'mission':<20}{'pass':>7}{'hit':>4}{'wall':>5}{'crash':>6}{'closest':>8}{'xy med':>8}{'xy p95':>8}{'xy max':>8}{'z p95':>7}{'yaw95':>7}{'in2s':>6}{'sig max':>8}")

@@ -91,6 +91,7 @@ class StickMapper:
 
     STOPPED = 0.03  # m/s below which the sticks stay centred and the stock hold does the work
     LEARN_RATE = 0.5  # share of the way to the newest estimate per second
+    DOWN_RATE_SHARE = 0.1  # lowering the gain goes this much slower than raising it
     GAIN_RANGE = (0.3, 2.5)  # how far the learned speed may stray from the airframe's value
     STEADY_S = 1.5  # a command must have held this long before its result is believed
 

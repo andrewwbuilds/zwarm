@@ -553,6 +553,7 @@ class Coordinator:
                 if blind and d.tracked.fix_age >= SEEN_UP_FIX_S:
                     # The estimate assumes a descent, so with no sighting this says nothing about the drone.
                     d.unknown_air = d.came_down = True
+                    d.down_at = now
                     d.fault("land", "landed blind and touchdown was never seen; check it by eye")
             elif now - d.toggled_at > LAND_TIMEOUT_S:
                 if d.blind_landing and not seen_up:

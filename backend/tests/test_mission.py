@@ -504,6 +504,7 @@ class FlightLimitTests(unittest.TestCase):
         self.assertIn("land", f.co.drones["a"].faults)
         f.run(5.0)
         self.assertEqual(f.links["a"].commands, ["land"])
+        self.assertNotIn(f.co.drones["a"], f.missions.crew(f.t), "past its limit, so it gets no more work")
 
     def test_time_counts_from_takeoff_and_resets_on_the_ground(self):
         f = Fleet(Phase.GROUND)

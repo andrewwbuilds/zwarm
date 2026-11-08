@@ -90,7 +90,7 @@ def fly(pad: tuple, viewpoints: list, seconds: float, seed: int) -> list[tuple]:
 def layouts(name: str, world: str = "demo") -> dict[str, list]:
     """Viewpoints per drone as (x, y, yaw). Each drone keeps to its own strip of the room."""
     q = math.pi / 2
-    if world == "demo":  # 8 x 6 m, swarm/sim_cameras.py
+    if world in DEMO_WORLDS:  # 8 x 6 m, swarm/sim_cameras.py
         if name == "mission":  # what the search planner does: stop, look, move on, any of eight headings
             return {
                 "1": [(-2.5, -1.8, 0), (-0.8, -1.6, q / 2), (1.2, -2.0, 0), (3.0, -1.6, q), (2.6, -1.0, 2 * q), (0.4, -1.2, -q), (-1.8, -1.4, 3 * q / 2)],

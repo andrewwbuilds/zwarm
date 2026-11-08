@@ -467,7 +467,8 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
     if best is None or best.registered < 3:
         raise StepFailed("COLMAP could not link the photos into a 3D model. Usually that means too little overlap or too "
                          "little detail (blank walls). Fly slower and keep textured surfaces in view.")
-    summaries = []
+    tracked = read_tracked(folder)
+    parts = []
     for model in sorted(models, key=lambda m: -m.registered):
         text = folder / "colmap" / "text" / model.path.name
         to_text(model.path, text)

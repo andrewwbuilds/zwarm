@@ -297,6 +297,8 @@ class Agent:
         """A mission event. May be called from the flight loop, so it only queues and never raises."""
         try:
             event = data.get("event") if isinstance(data, dict) else None
+            if event in ("done", "failed", "stopped", "exhausted"):
+                self._note(f"the mission is over: {text}")  # or the model goes on as if it were still running
             if (event or kind) not in OBSERVE_EVENTS:
                 return
             self._events.put_nowait((str(event or kind), str(text), data))

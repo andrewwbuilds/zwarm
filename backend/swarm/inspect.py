@@ -61,8 +61,8 @@ UNTRUSTED_SIGMA_M = 0.5  # a pose worse than this isn't used to compare views or
 UNTRUSTED_FIX_AGE_S = 2.0
 SAME_DAMAGE_M = 0.75  # looks whose picture centers land this close count as the same damage
 
-QUEUE_SIZE = 6  # at 3 to 14 s an image and two workers, this is 10 to 40 s behind at worst
-WORKERS = 2
+QUEUE_SIZE = 16  # a dropped photo's view may never be revisited, so hold a minute's worth at worst
+WORKERS = 3  # at 3 to 14 s an image. Three drones each stopping for 4 s send at most 0.75 photos a second
 MAX_PHOTOS = 200  # at most this many photos per mission: a limit on API use
 FAULT_EVERY_S = 60.0  # at most one "vision is failing" event this often
 

@@ -145,7 +145,10 @@ class BackendLink:
                 sticks, self.sticks = self.sticks, None
                 commands, self.commands = self.commands, []
             for name in commands:
-                socket.send(json.dumps({"type": name, "source": "swarm"}))
+                if name in ("assume_flying", "assume_grounded"):
+                    self._tell_backend(name == "assume_flying")
+                else:
+                    socket.send(json.dumps({"type": name, "source": "swarm"}))
             if sticks is not None:
                 throttle, yaw, pitch, roll, ttl = sticks
                 socket.send(json.dumps({"type": "axes", "mode": "linear", "source": "swarm", "ttl": ttl,

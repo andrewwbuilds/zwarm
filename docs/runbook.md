@@ -386,7 +386,7 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 
 | Symptom | Likely cause | Change | Direction |
 |---|---|---|---|
-| "probably on the floor" while it's hovering fine | The picture barely changes in a hover, over a plain floor. Read `video_change` for each drone in `/state` under `anchors.drones`, on the floor and in a hover. Set the limit between them. Sim hover is about 0.9, and it hasn't been measured on a drone | `backend/swarm/tracking.py:359` `STILL_CHANGE` | Lower, 0.5 to 0.2 |
+| "probably on the floor" while it's hovering fine | The picture barely changes in a hover, over a plain floor. Read `video_change` for each drone in `/state` under `anchors.drones`, on the floor and in a hover. Set the limit between them. Sim hover is about 0.9, and it hasn't been measured on a drone | `backend/swarm/tracking.py:373` `STILL_CHANGE` | Lower, 0.5 to 0.2 |
 | Same, when it was only coming down slowly | Sightings fell further than a fall would | `backend/swarm/coordinator.py:51` `FALL_DROP` and `LOW_SIGHTING` **safety** | Raise, 0.25 to 0.4, and lower 0.4 to 0.3 |
 | "touchdown was not seen" and it's down | Tags leave the view below about 0.2 m | `backend/swarm/coordinator.py:39` `GROUNDED_HEIGHT` | Raise, 0.15 to 0.3. Always check by eye before touching |
 | Same, and it takes a while | Slow stock landing | `backend/swarm/tracking.py:358` `LANDING_DESCENT` and `backend/swarm/coordinator.py:36` `LAND_TIMEOUT_S` | Lower to its real speed, raise to 20 |

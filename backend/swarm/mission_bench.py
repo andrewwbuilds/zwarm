@@ -480,6 +480,9 @@ def demo_room_map(seed):
         gaps = {gap["name"]: gap for gap in f.missions.gaps()}
         f.check(gaps["all"]["share_seen"] >= COVERED, f"gaps says only {gaps['all']['share_seen']}")
         yield from f.land()
+        yield from f.wait(1.0)
+        f.missions.settle()
+        f.check(capture.names() == ["start", "stop", "build"], f"capture got {capture.calls}")
     return f, script()
 
 

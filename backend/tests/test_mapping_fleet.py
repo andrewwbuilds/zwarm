@@ -390,6 +390,69 @@ class LevelTests(unittest.TestCase):
         self.assertGreater(scale, 0)
 
 
+class RoomFitTests(unittest.TestCase):
+    def cameras(self, where, spin, scale=0.3, shift=(4.0, -2.0, 1.0)):
+        return {f"1/{i:05d}.jpg": (scale * spin @ np.asarray(p) + np.asarray(shift), np.eye(3)) for i, p in enumerate(where)}
+
+    def spin(self, angle=0.9):
+        return np.array([[np.cos(angle), -np.sin(angle), 0], [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
+
+    def test_recovers_the_room_from_good_positions(self):
+        rng = np.random.default_rng(1)
+        where = np.column_stack([rng.uniform(-3, 3, 40), rng.uniform(-2, 2, 40), rng.uniform(0.9, 1.1, 40)])
+        cameras = self.cameras(where, self.spin())
+        tracked = {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where + rng.normal(0, 0.03, where.shape))}
+        fit = check_against_room(cameras, tracked)
+        self.assertLess(fit["median_error_m"], 0.1)
+        self.assertAlmostEqual(fit["scale"], 1 / 0.3, delta=0.1)
+        centre = np.array(cameras["1/00000.jpg"][0])
+        np.testing.assert_allclose(fit["scale"] * fit["rotation"] @ centre + fit["offset"], where[0], atol=0.1)
+
+    def test_a_folded_map_shows_up_as_a_large_error(self):
+        rng = np.random.default_rng(2)
+        where = np.column_stack([rng.uniform(-3, 3, 60), rng.uniform(-2, 2, 60), np.ones(60)])
+        folded = where.copy()
+        folded[:, 0] = np.abs(where[:, 0])  # half the room laid on top of the other half
+        fit = check_against_room(self.cameras(folded, self.spin()), {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where)})
+        self.assertGreater(fit["median_error_m"], fleet.ROOM_FIT_LIMIT_M)
+
+    def test_too_few_tracked_photos_gives_no_verdict(self):
+        where = np.column_stack([np.arange(5.0), np.zeros(5), np.ones(5)])
+        self.assertIsNone(check_against_room(self.cameras(where, self.spin()), {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where)}))
+
+    def test_a_hover_gives_no_verdict(self):
+        rng = np.random.default_rng(3)
+        where = np.array([1.0, 1.0, 1.0]) + rng.normal(0, 0.01, (30, 3))
+        self.assertIsNone(check_against_room(self.cameras(where, self.spin()), {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where)}))
+
+    def test_positions_recorded_at_capture_are_read_back_by_photo_name(self):
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            (folder / "drones" / "1").mkdir(parents=True)
+            (folder / "photos.json").write_text(json.dumps({"1/00001.jpg": "a.jpg", "1/00002.jpg": "b.jpg"}))
+            (folder / "drones" / "1" / "poses.jsonl").write_text('{"frame": "a.jpg", "p": [1, 2, 3]}\nnot json\n')
+            self.assertEqual(read_tracked(folder), {"1/00001.jpg": [1, 2, 3]})
+
+    def test_capture_records_positions_and_survives_a_tracker_fault(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            frames = FakeFrames(drones=("1", "2"))
+            def pose_of(drone):
+                if drone == "2":
+                    raise RuntimeError("tracker fault")
+                return (1.0, 2.0, 3.0)
+            capture = FleetCapture(frames, root, pose_of=pose_of)
+            capture.start("m")
+            frames.show("1", 1)
+            frames.show("2", 1)
+            self.assertTrue(until(lambda: capture.status()["photos"] == 2))
+            capture.stop()
+            capture.capture_thread.join(3)
+            line = json.loads((root / "m" / "drones" / "1" / "poses.jsonl").read_text())
+            self.assertEqual(line["p"], [1.0, 2.0, 3.0])
+            self.assertFalse((root / "m" / "drones" / "2" / "poses.jsonl").exists())
+
+
 class BuildStateTests(unittest.TestCase):
     RESULT = {"photos": 3, "by_drone": {"1": 3}, "registered": 3, "registered_by_drone": {"1": 3}, "points": 2,
               "models": [{"folder": "0", "registered": 3, "points": 2, "by_drone": {"1": 3}}], "warnings": [], "seconds": {}, "runner": "local"}

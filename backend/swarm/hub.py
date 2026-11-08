@@ -111,9 +111,15 @@ class Search:
             return
         hub = self.hub
         flying = self.flying()
-        if not flying and not any(d.phase in (Phase.TAKEOFF, Phase.CHECK) for d in hub.co.drones.values()) and not hub.co.takeoff_queue:
+        if flying:
+            self.nobody_since = None
+        elif not any(d.phase in (Phase.TAKEOFF, Phase.CHECK) for d in hub.co.drones.values()) and not hub.co.takeoff_queue:
+            up = any(d.phase == Phase.AIR and not d.landing_requested for d in hub.co.drones.values())
+            self.nobody_since = now if self.nobody_since is None else self.nobody_since
+            if up and now - self.nobody_since < NOBODY_WAIT_S:
+                return  # tracking or a link can come back
             self.state = "failed"
-            hub.report(f"No drones are left flying, so I stopped looking for the {self.label}.")
+            hub.report(f"No drones are able to work, so I stopped looking for the {self.label}.")
             return
         if self.state == "closing":
             self._close_in(now, flying)

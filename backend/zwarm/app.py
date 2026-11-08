@@ -200,7 +200,10 @@ class Zwarm:
                        "sure": t.sure, "seen_by": sorted(t.seen_by)} for t in hub.memory.known()]
             out = {"simulated": self.simulated, "t": round(hub.now, 2), "estopped": co.estopped, "mission": mission, "drones": drones, "room": room,
                    "coverage": coverage, "things": things, "flight_limit_s": self.missions.flight_limit_s,
-                   "closest": None if not math.isfinite(co.closest) else round(co.closest, 3)}
+                   # Not a distance: where they would stop, with height gaps stretched, minus the separation kept. pair_m is the distance.
+                   "closest": None if not math.isfinite(co.closest) else round(co.closest, 3),
+                   "pair_m": None if self.front.pair_m is None else round(self.front.pair_m, 3),
+                   "pair_lowest_m": None if self.front.pair_lowest_m is None else round(self.front.pair_lowest_m, 3)}
         out["agent"] = self.agent.state()
         out["pending_plan"] = self.agent.pending()
         out["loop"] = {**self.front.timing(), "overruns": self.runtime.overruns, "mission_errors": self.missions.errors, "hub_errors": hub.think_errors}

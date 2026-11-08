@@ -726,6 +726,8 @@ class Coordinator:
                 d.limited = False
                 if d.link.connected and d.phase != Phase.GROUND:
                     d.link.send_sticks(0.0, 0.0, 0.0, 0.0, TTL)
+                if self.tracker is not None:
+                    self.tracker.note_command(d.id, np.zeros(3), 0.0, flying, d.phase == Phase.LANDING)
                 continue
             if d.phase == Phase.LANDING:
                 velocity = np.array([velocity[0], velocity[1], 0.0])

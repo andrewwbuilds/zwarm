@@ -25,7 +25,8 @@ from swarm.eyes import EDGE_MARGIN, RELIABLE_REACH, SimEyes, in_view
 from swarm.hub import Hub
 from swarm.hub_bench import FURNITURE, THREE, HubFlight, on_floor
 from swarm.memory import Memory
-from swarm.mission import MissionError, MissionManager
+from swarm.mission import AT_EDGE_M, MissionError, MissionManager
+from swarm.sim_cameras import demo_world
 
 MISSION_LIMIT = 260.0  # simulated seconds for a mission to finish, inside the 270 s flight limit
 COVERED = 0.95  # the share of a region's visible floor that counts as covered

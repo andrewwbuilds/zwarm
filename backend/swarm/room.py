@@ -68,6 +68,17 @@ class Room:
         self.version += 1
         return True
 
+    def listed(self) -> list[Obstacle]:
+        """What's on the map from the start, not what a camera added in flight, which may be a false sighting."""
+        return [o for o in self.obstacles.values() if not o.name.startswith(SEEN_PREFIX)]
+
+    def flight_box(self, obstacle: Obstacle) -> tuple[np.ndarray, np.ndarray]:
+        """The space a drone has to stay out of. With fly_around, a listed obstacle counts as reaching floor to ceiling and past."""
+        lo, hi = np.array(obstacle.lo, float), np.array(obstacle.hi, float)
+        if self.fly_around and not obstacle.name.startswith(SEEN_PREFIX):
+            lo[2], hi[2] = self.lo[2] - TALLER_M, self.hi[2] + TALLER_M
+        return lo, hi
+
     def surfaces(self, p, reach: float) -> list[tuple[np.ndarray, float]]:
         """Every surface within reach of p, as (unit normal pointing back at p, distance).
 

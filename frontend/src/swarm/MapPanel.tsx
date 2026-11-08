@@ -1,0 +1,74 @@
+import { useEffect, useState } from "react";
+import PointCloud from "./PointCloud";
+import type { Api, Cloud, MapStatus } from "./types";
+
+const BUILDING = /build|running|reconstruct|queue|colmap/i;
+const DONE = /done|ready|built|complete|finished/i;
+
+function statusLine(status: MapStatus | null, points: number): string {
+  if (!status) return "No build status yet.";
+  const photos = `${status.photos} ${status.photos === 1 ? "photo" : "photos"}`;
+  const drones = Object.keys(status.byDrone).length;
+  const from = drones > 0 ? ` from ${drones} ${drones === 1 ? "drone" : "drones"}` : "";
+  const placed = status.registered > 0 ? `, ${status.registered} placed` : "";
+  const shown = points > 0 ? `, ${points.toLocaleString()} points` : "";
+  const state = status.state.charAt(0).toUpperCase() + status.state.slice(1);
+  return `${state}: ${photos}${from}${placed}${shown}`;
+}
+
+export default function MapPanel({ api, status }: { api: Api; status: MapStatus | null }) {
+  const [cloud, setCloud] = useState<Cloud | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [asked, setAsked] = useState(false);
+
+  const stamp = status ? `${status.name}/${status.state}/${status.registered}` : "";
+  const hasResult = status !== null && (status.registered > 0 || DONE.test(status.state));
+
+  useEffect(() => {
+    if (!hasResult) return;
+    let live = true;
+    api.points().then(
+      (next) => {
+        if (live && next.count > 0) setCloud(next);
+      },
+      (error: unknown) => {
+        if (live) setProblem(`The points didn't load: ${error instanceof Error ? error.message : String(error)}.`);
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [api, stamp, hasResult]);
+
+  const building = asked || (status !== null && BUILDING.test(status.state));
+
+  const build = async () => {
+    setProblem(null);
+    setAsked(true);
+    try {
+      await api.buildMap();
+    } catch (error) {
+      setProblem(`The build didn't start: ${error instanceof Error ? error.message : String(error)}.`);
+    } finally {
+      setAsked(false);
+    }
+  };
+
+  return (
+    <section className="zw-3d" aria-label="3D map">
+      <header>
+        <h2>3D map</h2>
+        <button type="button" className="zw-btn zw-btn-small" disabled={building} onClick={() => void build()}>
+          {building ? "Building" : "Build map"}
+        </button>
+      </header>
+      <div className="zw-3d-view">
+        {cloud
+          ? <PointCloud cloud={cloud} />
+          : <p className="zw-empty">No points yet. Fly a map mission, then press Build map.</p>}
+      </div>
+      <p className="zw-3d-status">{statusLine(status, cloud?.count ?? 0)}{cloud ? ". Drag to orbit." : ""}</p>
+      {(status?.error || problem) && <p className="zw-fault">{problem ?? status?.error}</p>}
+    </section>
+  );
+}

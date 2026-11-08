@@ -388,7 +388,7 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
     (folder / "colmap" / "sparse").mkdir(parents=True)
 
     def plan(root: str, threads: int, gpu: bool) -> list:
-        return colmap_steps(root, shape[1], shape[0], threads, gpu, mask is not None, shared_camera)
+        return colmap_steps(root, shape[1], shape[0], threads, gpu, mask is not None, shared_camera, fix_lens)
 
     used = runner
     try:

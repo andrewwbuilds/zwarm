@@ -240,12 +240,18 @@ class Agent:
             return self._answer(self._direct(command))
         if not said:
             return self._answer({"reply": "I didn't hear anything, so I did nothing.", "plan": None, "tool_calls": []})
+        # Read before waiting for the turn. A stop made while this sentence waits comes after it, so it cancels it.
+        with self._state:
+            epoch = self._epoch
+            self._spoken += 1
         if not self._turn_lock.acquire(timeout=TURN_WAIT_S):
-            return self._answer({"reply": "I'm still working on your last request. Stop, land and emergency stop still work.",
-                                 "plan": None, "tool_calls": []})
-        self.busy = True
+            return self._answer({"reply": "I'm still working on your last request, so I did nothing with that one. "
+                                          "Stop, land and emergency stop still work.", "plan": None, "tool_calls": []})
+        self._begin_thinking()
         try:
-            return self._answer(self._think(said))
+            if epoch != self._epoch:
+                return self._answer(self._dropped(_Turn(epoch)))
+            return self._answer(self._think(said, epoch))
         except Exception:
             logger.exception("[agent] a turn failed")
             return self._answer({"reply": "Something went wrong in the agent, so I may not have finished that. "

@@ -105,7 +105,7 @@ class Coverage:
 
     def share_seen(self) -> float:
         self._refresh()
-        reachable = self.open & (self.sees.any(axis=0) if len(self.sees) else np.zeros(len(self.cells), bool))
+        reachable = self.open & self._reachable()
         total = int(reachable.sum())
         return 1.0 if total == 0 else float((reachable & (self.counts >= LOOKS_NEEDED)).sum()) / total
 

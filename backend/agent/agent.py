@@ -186,6 +186,7 @@ class Agent:
         self.on_event = on_event
         self.auto_approve = auto_approve  # tests and the simulator only
         self.observe_every_s = observe_every_s
+        self.turn_budget_s = turn_budget_s
         self.clock = clock
         self.busy = False
         self._turn_lock = threading.Lock()  # one model conversation at a time

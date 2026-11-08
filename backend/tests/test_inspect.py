@@ -590,6 +590,24 @@ class InspectorTest(unittest.TestCase):
         release.set()
         self.wait(inspector)
 
+    def test_falling_behind_tells_the_operator_once(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def hang(jpegs, prompt):
+            release.wait(10.0)
+            return clean_answer(jpegs, prompt)
+
+        inspector = self.inspector(hang, workers=1, queue_size=1)
+        inspector.start()
+        for x in (0.0, 1.0, 2.0, 3.0, 4.0):
+            self.fly(inspector, pose=FakePose((x, 0.0, 1.0)))
+        faults = [event for event in self.events if event[0] == "fault"]
+        self.assertEqual(len(faults), 1)
+        self.assertIn("dropped", faults[0][1])
+        release.set()
+        self.wait(inspector)
+
     def test_a_dropped_view_can_be_sent_again(self):
         release = threading.Event()
         self.addCleanup(release.set)

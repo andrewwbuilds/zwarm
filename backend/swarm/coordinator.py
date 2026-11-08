@@ -422,7 +422,60 @@ class Coordinator:
                 d.fault("takeoff", "takeoff could not be sent")
                 self.takeoff_queue.clear()
 
+    def _looks_down(self, d: Drone, now: float) -> str | None:
+        """Why this drone seems to be on the floor already, or None.
+
+        Goes by real sightings and the camera. The pose estimate only echoes the commands, and it has been
+        seen rising while the drone lay on the floor.
+        """
+        seen = d.tracked.seen_log
+        if not seen:
+            return None
+        silent = now - seen[-1][0]
+        if silent < DOWN_AFTER_S:
+            return None
+        z = seen[-1][1]
+        asked = None if d.goal is None else float(d.goal[2])
+        if z < LOW_SIGHTING and (asked is None or asked >= LOW_SIGHTING):
+            return f"last seen only {z:.2f} m up"
+        drop = d.tracked.seen_drop(FALL_WINDOW_S)
+        if drop > FALL_DROP and (asked is None or z < asked - FALL_DROP):
+            return f"last seen falling, {drop:.2f} m in {FALL_WINDOW_S:.1f} s"
+        if silent >= STILL_AFTER_S and self.tracker is not None and self.tracker.camera_still(d.id, now):
+            return "its camera has stopped moving and it sees no floor markers"
+        return None
+
+    def _mark_down(self, d: Drone, why: str) -> None:
+        """Treat it as on the floor: no sticks, and above all no toggle. A sighting up high brings it back."""
+        d.phase = Phase.GROUND
+        d.unknown_air = d.came_down = True
+        d.goal = None
+        d.path = []
+        self._forget_requests(d)
+        getattr(d.link, "assume_grounded", lambda: None)()  # so the backend's own Land all can't start it either
+        d.fault("down", f"{why}, so it's probably on the floor. No landing was sent, because that toggle would start its "
+                        "motors. Check it by eye before going near it")
+
+    def _back_in_air(self, d: Drone) -> None:
+        """Written off as down, and now seen flying. It holds, and any toggle waits for the operator."""
+        d.phase = Phase.AIR
+        d.unknown_air = d.came_down = False
+        d.was_down = d.backend_grounded = True
+        d.clear("down")
+        d.fault("land", "it was seen flying after it looked to be down. It's holding and won't land by itself: press LAND")
+        self._set_goal(d, d.tracked.p.copy())
+
     def _toggle_land(self, d: Drone, now: float, blind: bool = False) -> None:
+        down = self._looks_down(d, now)
+        if down:
+            self._mark_down(d, down)
+            return
+        if blind and d.was_down:
+            d.fault("tracking", "position lost, and it already looked down once, so it won't be landed blind: check it by eye")
+            return
+        if d.backend_grounded and d.link.connected:
+            getattr(d.link, "assume_flying", lambda: None)()
+            d.backend_grounded = False
         if d.link.command("land"):
             d.phase = Phase.LANDING
             d.toggled_at = now

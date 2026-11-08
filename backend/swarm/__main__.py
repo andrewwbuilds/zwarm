@@ -15,7 +15,8 @@ def cmd_sim(args) -> int:
     from swarm.server import build_app, serve, sim_runtime
 
     print(f"Simulated swarm at http://localhost:{args.port}. Open http://localhost:5173/swarm to fly it.")
-    uvicorn.run(build_app(sim_runtime(args.seed, inside_out=args.inside_out)), host="127.0.0.1", port=args.port, log_level="warning")
+    runtime = sim_runtime(args.seed, inside_out=args.inside_out)
+    serve(build_app(runtime), runtime, args.port, log_level="warning")
     return 0
 
 

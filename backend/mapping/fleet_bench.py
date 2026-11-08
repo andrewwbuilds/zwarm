@@ -298,6 +298,7 @@ def main() -> int:
     parser.add_argument("--name", default=None)
     parser.add_argument("--cap", type=int, default=fleet.MAX_PHOTOS, help="most photos to give COLMAP")
     parser.add_argument("--shared-camera", action="store_true", help="one camera model for all drones")
+    parser.add_argument("--fix-lens", action="store_true", help="hold the lens at the --hfov guess instead of refining it")
     parser.add_argument("--hfov", type=float, default=fleet.HFOV_DEG, help="starting guess for the lens")
     parser.add_argument("--reuse", help="build from another run's frames instead of rendering, naming its folder under --root")
     parser.add_argument("--render-only", action="store_true")

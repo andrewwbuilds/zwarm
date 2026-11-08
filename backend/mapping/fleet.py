@@ -682,6 +682,7 @@ class FleetCapture:
                     "registered_by_drone": dict(result.get("registered_by_drone", {})),
                     "models": [m["registered"] for m in result.get("models", [])], "points": result.get("points", 0),
                     "in_room": result.get("in_room", False), "room_fit_m": result.get("room_fit_m"),
+                    "joined_maps": result.get("joined_maps", 0),
                     "warnings": list(result.get("warnings", [])), "seconds": dict(result.get("seconds", {})),
                     "runner": result.get("runner"), "splat": self.splat, "error": self.error}
 

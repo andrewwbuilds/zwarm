@@ -36,6 +36,7 @@ TILT = math.radians(45.0)  # estimate: the S20's fixed camera
 CRUISE = 1.0  # metres above the floor
 SPEED, TURN = 0.4, 0.55  # m/s and rad/s, the same as swarm/search.py
 DWELL_S = 2.0
+DEMO_WORLDS = ("demo", "plain")
 ROOM_PADS = {"1": (-1.2, -0.8), "2": (-1.2, 0.0), "3": (-1.2, 0.8)}
 
 

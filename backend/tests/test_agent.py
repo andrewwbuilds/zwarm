@@ -346,7 +346,7 @@ class StopRaceTests(unittest.TestCase):
         now = [0.0]
 
         def slow(messages, tools):
-            now[0] += 40.0
+            now[0] += 30.0
             return use(call("get_status"))
 
         fleet, client, agent = fleet_agent("mapping", slow, slow, slow, slow, slow, clock=lambda: now[0])

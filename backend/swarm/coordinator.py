@@ -560,6 +560,7 @@ class Coordinator:
                     d.fault("land", "landing was sent blind and touchdown was not seen; check it by eye")
                     d.phase = Phase.GROUND
                     d.unknown_air = d.came_down = True
+                    d.down_at = now
                     self._forget_requests(d)
                 else:
                     d.fault("land", "landing was sent but it's still in the air, so the packet was probably lost. "

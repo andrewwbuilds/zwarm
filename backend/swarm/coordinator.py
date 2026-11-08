@@ -172,6 +172,11 @@ class Coordinator:
                  airframe: Airframe | None = None, visible=None, tracker=None):
         self.room = room
         self.tracker = tracker  # an InsideOutTracker, told what each drone was commanded to do
+        if tracker is not None:
+            # Positions come from tags on the floor, and furniture hides them from above as well as from the side.
+            room.fly_around = True
+            room.version += 1
+            tracker.room = room
         self.visible = visible  # whether the tracker can see a given point; None means it always can
         self.limits = limits or Limits()
         self.airframe = airframe or Airframe()

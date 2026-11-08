@@ -115,11 +115,54 @@ class CameraGeometryTests(unittest.TestCase):
 
     def test_what_a_level_camera_sees(self):
         p = (0.0, 0.0, 1.0)
-        self.assertTrue(in_view(p, 0.0, (2.0, 0.0, 1.0))[0])
-        self.assertFalse(in_view(p, 0.0, (-2.0, 0.0, 1.0))[0], "behind")
-        self.assertFalse(in_view(p, 0.0, (5.0, 0.0, 1.0))[0], "too far")
-        self.assertFalse(in_view(p, 0.0, (0.5, 0.0, 0.0))[0], "under the bottom of the picture")
-        self.assertTrue(in_view(p, 0.0, (2.5, 0.0, 0.1))[0], "floor further off")
+        self.assertTrue(in_view(p, 0.0, (2.0, 0.0, 1.0), tilt=0.0)[0])
+        self.assertFalse(in_view(p, 0.0, (-2.0, 0.0, 1.0), tilt=0.0)[0], "behind")
+        self.assertFalse(in_view(p, 0.0, (5.0, 0.0, 1.0), tilt=0.0)[0], "too far")
+        self.assertFalse(in_view(p, 0.0, (0.5, 0.0, 0.0), tilt=0.0)[0], "under the bottom of the picture")
+        self.assertTrue(in_view(p, 0.0, (2.5, 0.0, 0.1), tilt=0.0)[0], "floor further off")
+
+    def test_what_a_tilted_camera_sees(self):
+        p = (0.0, 0.0, 1.0)
+        self.assertTrue(in_view(p, 0.0, (1.0, 0.0, 0.0))[0], "straight down its axis")
+        self.assertTrue(in_view(p, 0.0, (0.5, 0.0, 0.0))[0], "floor close in, which a level camera misses")
+        self.assertFalse(in_view(p, 0.0, (0.1, 0.0, 0.0))[0], "under the bottom of the picture")
+        self.assertFalse(in_view(p, 0.0, (2.0, 0.0, 1.0))[0], "level ahead is above the top of the picture")
+        self.assertFalse(in_view(p, 0.0, (-1.0, 0.0, 0.0))[0], "behind")
+        self.assertTrue(in_view(p, math.pi / 2, (0.0, 1.0, 0.0))[0], "turned left")
+
+    def test_the_axis_of_a_tilted_camera_points_down_and_forward(self):
+        np.testing.assert_allclose(ray(0.0, DEFAULT_TILT, 0.0, 0.0), (math.sqrt(0.5), 0.0, -math.sqrt(0.5)), atol=1e-9)
+        np.testing.assert_allclose(ray(math.pi / 2, DEFAULT_TILT, 0.0, 0.0), (0.0, math.sqrt(0.5), -math.sqrt(0.5)), atol=1e-9)
+        np.testing.assert_allclose(ray(0.0, 0.0, 0.0, 0.0), (1.0, 0.0, 0.0), atol=1e-9)
+
+    def test_camera_angles_and_room_directions_agree(self):
+        offset = np.array([1.2, -0.7, -0.9])
+        for yaw, tilt in [(0.0, 0.0), (0.7, DEFAULT_TILT), (-2.0, math.radians(30))]:
+            axis, left, up = (float(v) for v in to_camera(offset, yaw, tilt))
+            bearing, elevation = math.atan2(left, axis), math.atan2(up, math.hypot(axis, left))
+            np.testing.assert_allclose(ray(yaw, tilt, bearing, elevation), offset / np.linalg.norm(offset), atol=1e-9)
+
+    def test_the_floor_ray_beats_a_bad_range_guess(self):
+        p = (0.0, 0.0, 1.0)
+        size = (0.4, 0.4, 0.5)
+        foot = (0.0, 0.0)  # straight down the axis: the floor 1 m ahead
+        where = locate(p, 0.0, Detection("backpack", 0.0, 0.0, 1.9, size, 0.9, foot=foot))
+        np.testing.assert_allclose(where, (1.2, 0.0, 0.25), atol=1e-9)
+
+    def test_a_floor_ray_far_from_the_size_guess_is_not_believed(self):
+        p = (0.0, 0.0, 1.0)
+        detection = Detection("cup", 0.0, 0.0, 0.5, (0.1, 0.1, 0.1), 0.9, foot=(0.0, math.radians(-25.0)))
+        np.testing.assert_allclose(locate(p, 0.0, detection), np.array(p) + 0.5 * ray(0.0, DEFAULT_TILT, 0.0, 0.0), atol=1e-9)
+
+    def test_a_ray_that_never_reaches_the_floor_falls_back(self):
+        p = (0.0, 0.0, 1.0)
+        detection = Detection("cup", 0.0, 0.0, 2.0, (0.1, 0.1, 0.1), 0.9, foot=(0.0, math.radians(50.0)))
+        np.testing.assert_allclose(locate(p, 0.0, detection), np.array(p) + 2.0 * ray(0.0, DEFAULT_TILT, 0.0, 0.0), atol=1e-9)
+
+    def test_tilts_come_from_the_swarm_file(self):
+        tilts = camera_tilts({"drones": [{"id": "1", "camera_tilt_deg": 30}, {"id": 2}]})
+        self.assertEqual(list(tilts), ["1"])
+        self.assertAlmostEqual(tilts["1"], math.radians(30))
 
     def test_blocked_lines(self):
         lo, hi = (1.0, -0.5, 0.0), (2.0, 0.5, 1.0)

@@ -89,7 +89,7 @@ The console's HOLD, LAND and E-STOP end the mission as well as the moves, and wo
 | `YOLO_WEIGHTS` | No | Path to other detector weights. The default is `yolov10n.pt` |
 
 ## Status
-Checked on 2026-11-08 at commit `f151660`. Real and simulated results stay apart here because the simulated flight controller and camera are estimates.
+Checked on 2026-11-08 at commit `da36383`. Real and simulated results stay apart here because the simulated flight controller and camera are estimates.
 
 ### Real drones
 Zwarm has never flown a real drone. When last checked:

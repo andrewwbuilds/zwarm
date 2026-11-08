@@ -208,7 +208,7 @@ def render_flights(folder: Path, seconds: float, layout: str, world: str = "demo
 
 def align(model: np.ndarray, truth: np.ndarray) -> tuple[float, np.ndarray]:
     """Scale, rotate and shift model points onto the truth. Returns (scale, aligned points)."""
-    rotation, scale, offset, _ = fleet.fit_to_room(model, truth)
+    rotation, scale, offset, _ = fleet.fit_to_room(model, truth)  # robust, so a few wild cameras show up as outliers
     return scale, scale * model @ rotation.T + offset
 
 

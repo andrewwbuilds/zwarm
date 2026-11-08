@@ -284,6 +284,7 @@ class Coordinator:
             d.landing_requested = d.land_here_wanted = False
             if d.phase == Phase.AIR:
                 self._set_goal(d, d.tracked.p.copy())
+        self.hold_checks()
         self.takeoff_queue.clear()
 
     def land(self, now: float | None = None) -> None:

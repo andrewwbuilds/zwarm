@@ -287,6 +287,7 @@ function parseFinding(v: unknown): Finding | null {
     confidence: num(f.confidence),
     status: isFindingStatus(f.status) ? f.status : "pending",
     target: text(f.target),
+    views: num(f.views) ?? 1,
   };
 }
 

@@ -519,7 +519,7 @@ class JoiningTests(unittest.TestCase):
         folder = self.folder / "colmap" / "sparse" / str(index)
         folder.mkdir(parents=True)
         self.lines[str(index)] = (camera_lines, scale * where)
-        self.models[str(index)] = count
+        self.models[str(index)] = keep
         drone_dir = self.folder / "drones" / drone
         (drone_dir / "raw").mkdir(parents=True, exist_ok=True)
         (drone_dir / "raw" / raw_name(0, 0)).write_bytes(jpeg(index))

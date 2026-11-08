@@ -385,6 +385,19 @@ class StopButtons(unittest.TestCase):
         self.assertTrue(f.run(90.0, lambda s: all(d["phase"] == "ground" for d in s["drones"])))
 
 
+class HoverHeight(unittest.TestCase):
+    def test_a_first_fix_during_the_climb_doesnt_set_the_hover_height(self):
+        """Seen on floor tags: a first reading at 0.4 m sent a drone down to 0.4 m after its check, where it lost the tags."""
+        f = Flight(self)
+        plan = f.say("take off")["plan"]
+        f.http.post(f"/zwarm/plan/{plan['id']}/approve")
+        drones = f.zw.hub.co.drones
+        self.assertTrue(f.run(30.0, lambda s: drones["1"].check is not None))
+        drones["1"].check.home[2] = 0.4
+        self.assertTrue(f.run(60.0, lambda s: s["drones"][0]["phase"] == "air"))
+        self.assertGreater(float(drones["1"].goal[2]), 0.8)
+
+
 class TheRealLoop(unittest.TestCase):
     def test_runtime_thread_ticks_the_hub_and_missions(self):
         d = tempfile.TemporaryDirectory()

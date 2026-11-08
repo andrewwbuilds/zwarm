@@ -413,6 +413,7 @@ class Agent:
             left = deadline - self.clock()
             if left <= 0:
                 break
+            tools = self.box.schemas(READ_ONLY if turn.read_findings else None)
             try:
                 reply = self.client.complete(messages, tools, budget_s=min(left, getattr(self.client, "budget_s", left)))
             except NemotronError as error:

@@ -473,7 +473,9 @@ async def lifespan(app: FastAPI):
     except (TypeError, ValueError):
         control_rate = default_control_rate
 
-    flight_controller = FlightController(model, rc_proto, control_rate)
+    stabilizer_service = stabilizing.StabilizerService(stabilizing.from_env())
+    stabilizer_service.start()
+    flight_controller = FlightController(model, rc_proto, control_rate, stabilizer=stabilizer_service.stabilizer)
     flight_controller.start()
 
     # 3. Plugins (optional)

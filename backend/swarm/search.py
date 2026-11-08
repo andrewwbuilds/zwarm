@@ -79,11 +79,18 @@ class Coverage:
         yaws = [i * math.pi / 4 for i in range(8)]
         self.candidates = np.array([p for p in places for _ in yaws]).reshape(-1, 3)
         self.candidate_yaws = np.array([yaw for _ in places for yaw in yaws])
-        self.sees = np.array([self._view(p, yaw) for p, yaw in zip(self.candidates, self.candidate_yaws)]).reshape(
-            len(self.candidates), len(self.cells))
+        self.sees = {tilt: np.array([self._view(p, yaw, tilt) for p, yaw in zip(self.candidates, self.candidate_yaws)]).reshape(
+            len(self.candidates), len(self.cells)) for tilt in self.tilts}
 
-    def look(self, p, yaw: float) -> None:
-        self.counts[self._view(p, yaw)] += 1
+    def _reachable(self) -> np.ndarray:
+        reachable = np.zeros(len(self.cells), bool)
+        for sees in self.sees.values():
+            if len(sees):
+                reachable |= sees.any(axis=0)
+        return reachable
+
+    def look(self, p, yaw: float, tilt: float = DEFAULT_TILT) -> None:
+        self.counts[self._view(p, yaw, tilt)] += 1
 
     def obstacle_appeared(self, lo, hi) -> None:
         """Whatever was behind this was counted as seen when it wasn't, so those patches go back on the list."""

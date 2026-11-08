@@ -245,6 +245,7 @@ class MockSwarm {
         state: running.state,
         region: running.region,
         target: running.target,
+        reason: null,
         shareSeen: this.share(),
         elapsedS: (performance.now() - running.t0) / 1000,
         tasks,

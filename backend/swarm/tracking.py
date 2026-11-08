@@ -42,8 +42,16 @@ MAX_READ_RANGE_M = 4.0  # no real sighting is further than this; see read_range.
 READABLE_M = 1.8  # straight-line distance a tag is counted on being read from, from 1 m up
 
 
-def marker_image(marker_id: int, pixels: int = 800) -> np.ndarray:
-    return cv2.aruco.generateImageMarker(cv2.aruco.getPredefinedDictionary(DICTIONARY), marker_id, pixels)
+def tag_image(tag_id: int, cell_pixels: int = 40, margin_cells: int = 2) -> np.ndarray:
+    """A printed tag as the simulator draws it, with white paper around the whole 9-cell tag."""
+    cells = TOTAL_CELLS + 2 * margin_cells
+    image = np.full((cells, cells), 255, np.uint8)
+    rows = TAGS[tag_id]
+    for r in range(TOTAL_CELLS):
+        for c in range(TOTAL_CELLS):
+            if rows[r * TOTAL_CELLS + c] == "#":
+                image[margin_cells + r, margin_cells + c] = 0
+    return cv2.resize(image, None, fx=cell_pixels, fy=cell_pixels, interpolation=cv2.INTER_NEAREST)
 
 
 def local_corners(size: float) -> np.ndarray:

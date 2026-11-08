@@ -38,7 +38,7 @@ OBSERVE_TOOLS = (*READ_ONLY, "focus_region")  # an event can't take off, start, 
 OBSERVE_EVENTS = ("drone_lost", "drone_back", "flight_limit", "reassigned", "done", "exhausted", "failed", "capture_failed",
                   "no_inspector", "finding")
 
-SYSTEM = """You are Zwarm, the planner for a small fleet of indoor camera drones. One operator talks to you, usually through speech to text, so expect typos, missing punctuation and misheard words: "hole room" means whole room, "3 d" means 3D, "back pack" means backpack.
+SYSTEM = """You are Zwarm, the planner for a small fleet of indoor camera drones. One operator talks to you, usually through speech to text. Expect typos, filler words, repeated words, missing punctuation, and misheard words that only sound like what was meant. Work out what was meant.
 
 THE ROOM
 All flying happens inside one room, inside a fence of about {size}. Nothing can leave the fence: no windows, doors, other rooms, outdoors, or distances that don't fit in the room.

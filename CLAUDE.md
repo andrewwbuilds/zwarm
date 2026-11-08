@@ -1,6 +1,6 @@
 # ZWARM
 
-Host software for cheap Wi-Fi camera drones with closed firmware (fork of turbodrone). Python backend, React console, a physics simulator of the S20, visual SLAM, 3D mapping, and a fleet of Raspberry Pi gateways. See `README.md` for what it does and `docs/decisions/` for why.
+One person talks to three cheap Wi-Fi camera drones with closed firmware, and NVIDIA Nemotron turns the sentences into missions (fork of turbodrone). Python backend, React console, a physics simulator of the S20, visual SLAM, 3D mapping, and a fleet of Raspberry Pi gateways. `README.md` says what it does, how to run it and what's broken today. `docs/decisions/` says why, starting with `0002-zwarm-architecture.md`.
 
 ## Layout
 

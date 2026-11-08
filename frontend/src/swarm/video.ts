@@ -36,9 +36,8 @@ export class VideoFeeds {
   }
 
   start(): void {
-    if (this.running) return;
-    this.running = true;
-    void this.step();
+    this.loop += 1;
+    void this.step(this.loop);
   }
 
   stop(): void {

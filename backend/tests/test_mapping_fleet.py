@@ -504,7 +504,8 @@ class JoiningTests(unittest.TestCase):
         if warp:
             placed[:, 0] = np.abs(where[:, 0] - np.mean(x_range)) * warp
         camera_lines, tracked_lines = [], []
-        for i in range(count):
+        keep = count if first is None else first
+        for i in range(keep):
             name, raw = f"{drone}/{i + 1:05d}.jpg", f"{drone}-{i}.jpg"
             self.sources[name] = raw
             r = self.world_to_camera(i * 0.7)

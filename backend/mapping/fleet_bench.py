@@ -332,9 +332,9 @@ def main() -> int:
     parser.add_argument("--splat", action="store_true", help="in --live, also train a splat")
     args = parser.parse_args()
     if args.live:
-        root = Path(args.root) / "live-root"
+        root = Path(args.root) / (args.name or "live-root")
         shutil.rmtree(root, ignore_errors=True)
-        print("sim:", json.dumps(live(root, args.seconds, args.rate, args.splat), indent=1))
+        print("sim:", json.dumps(live(root, args.seconds, args.rate, args.splat, args.track_noise >= 0), indent=1))
         return 0
     name = args.name or f"{args.layout}-{int(args.seconds)}s"
     folder = Path(args.root) / name

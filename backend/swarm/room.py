@@ -121,7 +121,7 @@ class Room:
         p = np.asarray(p, float)
         best = float(min(np.min(p[:2] - self.lo[:2]), np.min(self.hi[:2] - p[:2]), self.hi[2] - p[2]))
         for obstacle in self.obstacles.values():
-            lo, hi = np.array(obstacle.lo), np.array(obstacle.hi)
+            lo, hi = self.flight_box(obstacle)
             outside = np.maximum(np.maximum(lo - p, p - hi), 0.0)
             distance = float(np.linalg.norm(outside))
             if distance == 0.0:

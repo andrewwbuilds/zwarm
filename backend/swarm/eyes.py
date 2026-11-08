@@ -55,22 +55,60 @@ class Eyes(Protocol):
         ...
 
 
-def locate(p, yaw: float, detection: Detection) -> np.ndarray:
-    """Where a detection is in the room, given the drone's pose."""
-    heading = yaw + detection.bearing
-    flat = detection.range * math.cos(detection.elevation)
-    return np.asarray(p, float) + np.array([flat * math.cos(heading), flat * math.sin(heading),
-                                            detection.range * math.sin(detection.elevation)])
+def camera_tilts(swarm_file: dict) -> dict[str, float]:
+    """Per-drone camera tilts from a swarm file's "camera_tilt_deg", in radians."""
+    return {str(d["id"]): math.radians(float(d["camera_tilt_deg"])) for d in swarm_file.get("drones", ()) if "camera_tilt_deg" in d}
 
 
-def in_view(p, yaw: float, targets, reach: float = REACH, margin: float = 0.0) -> np.ndarray:
-    """Which target points are inside the picture of a level camera at p."""
+def to_camera(offset, yaw, tilt: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """A room-frame offset as (along the camera axis, to its left, above it)."""
+    offset = np.asarray(offset, float)
+    x, y, z = offset[..., 0], offset[..., 1], offset[..., 2]
+    forward = x * np.cos(yaw) + y * np.sin(yaw)
+    left = -x * np.sin(yaw) + y * np.cos(yaw)
+    return forward * math.cos(tilt) - z * math.sin(tilt), left, forward * math.sin(tilt) + z * math.cos(tilt)
+
+
+def ray(yaw: float, tilt: float, bearing: float, elevation: float) -> np.ndarray:
+    """The room-frame unit direction of a camera-frame angle."""
+    axis = math.cos(elevation) * math.cos(bearing)
+    left = math.cos(elevation) * math.sin(bearing)
+    up = math.sin(elevation)
+    forward = axis * math.cos(tilt) + up * math.sin(tilt)
+    return np.array([forward * math.cos(yaw) - left * math.sin(yaw), forward * math.sin(yaw) + left * math.cos(yaw),
+                     -axis * math.sin(tilt) + up * math.cos(tilt)])
+
+
+def _on_floor(p, yaw: float, tilt: float, detection: Detection) -> np.ndarray | None:
+    """Where a thing's middle is, from the ray to its foot, or None if that ray isn't believable."""
+    direction = ray(yaw, tilt, *detection.foot)
+    if p[2] <= 0.0 or direction[2] > -0.05:
+        return None
+    distance = -p[2] / direction[2]
+    if detection.range > 0.0 and not 1 / FLOOR_RAY_LIMIT <= distance / detection.range <= FLOOR_RAY_LIMIT:
+        return None
+    flat = direction[:2] / np.linalg.norm(direction[:2])
+    middle = p[:2] + direction[:2] * distance + flat * min(detection.size[0], detection.size[1]) / 2
+    return np.array([middle[0], middle[1], detection.size[2] / 2])
+
+
+def locate(p, yaw: float, detection: Detection, tilt: float = DEFAULT_TILT) -> np.ndarray:
+    """Where a detection is in the room, given the drone's pose and its camera's tilt."""
+    p = np.asarray(p, float)
+    if detection.foot is not None:
+        where = _on_floor(p, yaw, tilt, detection)
+        if where is not None:
+            return where
+    return p + detection.range * ray(yaw, tilt, detection.bearing, detection.elevation)
+
+
+def in_view(p, yaw, targets, reach: float = REACH, margin: float = 0.0, tilt: float = DEFAULT_TILT) -> np.ndarray:
+    """Which target points are inside the picture of a camera at p, tilted down by tilt."""
     offset = np.atleast_2d(targets) - np.asarray(p, float)
-    flat = np.hypot(offset[:, 0], offset[:, 1])
-    bearing = (np.arctan2(offset[:, 1], offset[:, 0]) - yaw + math.pi) % (2 * math.pi) - math.pi
-    elevation = np.arctan2(offset[:, 2], flat)
-    return ((np.linalg.norm(offset, axis=1) <= reach) & (np.abs(bearing) <= HFOV / 2 - margin)
-            & (np.abs(elevation) <= VFOV / 2 - margin / 2))
+    axis, left, up = to_camera(offset, yaw, tilt)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return ((axis > 0.0) & (np.linalg.norm(offset, axis=-1) <= reach)
+                & (np.abs(left / axis) <= math.tan(HFOV / 2 - margin)) & (np.abs(up / axis) <= math.tan(VFOV / 2 - margin / 2)))
 
 
 def blocked(a, b, lo, hi) -> np.ndarray:

@@ -499,7 +499,7 @@ def demo_world(seed: int = 11) -> DemoWorld:
     edge = TAG_WIDTH_M * INNER_CELLS / TOTAL_CELLS
     anchors = {a.id: a for a in grid_layout((-2.5, -2.0), (2.5, 2.0), TAG_SPACING_M, edge) if clear(a)}
     scene = DecalScene(name="zwarm-demo", bounds=Box(FENCE[0], FENCE[1], "wall"), floor_material="concrete", boxes=boxes,
-                       decals=(paint[0], *anchor_decals(anchors), *paint[1:]))
+                       decals=(floor, *anchor_decals(anchors), *marks))
     return DemoWorld(scene, dict(PADS), FENCE, tuple(Obstacle(name, box.lo, box.hi) for name, box in furniture.items()),
                      tuple(Item(label, box.lo, box.hi) for label, box in hidden), anchors, damage)
 

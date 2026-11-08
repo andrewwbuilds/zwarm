@@ -65,6 +65,13 @@ class Tracked:
     def age(self, now: float) -> float:
         return math.inf if self.t is None else now - self.t
 
+    def seen_drop(self, window: float) -> float:
+        """How far the last sightings came down, over this many seconds before they stopped. Estimates don't count."""
+        if not self.seen_log:
+            return 0.0
+        last_t, last_z = self.seen_log[-1]
+        return max(z for t, z in self.seen_log if last_t - t <= window) - last_z
+
     def now(self, now: float) -> np.ndarray:
         """Position extrapolated to this moment, at most a short way."""
         return self.p + self.v * min(max(self.age(now), 0.0), 0.3)

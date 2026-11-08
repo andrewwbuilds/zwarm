@@ -115,7 +115,10 @@ def unseen_boxes(seed):
             f.say(f"drone {name} go to 3 {y}")
         yield from f.until(lambda: all(np.linalg.norm(d.tracked.p[:2] - np.array([3.0, y])) < 0.3
                                        for d, y in zip(f.co.drones.values(), (-1.5, 0.0, 1.5))), 120.0, "arriving past the boxes")
-        f.check(len(f.memory.obstacles()) == 3, f"expected to know 3 boxes, knew {len(f.memory.obstacles())}")
+        for label, box in boxes:
+            center = (np.array(box.lo[:2]) + np.array(box.hi[:2])) / 2
+            f.check(any(t.label == label and np.linalg.norm(t.p[:2] - center) < 0.6 for t in f.memory.obstacles()),
+                    f"the {label} isn't on the map where it really is")
         yield from f.down()
     return f, script()
 

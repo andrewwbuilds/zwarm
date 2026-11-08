@@ -27,9 +27,9 @@ import numpy as np
 from mapping import fleet
 from mapping.curate import raw_name
 from mapping.fleet import read_cameras
-from sim.camera import SIZES, Camera, Pose, VideoEncoder
+from sim.camera import HEIGHT, SIZES, WIDTH, Camera, Pose, VideoEncoder
 from sim.scenes import SCENES
-from swarm.sim_cameras import DecalCamera, demo_world
+from swarm.sim_cameras import DecalCamera, SimFrames, StillFleet, demo_world
 
 FPS = 17.6  # measured from the S20, see sim/camera.py
 TILT = math.radians(45.0)  # estimate: the S20's fixed camera

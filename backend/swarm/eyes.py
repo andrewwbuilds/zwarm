@@ -220,12 +220,14 @@ class SimEyes:
         if self.rng.random() > chance:
             return None
         range_bias, bearing_bias = self._bias(drone_id, key)
-        bearing = math.atan2(offset[1], offset[0]) - yaw + bearing_bias + self.rng.gauss(0.0, math.radians(1.0))
-        elevation = math.atan2(offset[2], math.hypot(offset[0], offset[1])) + self.rng.gauss(0.0, math.radians(1.0))
+        bearing, elevation = self._angles(offset, yaw, tilt, bearing_bias)
         distance = max(0.2, true_range * (1.0 + range_bias + self.rng.gauss(0.0, 0.06)))
         seen_size = tuple(float(s) * (1.0 + self.rng.gauss(0.0, 0.08)) for s in size)
+        foot_angles = None
+        if foot is not None and self._visible(cam, yaw, tilt, foot, skip=skip):
+            foot_angles = self._angles(foot - cam, yaw, tilt, bearing_bias)
         return Detection(label, bearing, elevation, distance, seen_size,
-                         min(0.99, max(0.41, confidence + self.rng.gauss(0.0, 0.05))))
+                         min(0.99, max(0.41, confidence + self.rng.gauss(0.0, 0.05))), foot=foot_angles)
 
     def look(self, drone_id: str, now: float) -> list[Detection] | None:
         if drone_id in self.blind:

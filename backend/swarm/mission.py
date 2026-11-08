@@ -321,7 +321,7 @@ class _Later:
 
     def __init__(self):
         self.jobs: queue.SimpleQueue = queue.SimpleQueue()
-        self.thread: threading.Thread | None = None
+        threading.Thread(target=self._run, daemon=True, name="mission-later").start()
 
     def __call__(self, job, *args) -> None:
         self.jobs.put((job, args))

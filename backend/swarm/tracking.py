@@ -318,9 +318,22 @@ def solve_fix(seen: list[tuple[Anchor, np.ndarray]], lens: Lens, tilt: float, t:
                tuple(anchor.id for anchor, _ in seen), range_m, reprojection, sigma_xy, sigma_z, sigma_yaw)
 
 
+def _in_the_way(camera: np.ndarray, corners: np.ndarray, blockers) -> bool:
+    """Whether a box hides any corner of a tag. Half a tag reads as no tag."""
+    for lo, hi in blockers:
+        along = corners - camera
+        with np.errstate(divide="ignore", invalid="ignore"):
+            low, high = (lo - camera) / along, (hi - camera) / along
+        enter = np.maximum(np.nanmax(np.minimum(low, high), axis=1), 0.0)
+        leave = np.minimum(np.nanmin(np.maximum(low, high), axis=1), 1.0)
+        if np.any(enter <= leave):
+            return True
+    return False
+
+
 def anchors_in_view(anchors: dict[str, Anchor], lens: Lens, tilt: float, p, yaw: float, max_range: float = READABLE_M,
-                    margin_px: float = 20.0) -> list[str]:
-    """Which anchors should be fully in view and readable from a pose, by geometry alone."""
+                    margin_px: float = 20.0, blockers=()) -> list[str]:
+    """Which anchors should be fully in view and readable from a pose, by geometry alone. blockers are (lo, hi) boxes that hide them."""
     cos_y, sin_y = math.cos(yaw), math.sin(yaw)
     cos_t, sin_t = math.cos(tilt), math.sin(tilt)
     nose = np.array([cos_y, sin_y, 0.0])

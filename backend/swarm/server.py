@@ -104,8 +104,7 @@ class Runtime:
             if first and flying:
                 logger.warning("[swarm] shutting down with drones in the air: landing them where they are")
                 self.co.land_here()
-        deadline = time.monotonic() + SHUTDOWN_LAND_S
-        while flying and time.monotonic() < deadline:
+        while flying and time.monotonic() < self.land_by:
             time.sleep(0.2)
             with self.lock:
                 flying = self.airborne()

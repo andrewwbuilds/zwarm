@@ -122,7 +122,8 @@ def pads_for(world: str) -> dict:
     return dict(demo_world().pads) if world == "demo" else dict(ROOM_PADS)
 
 
-def make_camera(world: str, walls: str, scale: float, seed: int) -> Camera:
+def make_camera(world: str, walls: str, scale: float, seed: int, fov_deg: float = 90.0) -> Camera:
+    fov = math.radians(fov_deg)
     if world == "demo":
         scene = demo_world().scene
         return DecalCamera(scene, scene.decals, render_scale=scale, seed=seed)

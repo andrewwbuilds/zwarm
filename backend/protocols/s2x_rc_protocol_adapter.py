@@ -16,6 +16,8 @@ class S2xRCProtocolAdapter(BaseProtocolAdapter):
         self.debug_packets = False
         self.packet_counter = 0
         self.swap_yaw_roll = False
+        self.link_quality = None
+        self.link_quality_at = -float("inf")
         # Stock Macrochip HY packets scale roll/pitch for app speed tiers.
         # Keep full-scale as the default so existing S2X behavior is unchanged.
         self.speed_scale_by_index = {

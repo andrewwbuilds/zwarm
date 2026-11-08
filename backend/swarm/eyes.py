@@ -201,7 +201,19 @@ class SimEyes:
                 clear &= ~blocked(cam, lines, box.lo, box.hi)
         return bool(clear.any())
 
-    def _report(self, drone_id, key, cam, yaw, label, center, size, confidence) -> Detection | None:
+    @staticmethod
+    def _foot(cam, center, floor: float, half_depth: float) -> np.ndarray:
+        """The middle of the near edge of its base: what the bottom centre of a detector's box lands on."""
+        toward = cam[:2] - center[:2]
+        toward = toward / max(float(np.linalg.norm(toward)), 1e-6)
+        return np.array([*(center[:2] + toward * half_depth), floor])
+
+    def _angles(self, offset, yaw, tilt, bias: float) -> tuple[float, float]:
+        axis, left, up = (float(v) for v in to_camera(offset, yaw, tilt))
+        return (math.atan2(left, axis) + bias + self.rng.gauss(0.0, math.radians(1.0)),
+                math.atan2(up, math.hypot(axis, left)) + self.rng.gauss(0.0, math.radians(1.0)))
+
+    def _report(self, drone_id, key, cam, yaw, tilt, label, center, size, confidence, foot=None, skip=None) -> Detection | None:
         offset = center - cam
         true_range = float(np.linalg.norm(offset))
         chance = 0.95 if true_range < 1.5 else 0.95 - 0.35 * (true_range - 1.5) / (REACH - 1.5)

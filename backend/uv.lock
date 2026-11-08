@@ -1563,6 +1563,7 @@ dependencies = [
     { name = "scipy" },
     { name = "starlette" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "websockets" },
 ]
 
 [package.optional-dependencies]

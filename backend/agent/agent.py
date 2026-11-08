@@ -370,7 +370,7 @@ class Agent:
             self._use_all(turn, reply.tool_calls, messages)
             if turn.epoch != self._epoch:
                 return self._dropped(turn)
-        final = final or self._results_in_words(turn) or "I don't have an answer for that, so I did nothing."
+        final = (final or self._results_in_words(turn) or "I don't have an answer for that, so I did nothing.")[:MAX_REPLY]
         if turn.plan is not None and "approv" not in final.lower():
             final += " It is waiting for your approval."
         with self._state:

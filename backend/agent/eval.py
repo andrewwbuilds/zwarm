@@ -341,7 +341,7 @@ class CountingClient:
 def run_item(item: dict, client) -> dict:
     fleet = FakeFleet(item.get("setup", "ground"))
     counting = CountingClient(client)
-    agent = fleet.agent(counting)
+    agent = fleet.agent(counting, turn_budget_s=300.0)
     started = time.monotonic()
     answer = agent.handle(item["text"])
     problems = judge(item, answer, fleet, counting.calls)

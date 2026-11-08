@@ -237,6 +237,10 @@ class BuildNameTests(unittest.TestCase):
         self.capture.forget_empty()
         self.assertEqual((self.capture.status()["name"], self.capture.status()["state"]), ("good", "done"))
 
+    def test_a_stuck_step_is_stopped_and_can_be_built_again(self):
+        with tempfile.TemporaryDirectory() as d, self.assertRaisesRegex(StepFailed, "stopped after"):
+            run(["sleep", "30"], Path(d) / "step.log", timeout_s=0.2)
+
     def test_a_landed_drones_frames_arent_saved(self):
         frames = FakeFrames(("a", "b"))
         capture = FleetCapture(frames, self.root, drones=["a", "b"], flying=lambda drone: drone == "a")

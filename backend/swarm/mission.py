@@ -1275,6 +1275,8 @@ class MissionManager:
     def _task_text(self, d, now: float) -> str:
         words = {Phase.GROUND: "on the ground", Phase.TAKEOFF: "taking off", Phase.CHECK: "checking its response",
                  Phase.LANDING: "landing", Phase.STOPPED: "motors cut"}
+        if d.phase == Phase.CHECK and d.check_held:
+            return "holding, with its response check paused"
         if d.phase != Phase.AIR:
             return words[d.phase]
         if d.landing_requested:

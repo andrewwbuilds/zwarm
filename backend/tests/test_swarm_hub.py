@@ -188,6 +188,7 @@ class CommandTests(unittest.TestCase):
         ("what have you seen?", "list"), ("what's in the room", "list"), ("what do you remember", "list"),
         ("help", "help"), ("line up", "form"), ("form a ring", "form"), ("make a circle", "form"), ("spread out", "form"),
         ("forget everything", "forget"),
+        ("Stop and land.", "land"), ("come back and land", "land"), ("bring them down", "land"), ("stop and land here", "land_here"),
     ]
 
     def test_verbs(self):

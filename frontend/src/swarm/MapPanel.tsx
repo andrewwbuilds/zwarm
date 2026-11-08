@@ -62,9 +62,16 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
     <section className={big ? "zw-3d zw-3d-big" : "zw-3d"} aria-label="3D map">
       <header>
         <h2>3D map</h2>
-        <button type="button" className="zw-btn zw-btn-small" disabled={building} onClick={() => void build()}>
-          {building ? "Building" : "Build map"}
-        </button>
+        <span className="zw-3d-actions">
+          {cloud && (
+            <button type="button" className="zw-btn zw-btn-small" onClick={() => setBig(!big)}>
+              {big ? "Smaller" : "Enlarge"}
+            </button>
+          )}
+          <button type="button" className="zw-btn zw-btn-small" disabled={building} onClick={() => void build()}>
+            {building ? "Building" : "Build map"}
+          </button>
+        </span>
       </header>
       <div className="zw-3d-view">
         {cloud

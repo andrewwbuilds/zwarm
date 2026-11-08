@@ -32,6 +32,7 @@ from swarm.tracking import DroneOptics, InsideOutTracker
 
 MISSION_LIMIT = 260.0  # simulated seconds for a mission to finish, inside the 270 s flight limit
 COVERED = 0.95  # the share of a region's visible floor that counts as covered
+DEMO_VIDEO_HZ = 5.0  # what `python -m zwarm sim` renders at. A real S20 sends more, which only helps
 
 
 class FakeCapture:

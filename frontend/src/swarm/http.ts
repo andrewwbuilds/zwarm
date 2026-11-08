@@ -20,6 +20,7 @@ const PHOTO_TIMEOUT_MS = 4000;
 const POINTS_TIMEOUT_MS = 20000;
 const CHAT_TIMEOUT_MS = 60000;
 const ACTION_TIMEOUT_MS = 5000;
+const PLAN_TIMEOUT_MS = 15000;
 const SAFETY_TIMEOUT_MS = 1000;
 
 export function resolveApiBase(param: string | null): string {

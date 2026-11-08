@@ -432,8 +432,9 @@ def check_against_room(cameras: dict, tracked: dict) -> dict | None:
     where = np.array([tracked[n] for n in names], float)
     if np.ptp(where[:, :2], axis=0).max() < 0.5:  # a hover can't fix a rotation
         return None
-    rotation, scale, offset, error = fit_to_room(placed, where)
-    return {"photos": len(names), "median_error_m": round(error, 3), "rotation": rotation, "scale": scale, "offset": offset}
+    rotation, scale, offset, errors = fit_to_room(placed, where)
+    return {"photos": len(names), "median_error_m": round(float(np.median(errors)), 3), "agrees": round(float((errors <= ROOM_FIT_LIMIT_M).mean()), 3),
+            "rotation": rotation, "scale": scale, "offset": offset}
 
 
 # ---------------------------------------------------------------- the build

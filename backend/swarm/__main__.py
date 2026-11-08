@@ -189,6 +189,12 @@ def cmd_bench(args) -> int:
     return main(args.rest)
 
 
+def cmd_floor_bench(args) -> int:
+    from swarm.floor_bench import main
+
+    return main(args.rest)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="python -m swarm", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)

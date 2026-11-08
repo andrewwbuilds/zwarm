@@ -45,7 +45,7 @@ RATE_PER_MINUTE = 36  # NVIDIA allows about 40 a minute per model
 DEAD_MODEL_S = 600.0  # a model that answered 404 or 403 isn't tried again for this long
 OFFLINE_S = 20.0  # after every model failed, fail at once for this long so commands stay fast
 
-_THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+_THINK = re.compile(r"<think>.*?(?:</think>|$)|^.*?</think>", re.DOTALL | re.IGNORECASE)
 _INLINE_CALL = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
 
 

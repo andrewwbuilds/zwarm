@@ -167,8 +167,10 @@ class SimEyes:
         self.walkers = list(walkers)
         self.rng = random.Random(seed * 7919 + 13)
         self.false_rate = false_rate  # chance per look of a one-frame detection of nothing
+        self.tilts = tilts or {}
         self.blind: set[str] = set()
         self.biases: dict[tuple[str, int], tuple[float, float]] = {}
+        self.mount_errors: dict[str, float] = {}
 
     def knows(self, label: str) -> bool:
         return label in LABELS

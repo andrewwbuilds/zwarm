@@ -593,7 +593,7 @@ class InsideOutTracker:
     def expected(self, drone_id: str, height: float = 1.0) -> list[str]:
         """The anchors this drone should see hovering over its pad."""
         d = self.drones[drone_id]
-        return anchors_in_view(self.anchors, d.lens or Lens.from_fov(), math.radians(d.tilt_deg), (d.x, d.y, height), d.yaw)
+        return anchors_in_view(self.anchors, d.lens or Lens.from_fov(), math.radians(d.tilt_deg), (d.x, d.y, height), d.yaw, blockers=self.blockers())
 
     def _change_now(self, drone_id: str, now: float) -> float | None:
         """video_change for code already holding the lock."""

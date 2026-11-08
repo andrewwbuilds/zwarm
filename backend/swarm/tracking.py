@@ -353,7 +353,8 @@ def anchors_in_view(anchors: dict[str, Anchor], lens: Lens, tilt: float, p, yaw:
             continue
         u = lens.matrix[0, 0] * points[0] / points[2] + lens.matrix[0, 2]
         v = lens.matrix[1, 1] * points[1] / points[2] + lens.matrix[1, 2]
-        if u.min() >= margin_px and u.max() <= lens.width - margin_px and v.min() >= margin_px and v.max() <= lens.height - margin_px:
+        if (u.min() >= margin_px and u.max() <= lens.width - margin_px and v.min() >= margin_px and v.max() <= lens.height - margin_px
+                and not _in_the_way(camera, anchor.corners(), blockers)):
             out.append(anchor.id)
     return out
 

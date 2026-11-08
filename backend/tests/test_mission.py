@@ -882,6 +882,24 @@ class InspectorHookTests(unittest.TestCase):
         f.seen_thing("couch", x=-1.0, y=-1.5)
         self.assertEqual(f.missions.start("inspect", "all", "the sofa")["target"], "couch")
 
+    def test_furniture_on_the_map_can_be_inspected_by_name(self):
+        f = self.inspect_flight()
+        f.room.add(Obstacle("generator", (1.4, -2.0, 0.0), (2.3, -1.25, 0.6)))
+        status = f.missions.start("inspect", "all", "generator")
+        self.assertEqual(status["target"], "generator")
+        tasks = f.hub.search.tasks
+        self.assertGreaterEqual(len(tasks), 2)
+        center = np.array([1.85, -1.625, 0.3])
+        for task in tasks:
+            self.assertTrue(in_view(task.view.p, task.view.yaw, center, tilt=DEFAULT_TILT)[0])
+
+    def test_a_region_inspection_includes_furniture_there(self):
+        f = self.inspect_flight()
+        f.room.add(Obstacle("generator", (1.4, -2.0, 0.0), (2.3, -1.25, 0.6)))
+        f.missions.start("inspect", "north")
+        self.assertTrue(any("generator" in task.text for task in f.hub.search.tasks))
+        self.assertTrue(any("floor" in task.text for task in f.hub.search.tasks))
+
     def test_people_arent_inspected(self):
         f = self.inspect_flight()
         f.seen_thing("person", x=1.0, y=1.0)

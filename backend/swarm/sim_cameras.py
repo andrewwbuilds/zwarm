@@ -478,7 +478,8 @@ def demo_world(seed: int = 11) -> DemoWorld:
               Damage("burn mark on top of the generator", "scorch", "generator", (1.85, -1.62, 0.6), 0.5, "high"),
               Damage("split in the side of the crate", "crack", "crate", (1.525, 1.25, 0.3), 0.6, "medium", (-1.0, 0.0)),
               Damage("rust on top of the cabinet", "rust", "cabinet", (-0.65, -2.05, 0.5), 0.55, "medium"),
-              Damage("small crack in the floor", "crack", "floor", (2.0, -0.9, 0.0), 0.6, "low"))
+              Damage("small crack in the floor", "crack", "floor", (2.0, -0.9, 0.0), 0.6, "low"),
+              Damage("burn mark on the couch seat", "scorch", "couch", (-0.62, 1.25, 0.7), 0.5, "high"))
     width, depth = FENCE[1][0] - FENCE[0][0], FENCE[1][1] - FENCE[0][1]
     floor = flat_decal(floor_image(rng, width, depth), (FENCE[0][0] + FENCE[1][0]) / 2, (FENCE[0][1] + FENCE[1][1]) / 2, depth, width)
     marks = (flat_decal(crack_image(rng, 1.4, 0.7), 1.0, 0.0, 1.4, 0.7, yaw_deg=90.0),

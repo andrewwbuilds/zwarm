@@ -373,6 +373,8 @@ class Toolbox:
         status = dict(self.capture.status() or {})
         name = _plain(args.get("name") or "") or status.get("name")
         state = str(status.get("state", "")).lower()
+        if name and name != status.get("name") and not getattr(self.capture, "has_frames", lambda _: True)(name):
+            raise Refused(f'There are no photos saved under "{name}". Leave the name out to build the newest map.')
         if state == "capturing":
             raise Refused("Photos are still being captured, and the map builds by itself when the mission ends. "
                           "Stop the mission first to build it now.")

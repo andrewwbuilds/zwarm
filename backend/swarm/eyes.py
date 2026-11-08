@@ -86,7 +86,7 @@ def _on_floor(p, yaw: float, tilt: float, detection: Detection) -> np.ndarray | 
     if p[2] <= 0.0 or direction[2] > -0.05:
         return None
     distance = -p[2] / direction[2]
-    if detection.range > 0.0 and not 1 / FLOOR_RAY_LIMIT <= distance / detection.range <= FLOOR_RAY_LIMIT:
+    if not detection.rough_range and not 1 / FLOOR_RAY_LIMIT <= distance / detection.range <= FLOOR_RAY_LIMIT:
         return None
     flat = direction[:2] / np.linalg.norm(direction[:2])
     middle = p[:2] + direction[:2] * distance + flat * min(detection.size[0], detection.size[1]) / 2

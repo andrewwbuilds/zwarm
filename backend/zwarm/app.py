@@ -114,6 +114,7 @@ class Front:
             self.tick_errors += 1
             logger.exception("[zwarm] a flight tick failed")
         self.missions.tick(now)
+        self._watch_pairs()
         self.tick_s.append(time.perf_counter() - started)
 
     def _halt(self, verb: str, button: str) -> None:

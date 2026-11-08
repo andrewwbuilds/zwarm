@@ -339,8 +339,13 @@ class Agent:
             messages = [{"role": "system", "content": self._system()},
                         {"role": "user", "content": OBSERVE_PROMPT.format(events=events)}]
             final = ""
+            deadline = self.clock() + DIGEST_BUDGET_S
             for _ in range(3):
-                reply = self.client.complete(messages, self.box.schemas(allowed))
+                left = deadline - self.clock()
+                if left <= 0 or turn.spoken_count != self._spoken:
+                    return
+                tools = self.box.schemas(READ_ONLY if turn.read_findings else allowed)
+                reply = self.client.complete(messages, tools, budget_s=left)
                 messages.append(reply.assistant_message())
                 if not reply.tool_calls:
                     final = reply.content

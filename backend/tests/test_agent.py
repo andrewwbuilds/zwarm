@@ -9,7 +9,7 @@ import unittest
 from agent.agent import PLAN_TTL_S, Agent, safety_command, spoken_mission
 from agent.eval import PROMPTS, FakeCapture, FakeFleet, judge
 from agent.nemotron import NemotronClient, NemotronError, Reply, ToolCall, parse_reply
-from agent.tools import NAMES, READ_ONLY, SCHEMAS, Refused, region_name
+from agent.tools import NAMES, READ_ONLY, SCHEMAS, Refused, region_mentioned, region_name
 from swarm import bench
 from swarm.bench import hall, solid
 from swarm.coordinator import Coordinator, DroneConfig, Phase

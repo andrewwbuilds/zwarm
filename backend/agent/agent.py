@@ -480,7 +480,7 @@ class Agent:
         for step in plan["steps"]:
             try:
                 given = {k: v for k, v in step["args"].items() if k != "note"}
-                results.append(self.box.run(step["tool"], self.box.check(step["tool"], given)))
+                results.append(self._act(epoch, step["tool"], self.box.check(step["tool"], given)))
             except Refused as refused:
                 results.append({"ok": False, "refused": str(refused)})
                 ok = False

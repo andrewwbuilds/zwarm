@@ -314,6 +314,7 @@ class Inspector:
         with self.cv:
             self.target = target
             self.watching = True
+            self.closing = False
             self.drones = {}
             self.waiting = {}
             self.views = []

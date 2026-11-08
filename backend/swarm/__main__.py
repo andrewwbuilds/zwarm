@@ -102,11 +102,25 @@ def cmd_fit_focal(args) -> int:
     from swarm.tracking import fit_focal
 
     config = SwarmFile.load(args.config)
-    frame = next(_frames(_source(args.camera), 1, 0.0))
-    model = locate_camera(frame, CameraModel.load(args.lens), config.anchors, config.anchor_m)
-    model.save(args.out)
-    print(f"Saved {args.out}: camera at {camera_position(model).round(2).tolist()} m, "
-          f"reprojection error {model.reprojection_px:.2f} px.")
+    print(f"Hold drone {args.drone}, motors off, about 1 m up over the grid, with several tags in view, for {args.seconds:.0f} s.")
+    captured, _ = _detections(config, args.drone, args.seconds)
+    if not captured:
+        raise SystemExit("no frames arrived. Is its backend running and sending video?")
+    height, width = captured[0][0].shape
+    result = fit_focal([seen for _, seen in captured], width, height)
+    scaled = result["focal_px"] * 1184 / width
+    print(f"{len(captured)} frames, {result['frames']} with 2 or more tags. Focal length {scaled:.1f} px at 1184 wide "
+          f"(90 degrees would be 592). Corners miss by {result['error_px']:.2f} px, against {result['error_at_guess_px']:.2f} px at the guess.")
+    if result["error_px"] > 2.5:
+        print("That's a large miss: check the tag positions, spacing and white_square_edge_m. Not storing it.")
+        return 1
+    if args.write:
+        data = json.loads(Path(args.config).read_text())
+        for drone in data["drones"]:
+            if str(drone["id"]) == args.drone:
+                drone["focal_px"] = round(scaled, 1)
+        Path(args.config).write_text(json.dumps(data, indent=1))
+        print(f"Stored focal_px for drone {args.drone} in {args.config}.")
     return 0
 
 

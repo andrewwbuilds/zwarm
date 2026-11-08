@@ -272,8 +272,12 @@ class Toolbox:
             target, note = self._inspect_target(target)
         else:
             target = None
-        if kind == "map" and getattr(self.missions, "capture", self.capture) is None:
+        capture = getattr(self.missions, "capture", self.capture)
+        if kind == "map" and capture is None:
             raise Refused("Map capture isn't set up in this run, so I can't build a map. I can explore instead.")
+        if kind == "map" and str((capture.status() or {}).get("state", "")).lower() == "building":
+            # It would fly but save no photos, which is a lot of a battery to spend on nothing.
+            raise Refused("The last map is still building, so a new one can't save photos yet. Wait for it, or explore instead.")
         self._need_drones()
         if not self.flying():
             self._need_preflight()

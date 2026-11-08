@@ -556,10 +556,12 @@ class FleetCapture:
                         logger.warning("[map] %s", message)
 
     def stop(self) -> dict:
-        """Stop saving frames. Safe to call when nothing is capturing."""
+        """Stop saving frames and return at once, so a mission can call this from the flight loop.
+
+        The capture thread ends by itself after any write in progress. Safe when nothing is capturing.
+        """
         with self.lock:
-            thread, capturing = self.capture_thread, self.state == "capturing"
-            if capturing:
+            if self.state == "capturing":
                 self.stopping.set()
                 self.state = "captured"
         if capturing and thread is not None:

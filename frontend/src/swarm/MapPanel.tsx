@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import PointCloud from "./PointCloud";
 import type { Api, Cloud, MapStatus } from "./types";
 
-const BUILDING = /build|running|reconstruct|queue|colmap/i;
-const DONE = /done|ready|built|complete|finished/i;
+// FleetCapture's states: idle, capturing, captured, building, done, failed.
+const BUILDING = "building";
+const DONE = "done";
 
 function statusLine(status: MapStatus | null, points: number): string {
   if (!status) return "No build status yet.";

@@ -267,6 +267,14 @@ class DirectCommandTests(unittest.TestCase):
             self.assertIn(verb, fleet.hub.calls)
             self.assertTrue(result["reply"])
 
+    def test_the_runbooks_landing_phrases_work_with_the_model_down(self):
+        for text in ("Stop and land.", "come back and land", "bring them down", "bring them home"):
+            fleet, client, agent = fleet_agent("mapping", down)
+            result = agent.handle(text)
+            self.assertEqual(client.calls, [], text)
+            self.assertIn("land", fleet.hub.calls, text)
+            self.assertNotIn("recognise", result["reply"], text)
+
     def test_works_while_the_model_is_hung_and_drops_its_late_answer(self):
         release, entered = threading.Event(), threading.Event()
 

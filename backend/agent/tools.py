@@ -123,8 +123,7 @@ SCHEMAS = [
           ("kind",)),
     _tool("focus_region",
           "Keep the current mission going but move all its drones to one region and share the work out again. Use this "
-          "when the operator says stop X and focus on a side, or switch to an area, while a mission is running. Do not "
-          "call stop_mission first.",
+          "whenever the operator wants a running mission's work moved to a named region. Do not call stop_mission first.",
           {"region": _REGION_ARG}, ("region",)),
     _tool("stop_mission", "End the current mission. The drones stay in the air and hold where they are."),
     _tool("take_off", "Prepare a takeoff of the whole fleet for the operator to approve. It doesn't fly until they do. "

@@ -22,9 +22,9 @@ from sim.scene import Box, Scene
 from swarm import bench
 from swarm.coordinator import Coordinator, DroneConfig, Phase
 from swarm.safety import Limits
-from swarm.sim_anchors import SimVideo, VideoConditions
+from swarm.sim_anchors import FloorCamera, SimVideo, VideoConditions
 from swarm.sim_fleet import Conditions
-from swarm.tracking import DroneOptics, InsideOutTracker, Lens, anchors_section, load_anchors, tag_grid
+from swarm.tracking import AnchorReader, DroneOptics, InsideOutTracker, Lens, anchors_section, fit_focal, load_anchors, tag_grid
 
 WHITE_SQUARE_M = 0.0767  # the printed tags
 HALL = Box((-5.0, -4.0, 0.0), (5.0, 4.0, 2.8), "wall")

@@ -239,6 +239,8 @@ class WholePitch(unittest.TestCase):
         # The whole flight, from the simulator's truth.
         truth = f.state()["sim"]
         self.assertEqual((truth["collisions"], truth["contacts"], truth["crashed"]), ([], [], []), truth)
+        # The runbook's separation bar reads this, and it should agree with the true distance. closest wouldn't.
+        self.assertLess(abs(f.state()["pair_lowest_m"] - truth["min_separation"]), 0.25)
         loop = f.state()["loop"]
         self.assertEqual((loop["errors"], loop["mission_errors"], loop["hub_errors"]), (0, 0, 0), loop)
 

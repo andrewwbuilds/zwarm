@@ -272,6 +272,28 @@ class CoverageTests(unittest.TestCase):
         coverage.obstacle_appeared((2.0, -0.5, 0.0), (2.5, 0.5, 1.0))
         self.assertGreater(int(coverage.remaining().sum()), before)
 
+    def test_a_tilted_camera_sees_floor_a_level_one_misses(self):
+        low = Coverage(self.room, (0.0,))
+        down = Coverage(self.room)
+        p = (0.0, 0.0, 1.0)
+        close = np.linalg.norm(low.cells[:, :2], axis=1) < 1.0
+        self.assertEqual(int((low._view(p, 0.0, 0.0) & close).sum()), 0)
+        self.assertGreater(int((down._view(p, 0.0) & close).sum()), 0)
+
+    def test_each_tilt_gets_its_own_viewpoints(self):
+        coverage = Coverage(self.room, (0.0, DEFAULT_TILT))
+        claimed = np.zeros(len(coverage.cells), bool)
+        level = coverage.best((0.0, 0.0, 1.0), 0.0, claimed, tilt=0.0)
+        tilted = coverage.best((0.0, 0.0, 1.0), 0.0, claimed, tilt=DEFAULT_TILT)
+        self.assertFalse(set(level.cells.tolist()) == set(tilted.cells.tolist()))
+
+    def test_a_standoff_keeps_the_thing_in_the_picture(self):
+        coverage = Coverage(self.room)
+        target = np.array([1.0, 1.0, 0.2])
+        view = coverage.standoff((-2.0, 0.0, 1.0), target)
+        self.assertTrue(in_view(view.p, view.yaw, target, reach=3.0, margin=math.radians(10.0))[0])
+        self.assertLess(float(np.linalg.norm(view.p[:2] - target[:2])), 2.0)
+
     def test_it_stops_when_nothing_is_left(self):
         coverage = Coverage(self.room)
         coverage.counts[:] = LOOKS_NEEDED

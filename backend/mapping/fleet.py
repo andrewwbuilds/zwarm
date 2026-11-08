@@ -624,8 +624,7 @@ class FleetCapture:
         try:
             results = sorted(self.root.glob("*/result.json"), key=lambda p: p.stat().st_mtime)
             if results:
-                self.result = json.loads(results[-1].read_text())
-                self.name, self.state = results[-1].parent.name, "done"
+                return results[-1].parent.name, json.loads(results[-1].read_text())
         except (OSError, ValueError) as error:
             logger.warning("[map] couldn't read the last map: %s", error)
 

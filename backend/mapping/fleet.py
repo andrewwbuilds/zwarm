@@ -535,7 +535,8 @@ class FleetCapture:
             for drone in self._drone_ids():
                 try:
                     frame = self.frames.latest(drone)
-                    if frame is None or seen.get(drone) == frame.number or counts.get(drone, 0) >= MAX_FRAMES_PER_DRONE:
+                    key = drone_folder(drone)
+                    if frame is None or seen.get(drone) == frame.number or counts.get(key, 0) >= MAX_FRAMES_PER_DRONE:
                         continue
                     seen[drone] = frame.number
                     raw = folder / drone_folder(drone) / "raw"

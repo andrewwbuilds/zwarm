@@ -524,28 +524,29 @@ class Survey:
         if all(t.state in ("done", "skipped") for t in self.tasks):
             self.state = "done"
 
-    def _give_work(self, d, now: float, flying: list) -> None:
+    def _share_out(self, now: float, flying: list) -> None:
+        """Closest drone and view first. A drone left idle next to a view is the one to take it, or it would be in the way."""
         hub = self.manager.hub
-        idle = {other.id for other in flying if self.held_by(other.id) is None}  # these are about to be sent elsewhere too
-        avoid = [other.tracked.p for other in hub.co.drones.values()
-                 if other is not d and other.id not in idle and other.phase in (Phase.AIR, Phase.CHECK, Phase.TAKEOFF, Phase.LANDING)]
-        avoid += [order.goal for other_id, order in hub.orders.items() if other_id != d.id]
-        best, best_distance = None, math.inf
-        for task in self.tasks:
-            if task.state != "waiting":
+        free = [d for d in flying if self.held_by(d.id) is None]
+        busy = [d.tracked.p for d in hub.co.drones.values()
+                if d not in free and d.phase in (Phase.AIR, Phase.CHECK, Phase.TAKEOFF, Phase.LANDING)]
+        waiting = [t for t in self.tasks if t.state == "waiting"]
+        pairs = sorted(((float(np.linalg.norm(t.view.p[:2] - d.tracked.p[:2])), i, j) for i, d in enumerate(free) for j, t in enumerate(waiting)))
+        given_drones, given_tasks = set(), set()
+        for _, i, j in pairs:
+            if i in given_drones or j in given_tasks:
                 continue
-            if any(np.linalg.norm(task.view.p[:2] - np.asarray(q)[:2]) < KEEP_AWAY for q in avoid):
+            d, task = free[i], waiting[j]
+            taken = [*busy, *(order.goal for other_id, order in hub.orders.items() if other_id != d.id)]
+            if any(np.linalg.norm(task.view.p[:2] - np.asarray(q)[:2]) < KEEP_AWAY for q in taken):
                 continue
-            distance = float(np.linalg.norm(task.view.p[:2] - d.tracked.p[:2]))
-            if distance < best_distance:
-                best, best_distance = task, distance
-        if best is None:
-            return
-        if best.last_holder is not None and best.last_holder != d.id:
-            self.manager.say("mission", f"{d.id} took over {best.last_holder}'s work: {best.text}.", event="reassigned",
-                             drone=d.id, from_drone=best.last_holder)
-        best.state, best.holder = "held", d.id
-        hub.order(d, best.view.p, best.view.yaw, now)
+            given_drones.add(i)
+            given_tasks.add(j)
+            if task.last_holder is not None and task.last_holder != d.id:
+                self.manager.say("mission", f"{d.id} took over {task.last_holder}'s work: {task.text}.", event="reassigned",
+                                 drone=d.id, from_drone=task.last_holder)
+            task.state, task.holder = "held", d.id
+            hub.order(d, task.view.p, task.view.yaw, now)
 
 
 def _names(items) -> str:

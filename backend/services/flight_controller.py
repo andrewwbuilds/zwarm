@@ -15,7 +15,8 @@ class FlightController:
         self.protocol = protocol_adapter
         self.update_interval = 1.0 / update_rate
         self.running = True
-        
+        self.stabilizer = stabilizer
+
         # Input state
         self.throttle_dir = 0
         self.yaw_dir = 0

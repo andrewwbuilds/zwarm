@@ -866,7 +866,7 @@ class Coordinator:
                 # Its sticks centre when commands stop, but it takes a moment to stop moving, so
                 # expect it where it would have come to rest, not where it was last seen.
                 position = d.tracked.p + d.tracked.v * min(age, STALE_S + self.limits.response)
-            want = self._want(d, now) if steerable else np.zeros(3)
+            want = self._safe_want(d, now) if steerable else np.zeros(3)
             bodies.append(Body(d.id, position, velocity, want, steerable, extra, descending=d.phase == Phase.LANDING))
         for d in self.drones.values():
             if self._steerable(d, now) and d.phase != Phase.LANDING:

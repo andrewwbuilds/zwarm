@@ -220,6 +220,15 @@ class EstimatorTests(unittest.TestCase):
         self.assertGreater(moving.sigma_xy, hover.sigma_xy + 0.2)
         self.assertGreater(moving.p[0], 1.5)  # and it carried the commanded motion forward
 
+    def test_a_long_gap_does_not_carry_the_last_command_through_it(self):
+        e = Estimator(0, 0, 0)
+        e.note_command(np.array([0.5, 0, 0]), 0.0, True, False)
+        e.advance(0.0)
+        e.advance(0.05)
+        e.advance(3.05)  # the coordinator hung; the backend centred the sticks after 0.3 s
+        self.assertLess(e.p[0], 0.3)
+        self.assertGreater(e.sigma_xy, 0.15)  # but it does know it has been a while
+
     def test_a_sighting_shrinks_uncertainty_and_moves_the_estimate(self):
         e = Estimator(0, 0, 0)
         e.note_command(np.zeros(3), 0.0, True, False)

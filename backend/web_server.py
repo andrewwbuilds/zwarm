@@ -46,6 +46,7 @@ from protocols.x69_lg_jpeg_video_protocol import X69LgJpegVideoProtocolAdapter
 from protocols.x69_lg_video_mode import normalize_x69_video_mode
 from plugins.manager import PluginManager
 from control import trajectory
+from control import stabilizer as stabilizing
 from sim import calibrate
 from sim.scenes import SCENES
 from utils.dropping_queue import DroppingQueue

@@ -4,6 +4,8 @@ Research date: 2026-11-07. Scope: a small indoor fleet of S20/S2x drones first.
 Other protocol families need their own hardware validation. This is an architecture
 recommendation, not a demonstrated swarm capability or measured fleet-size limit.
 
+Update: this repo went a different way on positioning. There are no room cameras and no markers on the drones. See `docs/decisions/0004-floor-tag-tracking.md`. The rest stands as research.
+
 ## Recommendation
 
 Use a central coordinator, external tracking in a shared room coordinate system,

@@ -21,7 +21,7 @@ import numpy as np
 
 from swarm.commands import EXPLANATION, parse
 from swarm.coordinator import Coordinator, Phase
-from swarm.eyes import EDGE_MARGIN, RELIABLE_REACH, blocked, in_view, locate
+from swarm.eyes import DEFAULT_TILT, EDGE_MARGIN, RELIABLE_REACH, blocked, in_view, locate
 from swarm.memory import Memory, Thing
 from swarm.room import Obstacle
 from swarm.safety import Moving

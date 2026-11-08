@@ -981,6 +981,17 @@ class MissionManager:
         event = {"done": "done", "stopped": "stopped"}.get(state, "failed")
         self.say("fault" if state == "failed" else "mission", text, event=event, mission=was_kind, region=self.region, target=self.target,
                  share_seen=round(self._share_seen(), 3), elapsed_s=round(now - self.started_at, 1))
+        self._build_if_down()
+
+    def _anyone_up(self) -> bool:
+        co = self.hub.co
+        return bool(co.takeoff_queue) or any(d.phase in (Phase.TAKEOFF, Phase.CHECK, Phase.AIR, Phase.LANDING) for d in co.drones.values())
+
+    def _build_if_down(self) -> None:
+        """COLMAP takes every core it can get, so it waits until nothing depends on the flight loop keeping up."""
+        if self.build_when_down and not self._anyone_up():
+            name, self.build_when_down = self.build_when_down, None
+            self.later(self._stop_capture_and_build, name)
 
     def _start_capture(self, name: str) -> None:
         try:

@@ -276,6 +276,7 @@ class Agent:
             if self.clock() - plan["created"] > PLAN_TTL_S:
                 return {"ok": False, "reply": "That plan is too old to trust, so nothing flew. Ask again.", "plan": _shown(plan)}
         result = self._execute(plan)
+        self._note(f"the operator approved the plan: {plan['summary']} {result['reply']}")
         self._emit("mission", result["reply"], {"plan": plan["id"], "ok": result["ok"]})
         return result
 

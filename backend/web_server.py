@@ -515,6 +515,8 @@ async def lifespan(app: FastAPI):
         plugin_manager.stop_all()
     if flight_controller:
         flight_controller.stop()
+    if stabilizer_service:
+        stabilizer_service.stop()
     if receiver:
         receiver.stop()
     if _pump_stop:

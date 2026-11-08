@@ -917,7 +917,7 @@ class RealFleetTests(unittest.TestCase):
 
     def test_an_unknown_inspect_target_flies_the_region_instead_of_failing_in_the_air(self):
         self.script(use(call("start_mission", kind="inspect", region="south", target="furniture")), say("Waiting for your approval."))
-        plan = self.agent.handle("Check the furniture for damage.")["plan"]
+        plan = self.agent.handle("Check the furniture on the south side for damage.")["plan"]
         approved = self.agent.approve(plan["id"])
         self.assertTrue(approved["ok"], approved)
         self.assertEqual(self.missions.status()["kind"], "inspect")

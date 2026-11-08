@@ -1085,6 +1085,7 @@ class MissionManager:
                     self._watch_crew(now)
                     self._watch_work(now)
                     self._feed_inspector(now)
+                self._build_if_down()
         except Exception:
             self.errors += 1
             logger.exception("[mission] watching the mission failed; the drones carry on with their last goals")

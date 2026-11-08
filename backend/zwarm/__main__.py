@@ -102,6 +102,7 @@ def main(argv=None) -> int:
     sub.add_argument("--port", type=int, default=PORT)
     sub.add_argument("--data", help="where findings and maps go; ~/Developer/datasets/zwarm if left out")
     sub.add_argument("--no-model", action="store_true", help="fly on fixed phrases if there's no NVIDIA_API_KEY")
+    sub.add_argument("--drones", help="fly only these, for example 1 or 1,2. The others stay on the floor")
     sub.set_defaults(run=cmd_fly)
 
     sub = commands.add_parser("preflight", help="check a swarm file, the backends, video and detector, without flying")

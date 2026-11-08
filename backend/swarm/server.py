@@ -108,9 +108,64 @@ class Runtime:
             time.sleep(0.2)
             with self.lock:
                 flying = self.airborne()
-        self.stopping.set()
-        self.thread.join(timeout=2.0)
-        self.close()
+        if flying:
+            logger.error("[swarm] still in the air after %.0f s: %s. Check them by eye.", SHUTDOWN_LAND_S, self._up())
+
+    def _up(self) -> str:
+        return ", ".join(d.id for d in self.co.drones.values() if d.phase in (Phase.TAKEOFF, Phase.CHECK, Phase.AIR, Phase.LANDING))
+
+    def shut_down(self) -> None:
+        """Never leave drones hovering because the program quit: land them first. Only the first call does anything."""
+        with self.closing:
+            if self.closed:
+                return
+            self.closed = True
+            self.land_everything()
+            self.stopping.set()
+            if self.thread.is_alive():
+                self.thread.join(timeout=2.0)
+            self.close()
+
+
+def serve(app: FastAPI, runtime: Runtime, port: int, host: str = "127.0.0.1", **options) -> None:
+    """Run the API until Ctrl-C, keeping it up through the landing so E-STOP still gets through.
+
+    Plain uvicorn closes its port before anything lands, and a second Ctrl-C makes it skip the landing.
+    """
+    import uvicorn
+
+    class LandFirst(uvicorn.Server):
+        landing: threading.Thread | None = None
+
+        def handle_exit(self, sig, frame) -> None:
+            if self.landing is None:
+                self.landing = threading.Thread(target=self.land_then_quit, daemon=True, name="swarm-land-first")
+                self.landing.start()
+            elif runtime.airborne():
+                _say("Still landing. E-STOP works in the console. This quits by itself once they're down, or after 25 s.")
+
+        def land_then_quit(self) -> None:
+            if runtime.airborne():
+                _say("Landing anything in the air. E-STOP works in the console until they're down.")
+            try:
+                runtime.land_everything()
+            finally:
+                self.should_exit = True
+
+    server = LandFirst(uvicorn.Config(app, host=host, port=port, **options))
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, server.handle_exit)  # closing the terminal lands too
+    try:
+        server.run()
+    finally:
+        runtime.shut_down()
+
+
+def _say(text: str) -> None:
+    try:
+        print(text, flush=True)
+    except OSError:  # the terminal has gone
+        logger.warning("[swarm] %s", text)
 
 
 def build_app(runtime: Runtime) -> FastAPI:

@@ -214,6 +214,18 @@ class Agent:
         self._observer: threading.Thread | None = None
         self._last_observed = -1e9
 
+    @property
+    def busy(self) -> bool:
+        return self._thinking > 0
+
+    def _begin_thinking(self) -> None:
+        with self._state:
+            self._thinking += 1
+
+    def _end_thinking(self) -> None:
+        with self._state:
+            self._thinking -= 1
+
     # ---------------------------------------------------------------- the operator's side
     def handle(self, text: str) -> dict:
         """Act on one sentence. Never raises, and always has a reply."""

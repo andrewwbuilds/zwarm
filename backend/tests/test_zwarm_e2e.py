@@ -385,6 +385,15 @@ class StopButtons(unittest.TestCase):
         self.assertTrue(f.run(90.0, lambda s: all(d["phase"] == "ground" for d in s["drones"])))
 
 
+class MapWhileBuilding(unittest.TestCase):
+    def test_a_new_map_is_refused_while_the_last_one_builds(self):
+        f = Flight(self)
+        f.capture.state = "building"
+        answer = f.say("Map this entire area in 3D")
+        self.assertIsNone(answer["plan"])
+        self.assertIn("still building", answer["tool_calls"][0]["result"]["refused"])
+
+
 class HoverHeight(unittest.TestCase):
     def test_a_first_fix_during_the_climb_doesnt_set_the_hover_height(self):
         """Seen on floor tags: a first reading at 0.4 m sent a drone down to 0.4 m after its check, where it lost the tags."""

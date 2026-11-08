@@ -437,6 +437,17 @@ class Sweep:
 
 
 @dataclass
+class Furniture:
+    """Something named on the room's map. It can be inspected like a thing the cameras found."""
+
+    label: str
+    p: np.ndarray
+    size: np.ndarray
+    id: int | None = None
+    moves: bool = False
+
+
+@dataclass
 class ViewTask:
     view: Viewpoint
     text: str

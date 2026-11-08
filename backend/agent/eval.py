@@ -157,8 +157,9 @@ class FakeMissions:
         return self.status()
 
     def status(self):
-        return {"kind": self.kind, "state": self.state, "region": self.region, "share_seen": self.share, "target": None,
-                "elapsed_s": 41.0, "tasks": {d: f"{self.kind or 'idle'}" for d in self.flown}, "flight_s": dict(self.flown)}
+        return {"kind": self.kind, "state": self.state, "region": self.region, "target": None, "share_seen": self.share,
+                "elapsed_s": 41.0 if self.kind else 0.0, "tasks": {d: f"{self.kind} work" if self.kind else None for d in self.flown},
+                "flight_s": dict(self.flown), "flight_limit_s": self.flight_limit_s, "reason": ""}
 
     def gaps(self):
         return [{"name": "north", "share_seen": 0.8, "viewpoint": {"x": 2.0, "y": 0.0, "yaw": 0.0}},

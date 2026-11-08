@@ -559,7 +559,7 @@ class Coordinator:
     @staticmethod
     def _judge_check(moved: float, after_stop: float) -> str | None:
         if moved < -CHECK_MIN_SPEED:
-            return f"it moved the wrong way ({moved:+.2f} m/s), so a stick is reversed or the heading is wrong"
+            return f"it moved the wrong way ({moved:+.2f} m/s by the tags), so a stick is reversed or the heading is wrong"
         if moved < CHECK_MIN_SPEED:
             return f"it barely responded to the sticks ({moved:+.2f} m/s)"
         if after_stop > CHECK_STILL_SPEED and after_stop > CHECK_STOP_RATIO * moved:

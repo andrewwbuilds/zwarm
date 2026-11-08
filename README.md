@@ -37,7 +37,7 @@ uv run python -m agent.eval                      # the planner's test set throug
 `zwarm sim` takes positions from the simulator's truth. `--inside-out` takes them from reading floor tags in rendered frames, as a real flight does. Add `?api=8013` to the console for another port.
 
 ## Fly real drones
-**Follow [the runbook](docs/runbook.md).** It has setup, preflight, a staged flight test, a demo-day checklist, a fallback demo and a tuning table. Read the [known problems](#known-problems) first, because the runbook's Stage 5 and its steps between flights run into two of them.
+**Follow [the runbook](docs/runbook.md).** It has setup, preflight, a staged flight test, a demo-day checklist, a fallback demo and a tuning table. Read the [known problems](#known-problems) too.
 
 ```
 (cd backend && uv sync --inexact --extra follow)   # adds YOLO, which real cameras use

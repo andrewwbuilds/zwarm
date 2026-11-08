@@ -55,7 +55,7 @@ def cmd_layout(args) -> int:
     section = anchors_section(None if edge is None else round(edge, 5), tags)
     Path(args.out).write_text(json.dumps({"anchors": section}, indent=1))
     xs, ys = [t["x"] for t in tags], [t["y"] for t in tags]
-    fence = {"lo": [min(xs) - 0.8, min(ys) - 0.4, 0.0], "hi": [max(xs) - 0.3, max(ys) + 0.4, 2.2]}
+    fence = {"lo": [min(xs) - 1.0, min(ys) - 0.5, 0.0], "hi": [max(xs) - 0.3, max(ys) + 0.5, 2.2]}
     print(f"Wrote {args.out}: tags {tags[0]['tag']} to {tags[-1]['tag']}.")
     print(f"  tag {tags[0]['tag']} at ({tags[0]['x']}, {tags[0]['y']}), tag {tags[-1]['tag']} at ({tags[-1]['x']}, {tags[-1]['y']}), "
           f"tops pointing {args.rotation_deg:g} degrees from +x. The top is the side opposite the printed label.")

@@ -273,6 +273,22 @@ def wrong_lens(seed):
     return _crossing(seed, video=VideoConditions(fov_deg=82.0))
 
 
+def fitted_lens(seed):
+    """The same lens, after `fit-focal` measured it from a hand-held hover over the grid."""
+    video = VideoConditions(fov_deg=82.0)
+    anchors = load_anchors(anchors_section(WHITE_SQUARE_M, tag_grid()))
+    scene = Scene(name="hall", bounds=HALL)
+    frames = []
+    for i in range(12):
+        camera = FloorCamera(scene, anchors, 45.0, video, seed + i)
+        c, s = math.cos(0.08 * i - 0.4), math.sin(0.08 * i - 0.4)
+        image = camera.render(-1.5 + 0.1 * i, 0.5 - 0.1 * i, 1.0 + 0.02 * i, (c, -s, 0.0, s, c, 0.0, 0.0, 0.0, 1.0))
+        frames.append(AnchorReader(anchors).find(image))
+    fitted = fit_focal(frames)
+    fov = 2 * math.degrees(math.atan(1184 / 2 / fitted["focal_px"]))
+    return _crossing(seed, video=video, assumed_fov=fov)
+
+
 MISSIONS = {m.__name__: m for m in (
     hover, swap, cross, ring, formations, pillar, wall_gap, under_table, missing_tags, brief_dropouts, covered_view,
     blind_for_good, frozen_coordinator, reversed_sticks, refused_takeoff, wrong_gains, sluggish, drafty, soft_video,

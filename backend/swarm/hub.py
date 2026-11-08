@@ -448,7 +448,9 @@ class Hub:
         self.co.land_here(self.now)
         return "Landing where they are."
 
-    def _do_hold(self, c) -> str:
+    @_action
+    def hold(self) -> str:
+        """Stop moving and end any search. The motors stay on."""
         self._stop_search()
         self.orders.clear()
         self.co.hold()

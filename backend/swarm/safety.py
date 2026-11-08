@@ -161,7 +161,7 @@ def filter_velocities(bodies: list[Body], room: Room, limits: Limits, moving: li
             offset = (ahead[b.id] - (thing.p + thing.v * limits.lookahead))[:2]
             distance = float(np.linalg.norm(offset))
             n = np.array([1.0, 0.0, 0.0]) if distance < 1e-6 else np.array([offset[0] / distance, offset[1] / distance, 0.0])
-            gap = distance - (thing.radius + limits.drone_radius + limits.pose_error + limits.moving_margin)
+            gap = distance - (thing.radius + limits.drone_radius + limits.pose_error + limits.moving_margin + b.extra_gap)
             closest = min(closest, gap)
             rule([(b.id, n)], -limits.gain * gap + n @ thing.v)
 

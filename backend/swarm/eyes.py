@@ -23,6 +23,8 @@ VFOV = math.radians(58.0)  # 16:9 at the 90 degree horizontal view the SLAM assu
 REACH = 3.5  # metres; past this a small object is too few pixels to name
 RELIABLE_REACH = 3.0  # within this, not seeing something is evidence it isn't there
 EDGE_MARGIN = math.radians(10.0)  # things at the edge of the picture don't count as looked at
+DEFAULT_TILT = math.radians(45.0)  # how far below level the camera points
+FLOOR_RAY_LIMIT = 2.0  # a floor position this many times off the size-based guess isn't believed
 
 # Names a YOLO model trained on COCO can give that might sit in a room, and what people call them.
 LABELS = {

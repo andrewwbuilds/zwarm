@@ -22,6 +22,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import numpy as np
+
 from agent.vision import VisionError, analyze, prompt_for
 from swarm.inspect_fixtures import FOLDER
 

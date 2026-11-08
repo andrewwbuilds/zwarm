@@ -146,8 +146,8 @@ def grid_layout(lo, hi, spacing: float, size: float, first_id: int = 0) -> list[
 class Lens:
     matrix: np.ndarray
     distortion: np.ndarray
-    rvec: np.ndarray | None = None
-    tvec: np.ndarray | None = None
+    width: int
+    height: int
     reprojection_px: float | None = None
 
     @classmethod

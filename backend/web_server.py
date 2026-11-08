@@ -961,6 +961,8 @@ def _frame_pump_worker(
                     pass
                 if runner is not None:
                     runner.frame(frame.data)
+                if stabilizer_service is not None:
+                    stabilizer_service.feed(frame)
                 if plugin_q is not None:
                     try:
                         plugin_q.put_nowait(frame)

@@ -7,7 +7,7 @@
 // second path is free even if the first one is full.
 
 import {
-  parseChat, parseEvents, parseFindings, parseMapStatus, parsePoints, parseState,
+  parseChat, parseDecision, parseEvents, parseFindings, parseMapStatus, parsePoints, parseState,
 } from "./parse";
 import type { Api, FindingStatus, SafetyAction } from "./types";
 

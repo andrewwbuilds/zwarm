@@ -523,7 +523,8 @@ class JoiningTests(unittest.TestCase):
         drone_dir = self.folder / "drones" / drone
         (drone_dir / "raw").mkdir(parents=True, exist_ok=True)
         (drone_dir / "raw" / raw_name(0, 0)).write_bytes(jpeg(index))
-        (drone_dir / "poses.jsonl").write_text("\n".join(tracked_lines) + "\n")
+        if first is None:
+            (drone_dir / "poses.jsonl").write_text("\n".join(tracked_lines) + "\n")
 
     def build(self, pooled: dict, keep_tracked: bool = True) -> dict:
         def fake_pool(folder, cap):

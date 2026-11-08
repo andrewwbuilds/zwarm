@@ -304,6 +304,101 @@ class DirectCommandTests(unittest.TestCase):
         self.assertIn("whole fleet", result["reply"])
 
 
+class StopRaceTests(unittest.TestCase):
+    def test_a_stop_during_a_tool_call_still_ends_what_it_started(self):
+        fleet, client, agent = fleet_agent("flying", use(call("start_mission", kind="map", region="all")), say("Started."))
+        started, carry_on = threading.Event(), threading.Event()
+        real_start = fleet.missions.start
+
+        def slow_start(*args):
+            started.set()
+            carry_on.wait(0.2)  # the stop command waits on the flight lock meanwhile
+            return real_start(*args)
+
+        fleet.missions.start = slow_start
+        turn = threading.Thread(target=agent.handle, args=("map it",))
+        turn.start()
+        self.assertTrue(started.wait(2.0))
+        stopper = threading.Thread(target=agent.handle, args=("stop",))
+        stopper.start()
+        carry_on.set()
+        turn.join(2.0)
+        stopper.join(2.0)
+        self.assertEqual([c[0] for c in fleet.missions.calls], ["start", "stop"])
+
+    def test_a_stop_between_plan_steps_cancels_the_rest(self):
+        fleet, client, agent = fleet_agent("ground", use(call("start_mission", kind="map", region="all")), say("Approve it."))
+        plan = agent.handle("map it")["plan"]
+        real_takeoff = fleet.hub.takeoff
+
+        def takeoff_then_stop():
+            reply = real_takeoff()
+            threading.Thread(target=agent.handle, args=("stop",)).start()
+            time.sleep(0.05)
+            return reply
+
+        fleet.hub.takeoff = takeoff_then_stop
+        approved = agent.approve(plan["id"])
+        self.assertFalse(approved["ok"])
+        self.assertNotIn("start", [c[0] for c in fleet.missions.calls])
+
+    def test_a_turn_has_a_time_budget(self):
+        now = [0.0]
+
+        def slow(messages, tools):
+            now[0] += 40.0
+            return use(call("get_status"))
+
+        fleet, client, agent = fleet_agent("mapping", slow, slow, slow, slow, slow, clock=lambda: now[0])
+        result = agent.handle("how is it going")
+        self.assertEqual(len(client.calls), 2)
+        self.assertTrue(result["reply"])
+
+
+class NamedRegionTests(unittest.TestCase):
+    def test_what_counts_as_naming_a_region(self):
+        for said, region in (("focus on the north side", "north"), ("the northern part", "north"), ("mapp the sowth side", "south"),
+                             ("go to the nor east corner", "north-east"), ("shift to the southwest", "south-west"), ("NE please", "north-east"),
+                             ("try the centre", "center"), ("the middle of the room", "center"), ("back to the whole room", "all")):
+            self.assertTrue(region_mentioned(said, region), said)
+
+    def test_what_does_not(self):
+        for said, region in (("focus on the other side", "south"), ("focus on the other side", "north"), ("that area", "all"),
+                             ("go over there", "east"), ("north side", "north-east"), ("do the usual", "west"), ("those things", "south")):
+            self.assertFalse(region_mentioned(said, region), said)
+
+    def test_a_region_the_operator_never_said_is_refused(self):
+        fleet, client, agent = fleet_agent("mapping", use(call("focus_region", region="south")), say("Which side do you mean?"))
+        result = agent.handle("focus on the other side")
+        self.assertFalse(result["tool_calls"][0]["ok"])
+        self.assertIn("ask them", result["tool_calls"][0]["result"]["refused"])
+        self.assertEqual(fleet.missions.calls, [])
+
+    def test_a_guessed_region_makes_no_plan(self):
+        fleet, client, agent = fleet_agent("ground", use(call("start_mission", kind="map", region="east")), say("Which part?"))
+        self.assertIsNone(agent.handle("map that bit")["plan"])
+        self.assertIsNone(agent.pending())
+
+    def test_starting_on_the_whole_room_is_the_default(self):
+        fleet, client, agent = fleet_agent("flying", use(call("start_mission", kind="map", region="all")), say("Mapping."))
+        self.assertTrue(agent.handle("map it")["tool_calls"][0]["ok"])
+
+    def test_moving_to_the_whole_room_has_to_be_said(self):
+        fleet, client, agent = fleet_agent("mapping", use(call("focus_region", region="all")), say("Which?"))
+        self.assertFalse(agent.handle("focus on that area")["tool_calls"][0]["ok"])
+
+    def test_the_answer_to_a_question_counts(self):
+        fleet, client, agent = fleet_agent("mapping", say("East is least seen. Try there?"), use(call("focus_region", region="east")), say("Moved."))
+        agent.handle("where should we look")
+        self.assertTrue(agent.handle("yes do that")["tool_calls"][0]["ok"])
+        self.assertEqual(fleet.missions.calls, [("focus", "east")])
+
+    def test_an_event_turn_may_choose_for_itself(self):
+        fleet, client, agent = fleet_agent("mapping", use(call("focus_region", region="east")), say("Moved."), observe_every_s=0.0)
+        agent._digest([("drone_lost", "b lost tracking", {})])
+        self.assertEqual(fleet.missions.calls, [("focus", "east")])
+
+
 class ToolCheckTests(unittest.TestCase):
     def refused(self, setup, name, **args):
         fleet, client, agent = fleet_agent(setup, use(call(name, **args)), say("Sorry."))

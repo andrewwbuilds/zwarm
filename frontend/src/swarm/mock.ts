@@ -390,7 +390,7 @@ class MockSwarm {
   }
 
   async buildMap(): Promise<void> {
-    this.map = { ...this.map, state: "building" };
+    this.map = { ...this.map, state: "building", step: "placing photos" };
     this.buildDoneAt = performance.now() + 5000;
   }
 

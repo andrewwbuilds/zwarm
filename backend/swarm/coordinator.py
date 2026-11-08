@@ -321,6 +321,7 @@ class Coordinator:
         self._set_goal(d, np.array([d.config.pad[0], d.config.pad[1], max(d.tracked.p[2], 0.7)]))
 
     def land_here(self, now: float | None = None) -> None:
+        """Land where they are. A drone that can't take the toggle yet, climbing or with its link down, gets it when it can."""
         now = self.now if now is None else now
         self.takeoff_queue.clear()
         for d in self.drones.values():

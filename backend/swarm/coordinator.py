@@ -227,6 +227,8 @@ class Coordinator:
             return problems
         self.estopped = False
         self.last_takeoff = None
+        for d in self.drones.values():
+            self._forget_requests(d)
         self.takeoff_queue = list(self.drones)
         self.next_takeoff = now
         return []

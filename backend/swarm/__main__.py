@@ -25,8 +25,13 @@ def cmd_fly(args) -> int:
     import uvicorn
 
     from swarm.server import SwarmFile, build_app, real_runtime
+    from swarm.tracking import SwarmFileError
 
-    runtime = real_runtime(SwarmFile.load(args.config))
+    try:
+        config = SwarmFile.load(args.config)
+    except SwarmFileError as error:
+        print(f"Refusing to fly: {error}")
+        return 2
     print(f"Swarm ready at http://localhost:{args.port}. Open http://localhost:5173/swarm to fly it.")
     print("Nothing moves until you press Take off. Ctrl-C lands anything in the air, then quits.")
     uvicorn.run(build_app(runtime), host="127.0.0.1", port=args.port, log_level="warning")

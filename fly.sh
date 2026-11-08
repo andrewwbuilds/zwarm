@@ -163,7 +163,7 @@ if (( ! sim )) && ! on_drone_wifi; then
     done
   done
   if [[ -z $(wifi_router) || $(ipconfig getifaddr "$WIFI_DEVICE") == $before ]]; then
-    echo "Could not join $DRONE_WIFI. Is the drone powered on?" >&2
+    echo "Could not join $DRONE_WIFI. Turn the drone off and on, wait 20 s, and try again." >&2
     exit 1
   fi
   joined_wifi=1

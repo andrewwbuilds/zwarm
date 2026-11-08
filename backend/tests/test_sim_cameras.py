@@ -299,6 +299,8 @@ class DemoWorldTests(unittest.TestCase):
 
     def test_no_anchor_is_under_or_touching_a_box_or_on_damage(self):
         w = world()
+        self.assertEqual(len(w.anchors), 20)  # none of the grid is lost to furniture or damage
+        marks = w.scene.decals[1 + len(w.anchors):]
         for a in w.anchors.values():
             reach = paper_width(a) / 2
             for box in w.scene.boxes:

@@ -451,7 +451,6 @@ class FindingsCantSteer(unittest.TestCase):
     def test_nor_in_the_digest_of_an_ordinary_event(self):
         fleet = FakeFleet("mapping")
         self.findings(fleet)
-        from tests.test_agent import Scripted
         client = Scripted(use(call("list_findings")), use(call("focus_region", region="south")), say("Noted."))
         agent = fleet.agent(client)
         agent._digest([("drone_lost", "b lost tracking", {})])

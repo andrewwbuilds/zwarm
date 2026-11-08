@@ -20,7 +20,7 @@ def cmd_sim(args) -> int:
 
     zw = sim(args.seed, args.data, args.rate, args.inside_out)
     print(f"SIMULATED Zwarm at http://localhost:{args.port}. Nothing here talks to a real drone. Console: http://localhost:5173/swarm", flush=True)
-    _serve(build(zw), args.port)
+    _serve(zw, build(zw), args.port)
     return 0
 
 

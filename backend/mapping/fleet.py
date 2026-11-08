@@ -596,6 +596,9 @@ class FleetCapture:
 
         With it, a finished map is checked against the tracked positions and placed in room coordinates.
         Without it, the map is levelled with a rough scale and no one can tell if its shape is wrong.
+
+        flying(drone) -> bool, optional: frames from a drone on the floor aren't saved, or a landed one
+        would keep using up its share of the photo cap on the same patch of floor.
         """
         self.frames = frames
         self.root = Path(root)

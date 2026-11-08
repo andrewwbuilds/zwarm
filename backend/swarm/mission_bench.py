@@ -319,8 +319,11 @@ def stop_midway(seed):
         moved = max(float(np.linalg.norm(d.tracked.p[:2] - b[:2])) for d, b in zip(f.co.drones.values(), before))
         f.check(moved < 0.4, f"drifted {moved:.2f} m after stop")
         f.missions.settle()
-        f.check(capture.names() == ["start", "stop", "build"], f"capture got {capture.calls}")
+        f.check(capture.names() == ["start"], f"nothing should build with drones up: {capture.calls}")
         yield from f.down()
+        yield from f.wait(1.0)
+        f.missions.settle()
+        f.check(capture.names() == ["start", "stop", "build"], f"capture got {capture.calls}")
     return f, script()
 
 

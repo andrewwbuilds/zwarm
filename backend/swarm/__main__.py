@@ -34,7 +34,7 @@ def cmd_fly(args) -> int:
         return 2
     print(f"Swarm ready at http://localhost:{args.port}. Open http://localhost:5173/swarm to fly it.")
     print("Nothing moves until you press Take off. Ctrl-C lands anything in the air, then quits.")
-    uvicorn.run(build_app(runtime), host="127.0.0.1", port=args.port, log_level="warning")
+    uvicorn.run(build_app(real_runtime(config)), host="127.0.0.1", port=args.port, log_level="warning")
     return 0
 
 

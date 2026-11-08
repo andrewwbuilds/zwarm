@@ -548,7 +548,7 @@ class Coordinator:
             speed = sum(r["moved"] for r in check.results) / len(check.results)
             # Only ever raise it. A short move may not reach full speed, and believing a drone is
             # slower than it is makes it fly too fast. Steady flight can correct it downward later.
-            d.mapper.scale = max(d.mapper.scale, min(StickMapper.GAIN_RANGE[1], speed / CHECK_SPEED))
+            d.mapper.scale = max(d.mapper.scale, min(StickMapper.GAIN_RANGE[1], speed / min(CHECK_SPEED, self.limits.max_speed)))
             home = check.home
             d.check = None
             d.phase = Phase.AIR

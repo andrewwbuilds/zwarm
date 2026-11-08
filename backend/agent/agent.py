@@ -331,6 +331,12 @@ class Agent:
         self._remember([{"role": "user", "content": "(the operator gave a stop command)"}, {"role": "assistant", "content": reply}])
         return {"reply": reply, "plan": None, "tool_calls": []}
 
+    def _remember(self, messages: list[dict]) -> None:
+        kept = [{**m, "content": str(m.get("content") or "")[:MAX_REMEMBERED_RESULT]} if m["role"] == "tool" else m for m in messages]
+        with self._state:
+            self._history.append(kept)
+            del self._history[:-HISTORY_TURNS]
+
     # ---------------------------------------------------------------- talking to the model
     def _system(self) -> str:
         co = self.box.hub.co

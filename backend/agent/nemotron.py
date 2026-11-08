@@ -284,8 +284,8 @@ class NemotronClient:
             if 200 <= status < 300:
                 try:
                     return parse_reply(json.loads(raw), model, elapsed)
-                except ValueError as error:
-                    raise _ModelFailed(self._safe(f"unreadable reply: {error}")) from None
+                except (ValueError, TypeError, KeyError, AttributeError, IndexError) as error:  # a 200 can hold any shape at all
+                    raise _ModelFailed(self._safe(f"unreadable reply: {error!r}")) from None
             last = f"HTTP {status}"
             if status in (401, 403, 404, 410):
                 with self._lock:

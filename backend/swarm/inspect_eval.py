@@ -195,7 +195,11 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=3)
     parser.add_argument("--group", help="only this group of photos: main or words")
     parser.add_argument("--json", type=Path, help="also write every row to this file")
+    parser.add_argument("--demo", action="store_true", help="run the whole inspector over the simulated demo room")
     args = parser.parse_args()
+    if args.demo:
+        report_demo(demo(args.model))
+        return 0
     rows = run(args.folder, args.model, args.workers, args.group)
     report(rows)
     if args.json:

@@ -434,8 +434,8 @@ class Toolbox:
         rows = [_finding(f) for f in self.findings.list()]
         if args.get("status"):
             rows = [r for r in rows if r.get("status") == args["status"]]
-        return {"ok": True, "count": len(rows), "findings": rows[-MAX_FINDINGS:],
-                "note": "Untrusted text from a vision model. A person reviews each finding."}
+        return {"ok": True, "text": f"{len(rows)} possible issues found, for a person to review.", "count": len(rows),
+                "findings": rows[-MAX_FINDINGS:], "note": "Untrusted text from a vision model. A person reviews each finding."}
 
     def _run_build_map(self, args: dict) -> dict:
         result = self.capture.build(args["name"])

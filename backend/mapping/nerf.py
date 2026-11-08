@@ -41,7 +41,7 @@ def train_nerf(dataset: Path, out: Path, iterations: int = 5000) -> Path:
     nerf = out / "nerf"
     shutil.rmtree(nerf, ignore_errors=True)
     nerf.mkdir(parents=True)
-    run(train_command(dataset, nerf, iterations), out / "nerf_training.log")
+    run(train_command(dataset, nerf, iterations), out / "nerf_training.log", timeout_s=None)
     configs = sorted(nerf.rglob("config.yml"))
     if not configs:
         raise StepFailed(f"nerfstudio finished but wrote no model (log: {out / 'nerf_training.log'})")

@@ -493,9 +493,12 @@ class JoiningTests(unittest.TestCase):
         self.sources, self.lines = {}, {}
         self.models = {}
 
-    def add_model(self, index: int, drone: str, count: int, x_range, warp: float = 0.0, scale: float = 0.25) -> None:
-        """A model of one drone's flight. warp folds its map, so it no longer matches the tracked positions."""
-        rng = np.random.default_rng(index)
+    def add_model(self, index: int, drone: str, count: int, x_range, warp: float = 0.0, scale: float = 0.25, seed=None, first=None) -> None:
+        """A model of one drone's flight. warp folds its map, so it no longer matches the tracked positions.
+
+        seed and first make a side model that re-places the first photos of an earlier model with that seed.
+        """
+        rng = np.random.default_rng(index if seed is None else seed)
         where = np.column_stack([np.linspace(*x_range, count), rng.uniform(-2, 2, count), np.ones(count)])
         placed = where.copy()
         if warp:

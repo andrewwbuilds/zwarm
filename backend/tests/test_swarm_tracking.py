@@ -1,9 +1,15 @@
-"""The tracker against rendered camera images, where the true poses are known exactly."""
+"""The floor-tag tracker against rendered frames, where the true poses are known exactly.
 
+These run the same detector real flights use, on simulated frames. They bound the maths. They say
+nothing about what the real camera will do.
+"""
+
+import json
 import math
+import tempfile
 import unittest
+from pathlib import Path
 
-import cv2
 import numpy as np
 
 from swarm.tracking import (

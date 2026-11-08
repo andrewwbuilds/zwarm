@@ -466,8 +466,8 @@ def demo_world(seed: int = 11) -> DemoWorld:
     generator = Box((1.4, -2.0, 0.0), (2.3, -1.25, 0.6), "metal")
     crate = Box((1.525, 0.9, 0.0), (2.225, 1.6, 0.55), "wood")
     cabinet = Box((-1.1, -2.4, 0.0), (-0.2, -1.7, 0.5), "white")
-    workbench = Box((-1.1, 0.85, 0.0), (-0.15, 1.65, 0.7), "wood")
-    furniture = {"generator": generator, "crate": crate, "cabinet": cabinet, "workbench": workbench}
+    couch = Box((-1.1, 0.85, 0.0), (-0.15, 1.65, 0.7), "fabric")
+    furniture = {"generator": generator, "crate": crate, "cabinet": cabinet, "couch": couch}
     hidden = (("backpack", Box((0.5, 1.95, 0.0), (0.85, 2.25, 0.45), "fabric")),
               ("suitcase", Box((-2.6, -2.4, 0.0), (-2.05, -2.1, 0.6), "leather")),
               ("chair", Box((2.5, -0.225, 0.0), (2.95, 0.225, 0.85), "wood")),

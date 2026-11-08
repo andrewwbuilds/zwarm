@@ -521,8 +521,16 @@ class FleetCapture:
         folder = self.root / name / "drones"
         seen: dict[str, int] = {}
         counts: dict[str, int] = {}
-        made: set[str] = set()
-        started = self.clock()
+        carried_ms = 0  # later than every frame already saved
+        if folder.exists():
+            for path in folder.iterdir():
+                earlier = frame_files(path / "raw")
+                if earlier:
+                    counts[path.name] = len(earlier)
+                    carried_ms = max(carried_ms, (frame_time_ms(earlier[-1]) or 0) + 1000)
+            with self.lock:
+                self.saved = dict(counts)
+        started = None  # the first frame's time: real and simulated frames run on different clocks
         while not stopping.wait(POLL_S):
             for drone in self._drone_ids():
                 try:

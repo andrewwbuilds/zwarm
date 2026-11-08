@@ -69,6 +69,7 @@ function FindingRow({ api, finding, onJudge, onEnlarge }: RowProps) {
         </p>
         <p className="zw-finding-meta">
           {finding.drone}{finding.target ? `, ${finding.target}` : ""}{sure === null ? "" : `, ${sure}% sure`}
+          {finding.views > 1 ? `, ${finding.views} looks` : ""}
         </p>
         {finding.status === "pending" ? (
           <div className="zw-finding-buttons">

@@ -120,7 +120,7 @@ def layouts(name: str, world: str = "demo") -> dict[str, list]:
 
 
 def pads_for(world: str) -> dict:
-    return dict(demo_world().pads) if world == "demo" else dict(ROOM_PADS)
+    return dict(demo_world().pads) if world in DEMO_WORLDS else dict(ROOM_PADS)
 
 
 def make_camera(world: str, walls: str, scale: float, seed: int, fov_deg: float = 90.0) -> Camera:

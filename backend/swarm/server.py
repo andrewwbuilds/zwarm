@@ -218,37 +218,37 @@ class SwarmFile:
     @classmethod
     def load(cls, path: str | Path) -> "SwarmFile":
         data = json.loads(Path(path).read_text())
-        tracking = data.get("tracking", {})
-        drones = [DroneEntry(str(d["id"]), int(d["marker"]), str(d["backend"]), tuple(d["pad"]), float(d.get("yaw_deg", 0.0)))
+        drones = [DroneEntry(str(d["id"]), str(d["backend"]), tuple(d["pad"]), float(d.get("yaw_deg", 0.0)),
+                             float(d.get("camera_tilt_deg", DEFAULT_TILT_DEG)),
+                             None if d.get("focal_px") is None else float(d["focal_px"]))
                   for d in data["drones"]]
-        anchors = tracking.get("anchors", {})
-        limits = Limits(**data.get("limits", {}))
-        return cls(Room.from_dict(data), drones, float(tracking.get("marker_m", 0.07)),
-                   float(tracking.get("mount_height_m", 0.05)), list(tracking.get("cameras", [])), limits,
-                   float(anchors.get("marker_m", 0.15)),
-                   {int(k): tuple(v) for k, v in anchors.get("positions", {}).items()})
+        return cls(Room.from_dict(data), drones, load_anchors(data.get("anchors")), Limits(**data.get("limits", {})),
+                   float(data.get("video_latency_s", 0.15)))
+
+    def optics(self) -> dict[str, DroneOptics]:
+        return {d.id: DroneOptics(d.pad[0], d.pad[1], math.radians(d.yaw_deg), d.camera_tilt_deg,
+                                  None if d.focal_px is None else Lens.from_focal(d.focal_px))
+                for d in self.drones}
+
+    def backends(self) -> dict[str, str]:
+        return {d.id: d.backend for d in self.drones}
 
 
 def real_runtime(config: SwarmFile) -> Runtime:
-    import math
-
+    from swarm.frames import StreamFrames
     from swarm.links import BackendLink
-    from swarm.tracking import CameraModel, CameraWorker, PoseStore
 
-    if not config.cameras:
-        raise ValueError("the swarm file lists no cameras: without tracking nothing can fly")
     links = {d.id: BackendLink(d.backend, d.id) for d in config.drones}
-    store = PoseStore({d.marker: d.id for d in config.drones}, config.mount_height_m)
-    workers = []
-    for entry in config.cameras:
-        model = CameraModel.load(entry["calibration"])
-        if model.rvec is None:
-            raise ValueError(f"{entry['calibration']} has no camera position: run locate-camera first")
-        workers.append(CameraWorker(entry["source"], model, config.marker_m, store))
+    frames = StreamFrames(config.backends())
+    tracker = InsideOutTracker(config.optics(), config.anchors, (config.room.lo, config.room.hi), config.video_latency_s)
     configs = [DroneConfig(d.id, (d.pad[0], d.pad[1], 0.0), math.radians(d.yaw_deg)) for d in config.drones]
-    coordinator = Coordinator(config.room, configs, links, config.limits,
-                              visible=lambda p: any(worker.sees(p) for worker in workers))
+    first = next(iter(tracker.drones.values()))
 
+    def visible(p) -> bool:
+        lens = first.lens or Lens.from_fov()
+        return bool(anchors_in_view(config.anchors, lens, math.radians(first.tilt_deg), p, math.radians(config.drones[0].yaw_deg)))
+
+    coordinator = Coordinator(config.room, configs, links, config.limits, visible=visible, tracker=tracker)
     for link in links.values():
         link.start()
     for worker in workers:

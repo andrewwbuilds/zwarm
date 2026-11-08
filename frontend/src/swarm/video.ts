@@ -54,7 +54,7 @@ export class VideoFeeds {
         this.skipUntil.set(id, performance.now() + RETRY_NO_VIDEO_MS);
       }
     }
-    if (this.running) this.timer = window.setTimeout(() => void this.step(), PAUSE_MS);
+    if (loop === this.loop) this.timer = window.setTimeout(() => void this.step(loop), PAUSE_MS);
   }
 
   private nextDrone(): string | null {

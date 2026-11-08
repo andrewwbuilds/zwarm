@@ -692,7 +692,7 @@ class Coordinator:
         for d in self.drones.values():
             if d.tracked.t is None or d.phase == Phase.STOPPED:
                 continue
-            if d.phase == Phase.GROUND and (d.tracked.age(now) > STALE_S or d.tracked.p[2] < 0.3):
+            if d.phase == Phase.GROUND and not d.unknown_air and (d.tracked.age(now) > STALE_S or d.tracked.p[2] < 0.3):
                 continue  # on the floor: flight heights keep everyone well above it
             steerable = self._steerable(d, now)
             age = d.tracked.age(now)

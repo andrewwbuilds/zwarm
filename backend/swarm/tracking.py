@@ -576,6 +576,11 @@ class InsideOutTracker:
         d = self.drones[drone_id]
         return anchors_in_view(self.anchors, d.lens or Lens.from_fov(), math.radians(d.tilt_deg), (d.x, d.y, height), d.yaw)
 
+    def _change_now(self, drone_id: str, now: float) -> float | None:
+        """video_change for code already holding the lock."""
+        recent = [change for t, change in self.changes[drone_id] if now - t <= STILL_WINDOW_S]
+        return None if len(recent) < STILL_MIN_FRAMES else round(float(np.median(recent)), 2)
+
     def report(self, now: float) -> dict[str, dict]:
         with self.lock:
             return {k: {

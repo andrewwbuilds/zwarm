@@ -972,6 +972,9 @@ class MissionManager:
             self.capture.start(name)
         except Exception as error:
             logger.exception("[mission] map capture didn't start")
+            with self.hub.lock:
+                if self.capture_name == name:  # the next tick ends the mission, so no battery goes on saving nothing
+                    self.capture_name, self.capture_failed = None, str(error)
             self.say("fault", f"Map capture didn't start: {error}", event="capture_failed")
 
     def _stop_capture_and_build(self, name: str) -> None:

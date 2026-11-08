@@ -595,7 +595,8 @@ class FleetCapture:
                 if self.name != name:
                     self.saved = {}
                 self.name, self.state, self.step, self.error, self.result, self.splat = name, "building", None, None, None, None
-                self.build_thread = threading.Thread(target=self._build, args=(name, splat), daemon=True, name="map-build")
+                self.build_thread = threading.Thread(target=self._build, args=(name, splat, self.capture_thread),
+                                                     daemon=True, name="map-build")
                 self.build_thread.start()
         return self.status()
 

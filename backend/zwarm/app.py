@@ -97,6 +97,8 @@ class Front:
         self.events: EventLog | None = None
         self.tick_s: deque = deque(maxlen=TICK_S_KEPT)
         self.tick_errors = 0
+        self.pair_m: float | None = None  # how far apart the two closest flying drones are, by tracked position
+        self.pair_lowest_m: float | None = None  # the lowest that has been since this started
         self.last_button: str | None = None
         self.last_button_at = 0.0
 

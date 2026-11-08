@@ -418,7 +418,7 @@ class Agent:
                 reply = self.client.complete(messages, tools, budget_s=min(left, getattr(self.client, "budget_s", left)))
             except NemotronError as error:
                 if not turn.records:
-                    return self._fallback(text, error)
+                    return self._fallback(text, error, turn.epoch)
                 final = f"{self._results_in_words(turn)} I lost the model before I could finish."
                 break
             if turn.epoch != self._epoch:

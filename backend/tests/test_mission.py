@@ -386,6 +386,19 @@ class StatusTests(unittest.TestCase):
         self.assertLess(gaps["south"]["share_seen"], 0.5)
         self.assertAlmostEqual(gaps["all"]["share_seen"], 0.5, delta=0.2)
 
+    def test_coverage_map_is_what_the_console_draws(self):
+        import json
+        f = Fleet()
+        f.run()
+        f.missions.coverage.counts[0] = LOOKS_NEEDED
+        f.missions.coverage.counts[1] = 1
+        shown = f.missions.coverage_map()
+        json.dumps(shown)
+        self.assertEqual(len(shown["cells"]), len(f.missions.coverage.cells))
+        self.assertEqual(shown["cells"][0][2], 1.0)
+        self.assertEqual(shown["cells"][1][2], round(1 / LOOKS_NEEDED, 2))
+        self.assertEqual(shown["cell"], 0.5)
+
     def test_floor_seen_with_no_mission_running_still_counts(self):
         f = Fleet()
         f.run(1.5)

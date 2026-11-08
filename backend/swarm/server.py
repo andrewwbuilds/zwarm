@@ -251,8 +251,8 @@ def real_runtime(config: SwarmFile) -> Runtime:
     coordinator = Coordinator(config.room, configs, links, config.limits, visible=visible, tracker=tracker)
     for link in links.values():
         link.start()
-    for worker in workers:
-        worker.start()
+    frames.start()
+    tracker.start(frames)
 
     def close() -> None:
         for worker in workers:

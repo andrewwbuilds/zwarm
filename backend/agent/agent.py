@@ -202,8 +202,9 @@ class Agent:
         self.observe_every_s = observe_every_s
         self.turn_budget_s = turn_budget_s
         self.clock = clock
-        self.busy = False
-        self._turn_lock = threading.Lock()  # one model conversation at a time
+        self._thinking = 0
+        self._turn_lock = threading.Lock()  # one operator sentence at a time
+        self._spoken = 0  # sentences the operator has said, so a comment on an event gives way to them
         self._state = threading.Lock()  # plan and epoch. Never held across a model or hub call.
         self._epoch = 0  # goes up on every stop-type command, so a turn already thinking can't act after it
         self._plan: dict | None = None

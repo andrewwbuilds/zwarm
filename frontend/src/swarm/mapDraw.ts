@@ -345,10 +345,12 @@ function drawDrone(ctx: CanvasRenderingContext2D, d: Drone, pose: Shown, color: 
 
   ctx.font = '700 16px "Avenir Next", "Segoe UI", system-ui, sans-serif';
   ctx.textBaseline = "middle";
+  ctx.textAlign = "center";
   const broken = d.faults.length > 0 || !d.connected;
-  const roomOnRight = x + 18 + ctx.measureText(d.id).width < f.right - 4;
-  ctx.textAlign = roomOnRight ? "left" : "right";
-  label(ctx, d.id, roomOnRight ? x + 18 : x - 18, y - 16, broken ? FAULT : color);
+  // Centred above the drone, so neighbours on their pads don't run together.
+  const half = ctx.measureText(d.id).width / 2;
+  const labelX = Math.max(f.left + half + 4, Math.min(f.right - half - 4, x));
+  label(ctx, d.id, labelX, y - 30, broken ? FAULT : color);
 }
 
 function drawCompass(ctx: CanvasRenderingContext2D, room: Room, f: Frame): void {

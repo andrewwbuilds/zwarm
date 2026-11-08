@@ -137,6 +137,7 @@ class RegionCoverage(Coverage):
         self.region = "all"
         self.usable = usable  # usable(p, yaw): whether a drone can hold this viewpoint at all
         self.usable_known: dict[tuple, bool] = {}
+        self.usable_for: list[str] = []  # the listed obstacles behind those answers
         self.hub_looks = True  # off when real camera frames are counted instead of the detector's answers
         self.in_region = np.ones(len(self.cells), bool)
         self.ever = np.zeros(len(self.cells), bool)  # seen at some point, even if counted again since

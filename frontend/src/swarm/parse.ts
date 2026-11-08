@@ -5,7 +5,7 @@
 import {
   EVENT_KINDS,
   type AgentInfo, type Anchor, type ChatReply, type Cloud, type Coverage, type CoverageCell, type Drone,
-  type EventKind, type Finding, type FindingStatus, type LogEvent, type MapStatus, type Mission, type Obstacle,
+  type Decision, type EventKind, type Finding, type FindingStatus, type LogEvent, type MapStatus, type Mission, type Obstacle,
   type Plan, type Room, type Thing, type ToolCall, type Vec3, type ZwarmState,
 } from "./types";
 

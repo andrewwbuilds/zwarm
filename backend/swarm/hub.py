@@ -388,19 +388,31 @@ class Hub:
         if math.hypot(offset[0], offset[1]) > 0.4:
             self.aim(d, math.atan2(offset[1], offset[0]))
 
-    # ---------------------------------------------------------------- commands
+    # ---------------------------------------------------------------- what can be asked
+    # Plain methods taking plain values, each returning a sentence for the operator. Text from a
+    # person goes through command(), which only parses and calls one of these. All are thread-safe.
     def command(self, text: str) -> str:
         """Do what was said and answer. Anything not understood changes nothing."""
-        self.memory.note(self.now, "said", text)
-        c = parse(text, tuple(self.co.drones))
-        try:
-            reply = getattr(self, f"_do_{c.verb}", self._do_unknown)(c)
-        except Exception:
-            logger.exception("[hub] command failed: %s", text)
-            reply = "That failed inside the hub, so nothing changed. Check the log."
-        self.memory.note(self.now, "reply", reply)
-        self.memory.commit()
-        return reply
+        with self.lock:
+            self.memory.note(self.now, "said", text)
+            self.memory.commit()
+            c = parse(text, tuple(self.co.drones))
+            if c.verb == "refused":
+                return c.problem
+            if c.verb == "help":
+                return EXPLANATION
+            if c.verb == "unknown":
+                return "I didn't understand that, so I did nothing. " + EXPLANATION
+            if c.verb == "goto":
+                if c.point is not None:
+                    return self.go_to(*c.point, drone=c.drone)
+                return self.go_to_thing(c.label, drone=c.drone)
+            if c.verb == "form":
+                return self.form(c.shape)
+            if c.verb in ("find", "where", "forget"):
+                return getattr(self, c.verb)(c.label)
+            return {"estop": self.estop, "takeoff": self.takeoff, "land": self.land, "land_here": self.land_here,
+                    "hold": self.hold, "status": self.status, "list": self.seen}[c.verb]()
 
     def _stop_search(self) -> None:
         """End any search and the moves it ordered. A plain "go to" for one drone leaves the others' moves alone."""

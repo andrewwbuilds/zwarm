@@ -502,6 +502,8 @@ class Agent:
         record["ok"] = bool(result.get("ok"))
         record["result"] = result
         turn.records.append(record)
+        if call.name == "list_findings" and record["ok"]:
+            turn.read_findings = True
         self._emit("tool", f"{call.name}: {_result_words(result)}", {"name": call.name, "arguments": record["arguments"], "ok": record["ok"]})
         return result
 

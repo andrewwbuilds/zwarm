@@ -592,7 +592,7 @@ def _marker_filter(tracker):
     optics = next(iter(tracker.drones.values()))
     lens = optics.lens or Lens.from_fov()
     tilt = math.radians(optics.tilt_deg)
-    return lambda p, yaw: bool(anchors_in_view(tracker.anchors, lens, tilt, p, yaw))
+    return lambda p, yaw: bool(anchors_in_view(tracker.anchors, lens, tilt, p, yaw, blockers=tracker.blockers()))
 
 
 class MissionManager:

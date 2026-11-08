@@ -257,7 +257,7 @@ class Agent:
             return self._answer({"reply": "Something went wrong in the agent, so I may not have finished that. "
                                           "Stop, land and emergency stop still work.", "plan": None, "tool_calls": []})
         finally:
-            self.busy = False
+            self._end_thinking()
             self._turn_lock.release()
 
     def pending(self) -> dict | None:

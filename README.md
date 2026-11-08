@@ -86,6 +86,24 @@ To check the link without starting the motors, run `uv run python preflight.py` 
 The person-following plugin needs the heavy YOLO dependencies, which are optional: run `uv sync --extra follow` in `backend`, then set `PLUGINS_ENABLED=true`.
 
 
+## Drift stabilizer
+Over a plain floor, in dim light or high up, the drone's optical-flow sensor loses the floor, and a centred stick then only means "stay level". The stabilizer reads motion from the front camera and adds small pitch and roll corrections: it brakes when you let go of the sticks, then holds that spot. It's off by default. Turn it on with the `stabilizer` button in the console, or set `STABILIZER_ENABLED=true` in `backend/.env`. If your camera's field of view isn't 90 degrees, set `STABILIZER_HFOV`.
+
+**It has not flown on a real drone yet.** Try it low, in open space, with a hand near E-stop. Your sticks always win on their axis. It doesn't touch height or heading, and it goes hands-off on a blank view, within about 0.6 m of a plain surface, and if the video stalls.
+
+Measured in the simulator only (`cd backend && uv run python -m sim.stability`, 384 flight pairs). The simulated flight controller is an estimate, so these numbers don't predict a real drone's improvement.
+
+| Flight | Median drift, off → on | Worst, off → on | Target |
+|---|---|---|---|
+| Hover 20 s, no flow | 2.78 → 0.44 m | 11.05 → 1.99 m | met (70% less) |
+| Stop after moving, no flow | 3.06 → 1.45 m | 8.38 → 4.15 m | met (50% less) |
+| Hold near a wall, no flow | 1.49 → 0.07 m | 3.39 → 1.92 m | met (50% less) |
+| Turn right after takeoff, no flow | 0.57 → 0.39 m | 3.64 → 3.06 m | **missed** (50% less) |
+| Turn after 5 s of hover, no flow | 0.56 → 0.74 m | 4.28 → 2.58 m | **missed: median got worse** |
+| All flights, flow working | 0.10 → 0.22 m | 1.67 → 1.59 m | **missed: 13 of 192 over 0.25 m worse** |
+
+Bumps and crashes across all 384 flights fell from 19 and 1 to 3 and 0. So leave it off if your drone already holds well, and don't expect it to fix drift during an in-place turn. To check whether flow loss is your cause, fly over a busy patterned rug: if the drift mostly goes away, it is. See [the decision record](docs/decisions/0001-visual-stabilizer.md).
+
 ## Localization (visual SLAM)
 The S20 sends no position data, so the only source is its camera. `backend/slam` tracks the video and builds a map: it follows corners between frames, finds the camera pose from the 3D points it has triangulated, refines recent keyframes (bundle adjustment), and closes loops when the drone returns to a place it has seen.
 

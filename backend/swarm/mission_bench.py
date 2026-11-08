@@ -476,7 +476,7 @@ def demo_room_map(seed):
         f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
         f.check_covered()
         f.missions.settle()
-        f.check(capture.names() == ["start", "stop", "build"], f"capture got {capture.calls}")
+        f.check(capture.names() == ["start"], f"nothing should build with drones up: {capture.calls}")
         gaps = {gap["name"]: gap for gap in f.missions.gaps()}
         f.check(gaps["all"]["share_seen"] >= COVERED, f"gaps says only {gaps['all']['share_seen']}")
         yield from f.land()

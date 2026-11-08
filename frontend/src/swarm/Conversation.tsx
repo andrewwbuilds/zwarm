@@ -187,7 +187,8 @@ export default function Conversation({ api, events, agent, plan }: Props) {
       return nextKey.current;
     };
     setLocal((old) => [...old, { key: key(), after, kind: "said", text }]);
-    setRunning((n) => n + 1);
+    runningNow.current += 1;
+    setRunning(runningNow.current);
     try {
       const answer = await api.chat(text);
       const added: LocalLine[] = answer.toolCalls.map((call) => ({ key: key(), after, kind: "tool", call }));

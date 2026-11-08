@@ -585,8 +585,11 @@ class LosingDroneTests(unittest.TestCase):
         f.missions.start("explore", "all")
         f.links["a"].connected = f.links["b"].connected = False
         f.run(2.5)
+        self.assertEqual(f.missions.state, "running")  # a link can come back
+        f.run(ALL_LOST_S)
         self.assertEqual(f.missions.state, "failed")
-        self.assertIn("No drones are left", f.missions.reason)
+        self.assertIn("No drone has been able to work", f.missions.reason)
+        self.assertIn("lost its control link", f.missions.reason)
 
     def test_a_drone_that_never_flew_this_mission_isnt_lost(self):
         f = Fleet()

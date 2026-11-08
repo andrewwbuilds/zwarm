@@ -292,7 +292,8 @@ class Toolbox:
         label = clean_label(target.lower())
         with self.lock:
             known = [t for t in memory.find(label) if not t.moves]
-        if known:
+            named = getattr(self.missions, "_furniture", lambda: [])()  # on the room's map, so never needs seeing first
+        if known or any(label in item.label for item in named):
             return label, None
         return None, (f'The fleet hasn\'t seen "{target}" yet, so this inspects the floor and everything it '
                       "already knows in that region, and reports any damage in the photos.")

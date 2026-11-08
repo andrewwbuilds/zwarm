@@ -359,6 +359,59 @@ def level_map(cameras: dict, xyz: np.ndarray, tilt_deg: float = TILT_DEG, height
     return rotation, scale, offset
 
 
+def fit_to_room(placed: np.ndarray, tracked: np.ndarray) -> tuple:
+    """The scale, rotation and shift that best carry map positions onto tracked ones (Umeyama).
+
+    Returns (rotation, scale, offset, median error in metres), where a room point is scale * rotation @ p + offset.
+    """
+    mean_p, mean_t = placed.mean(axis=0), tracked.mean(axis=0)
+    a, b = placed - mean_p, tracked - mean_t
+    u, d, vt = np.linalg.svd(b.T @ a / len(a))
+    flip = np.eye(3)
+    if np.linalg.det(u) * np.linalg.det(vt) < 0:
+        flip[2, 2] = -1
+    rotation = u @ flip @ vt
+    scale = float(np.trace(np.diag(d) @ flip) / max((a * a).sum() / len(a), 1e-12))
+    offset = mean_t - scale * rotation @ mean_p
+    errors = np.linalg.norm(scale * placed @ rotation.T + offset - tracked, axis=1)
+    return rotation, scale, offset, float(np.median(errors))
+
+
+def read_tracked(folder: Path) -> dict[str, list[float]]:
+    """Photo name -> where the tracker said its drone was, for the photos that have a tracked position."""
+    sources_path = folder / "photos.json"
+    if not sources_path.exists():
+        return {}
+    sources = json.loads(sources_path.read_text())
+    tracked = {}
+    for drone in {name.split("/")[0] for name in sources}:
+        path = folder / "drones" / drone / "poses.jsonl"
+        if not path.exists():
+            continue
+        known = {}
+        for line in path.read_text().splitlines():
+            try:
+                entry = json.loads(line)
+                known[entry["frame"]] = entry["p"]
+            except (ValueError, KeyError):  # a line cut short by a crash
+                continue
+        tracked.update({name: known[raw] for name, raw in sources.items() if name.startswith(drone + "/") and raw in known})
+    return tracked
+
+
+def check_against_room(cameras: dict, tracked: dict) -> dict | None:
+    """Compare the map's camera positions with the tracked ones. None when too few photos have both."""
+    names = sorted(set(cameras) & set(tracked))
+    if len(names) < MIN_FIT_PHOTOS:
+        return None
+    placed = np.array([cameras[n][0] for n in names])
+    where = np.array([tracked[n] for n in names], float)
+    if np.ptp(where[:, :2], axis=0).max() < 0.5:  # a hover can't fix a rotation
+        return None
+    rotation, scale, offset, error = fit_to_room(placed, where)
+    return {"photos": len(names), "median_error_m": round(error, 3), "rotation": rotation, "scale": scale, "offset": offset}
+
+
 # ---------------------------------------------------------------- the build
 def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = lambda step: None, shared_camera: bool = False,
               fix_lens: bool = False) -> dict:

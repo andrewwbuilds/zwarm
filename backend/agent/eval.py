@@ -162,10 +162,10 @@ class FakeMissions:
                 "flight_s": dict(self.flown), "flight_limit_s": self.flight_limit_s, "reason": ""}
 
     def gaps(self):
-        return [{"name": "north", "share_seen": 0.8, "viewpoint": {"x": 2.0, "y": 0.0, "yaw": 0.0}},
-                {"name": "south", "share_seen": 0.35, "viewpoint": {"x": -2.0, "y": 0.0, "yaw": 3.14}},
-                {"name": "east", "share_seen": 0.1, "viewpoint": {"x": 0.0, "y": -1.5, "yaw": -1.57}},
-                {"name": "west", "share_seen": 0.6, "viewpoint": {"x": 0.0, "y": 1.5, "yaw": 1.57}}]
+        seen = {"all": self.share, "north": 0.8, "south": 0.35, "east": 0.1, "west": 0.6, "north-east": 0.3, "north-west": 0.9,
+                "south-east": 0.05, "south-west": 0.5, "center": 0.7}
+        return [{"name": name, "share_seen": share, "unseen_m2": round((1.0 - share) * 24.0, 2), "out_of_view_m2": 0.0,
+                 "viewpoint": {"x": 1.5, "y": -1.5, "z": 1.0, "yaw_deg": -45.0}} for name, share in seen.items()]
 
 
 class FakeFindings:

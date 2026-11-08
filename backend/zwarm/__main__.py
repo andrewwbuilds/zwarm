@@ -105,9 +105,15 @@ def main(argv=None) -> int:
     sub.add_argument("--drones", help="fly only these, for example 1 or 1,2. The others stay on the floor")
     sub.set_defaults(run=cmd_fly)
 
-    sub = commands.add_parser("preflight", help="check a swarm file, the backends, video and detector, without flying")
+    sub = commands.add_parser("preflight", help="read-only pass or fail for each drone. Sends no flight command")
     sub.add_argument("config")
-    sub.add_argument("--no-model", action="store_true", help="don't require NVIDIA_API_KEY")
+    sub.add_argument("--no-model", action="store_true", help="don't require NVIDIA_API_KEY or try the model")
+    sub.add_argument("--drones", help="check only these, for example 1 or 1,2")
+    sub.add_argument("--seconds", type=float, help="how long to watch the video; 25 s, or 6 s with --on-pad")
+    sub.add_argument("--on-pad", action="store_true", help="the drones stay on their pads, so skip the tag and pose checks")
+    sub.add_argument("--save-frames", metavar="DIR", help="save each drone's sharpest frame here")
+    sub.add_argument("--vision", action="store_true", help="also send one real frame to the vision model, which takes up to 40 s")
+    sub.add_argument("--watch", action="store_true", help="print tags and pose until Ctrl-C, safe with a drone in the air")
     sub.set_defaults(run=cmd_preflight)
 
     args = parser.parse_args(argv)

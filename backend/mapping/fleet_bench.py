@@ -264,7 +264,7 @@ def evaluate(folder: Path) -> dict:
                           "points_z_p5_p50_p95": np.percentile(cloud[:, 2], [5, 50, 95]).round(3).tolist()}}
 
 
-def live(root: Path, seconds: float, rate_hz: float, splat: bool) -> dict:
+def live(root: Path, seconds: float, rate_hz: float, splat: bool, tracked: bool = True) -> dict:
     """The whole path in real time: SimFrames video, FleetCapture saving it, a build in the background, points()."""
     world = demo_world()
     plan = layouts("mission", "demo")

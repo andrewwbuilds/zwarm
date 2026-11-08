@@ -142,15 +142,37 @@ class CaptureTests(unittest.TestCase):
         self.frames.show("1", 2)
         self.assertTrue(until(lambda: self.capture.status()["by_drone"].get("1") == 1))
 
-    def test_frames_times_are_relative_to_the_start(self):
-        clock = [100.0]
-        capture = FleetCapture(self.frames, self.root, clock=lambda: clock[0])
+    def test_frame_times_count_from_the_first_frame_on_any_clock(self):
+        self.capture.start("t")
+        self.frames.show("1", 1, t=5000.0)
+        self.assertTrue(until(lambda: self.capture.status()["photos"] == 1))
+        self.frames.show("2", 1, t=5002.5)
+        self.assertTrue(until(lambda: self.capture.status()["photos"] == 2))
+        self.assertEqual([p.name for p in (self.root / "t" / "drones" / "1" / "raw").glob("*.jpg")], [raw_name(0, 0)])
+        self.assertEqual([p.name for p in (self.root / "t" / "drones" / "2" / "raw").glob("*.jpg")], [raw_name(0, 2500)])
+
+    def test_starting_the_same_map_again_carries_on_after_a_battery_swap(self):
+        self.capture.start("m")
+        self.frames.show("1", 1, t=10.0)
+        self.assertTrue(until(lambda: self.capture.status()["photos"] == 1))
+        self.frames.show("1", 2, t=12.0)
+        self.assertTrue(until(lambda: self.capture.status()["photos"] == 2))
+        self.capture.stop()
+        self.capture.start("m")
+        self.frames.show("1", 1, t=99.0)  # the same drone's video starts counting again
+        self.assertTrue(until(lambda: self.capture.status()["photos"] == 3))
+        self.capture.stop()
+        names = self.saved("1")
+        self.assertEqual(names, [raw_name(0, 0), raw_name(1, 2000), raw_name(2, 3000)])
+
+    def test_a_drone_id_with_odd_characters_stays_inside_its_folder(self):
+        frames = FakeFrames(drones=("../evil",))
+        capture = FleetCapture(frames, self.root)
         self.addCleanup(capture.stop)
-        capture.start("t")
-        self.frames.show("1", 1, t=102.5)
+        capture.start("m")
+        frames.show("../evil", 1)
         self.assertTrue(until(lambda: capture.status()["photos"] == 1))
-        names = [p.name for p in (self.root / "t" / "drones" / "1" / "raw").glob("*.jpg")]
-        self.assertEqual(names, [raw_name(0, 2500)])
+        self.assertEqual([p.name for p in (self.root / "m" / "drones").iterdir()], [".._evil"])
 
     def test_drone_ids_come_from_whatever_the_frames_object_offers(self):
         sim = SimpleNamespace(fleet=SimpleNamespace(drones={"a": object(), "b": object()}), latest=lambda d: None)

@@ -765,7 +765,7 @@ class MapTests(unittest.TestCase):
         coverage.counts[coverage.cells[:, 1] > 0.0] = LOOKS_NEEDED
         self.assertGreater(f.missions.start("explore", "all")["share_seen"], 0.4)
 
-    def test_build_starts_when_the_mission_is_stopped(self):
+    def test_build_waits_until_the_drones_are_down(self):
         capture = mock.Mock()
         f = Fleet(capture=capture)
         f.run()

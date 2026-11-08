@@ -240,13 +240,8 @@ def main(argv=None) -> int:
     sub.add_argument("--write", action="store_true", help="store the result in the swarm file")
     sub.set_defaults(run=cmd_fit_focal)
 
-    sub = commands.add_parser("bench", help="score collision avoidance in simulation, with a simulated tracker", add_help=False)
-    sub.add_argument("rest", nargs=argparse.REMAINDER)
-    sub.set_defaults(run=cmd_bench)
-
-    sub = commands.add_parser("floor-bench", help="score flying from floor tags in simulation, with the real detector", add_help=False)
-    sub.add_argument("rest", nargs=argparse.REMAINDER)
-    sub.set_defaults(run=cmd_floor_bench)
+    commands.add_parser("bench", help="score collision avoidance in simulation, with a simulated tracker")
+    commands.add_parser("floor-bench", help="score flying from floor tags in simulation, with the real detector")
 
     args = parser.parse_args(argv)
     return args.run(args)

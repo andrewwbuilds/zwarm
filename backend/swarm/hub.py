@@ -420,22 +420,16 @@ class Hub:
             self.search.state = "stopped"
             self.orders.clear()
 
-    def _do_unknown(self, c) -> str:
-        return "I didn't understand that, so I did nothing. " + EXPLANATION
-
-    def _do_refused(self, c) -> str:
-        return c.problem
-
-    def _do_help(self, c) -> str:
-        return EXPLANATION
-
-    def _do_estop(self, c) -> str:
+    @_action
+    def estop(self) -> str:
+        """Cut every motor. The drones fall."""
+        self.co.estop()
         self._stop_search()
         self.orders.clear()
-        self.co.estop()
         return "Motors cut on every drone. They are falling."
 
-    def _do_takeoff(self, c) -> str:
+    @_action
+    def takeoff(self) -> str:
         problems = self.co.takeoff(self.now)
         return "Not taking off: " + "; ".join(problems) + "." if problems else "Taking off, one at a time."
 

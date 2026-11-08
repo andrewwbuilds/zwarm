@@ -12,8 +12,8 @@ One person talks to three cheap Wi-Fi camera drones with closed firmware, and NV
 - `backend/mapping/fleet.py`: one map from every drone. `uv run python -m mapping.fleet_bench` checks it against simulator truth. Placing every photo doesn't prove a map is right.
 - `backend/swarm/`: multi-drone coordination. `hub.py` is the shared memory and the actions (plain methods; `commands.py` only parses fixed phrases into them), `memory.py` is SQLite, `eyes.py` and `yolo_eyes.py` are the cameras, `search.py` shares out the floor. `backend/slam/`, `backend/mapping/`: localization and photogrammetry.
 - `backend/swarm/mission.py`: explore, map, inspect and search on top of the hub. `inspect.py` finds damage, `sim_cameras.py` renders the demo room.
-- `backend/agent/`: the Nemotron planner, its checked tools, and vision.
-- `backend/zwarm/`: the whole app on port 8010. `app.py` composes every part. Its `Front` is what `swarm/server.py`'s Runtime and routes hold as `co`, so a tick is hub then missions, and a stop button ends the mission too.
+- `backend/agent/`: the Nemotron side. `agent.py` is `handle`, `approve` and `observe`, `tools.py` the twelve checked tools, `nemotron.py` the client and model chain, `vision.py` the image calls, `eval.py` the live test set.
+- `backend/zwarm/`: the whole app on port 8010. `app.py` composes every part. Its `Front` is what `swarm/server.py`'s Runtime and routes hold as `co`, so a tick is hub then missions, and a stop button ends the mission too. The `/zwarm/*` routes are in `app.py`, `preflight.py` is read-only and `markers.py` prints floor tags.
 - `docs/runbook.md`: flight day, staged test and tuning table, with file:line for each constant. `backend/zwarm/real.example.json` is the swarm file to copy.
 - `frontend/`: Vite and React console. `?backend=` picks the backend per tab. `/swarm` (`src/pages/SwarmPage.tsx`, `src/swarm/`) is the operator console; `?api=` picks its backend and `?mock=1` fakes one.
 - `tools/pi/`: Pi install, fleet scripts and watchdogs. `docs/research/`: reverse-engineering notes.

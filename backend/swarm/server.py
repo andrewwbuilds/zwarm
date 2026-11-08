@@ -168,6 +168,12 @@ def build_app(runtime: Runtime) -> FastAPI:
             runtime.co.estop()
         return {"ok": True}
 
+    @app.post("/reset-pads")
+    def reset_pads():
+        """The operator has put the landed drones back on their pads."""
+        with runtime.lock:
+            return answer(runtime.co.reset_to_pads())
+
     @app.post("/obstacles")
     def add_obstacle(body: dict = Body(...)):
         try:

@@ -53,4 +53,13 @@ npm run dev                                         # /swarm on port 5173, for a
 - Camera geometry assumes a camera tilted 45 degrees down (`eyes.DEFAULT_TILT`). Pass `tilt=0.0` for a level one.
 - Real positions come from 25 printed AprilTags, family `tagStandard41h12`, IDs 0-24, flat on the floor in a grid and seen by each drone's own camera. Don't ask the user to print ArUco or QR codes. OpenCV can't read this family, so use `pupil-apriltags`. Its `tag_size` is the edge of the 5-cell white square inside the black ring: 0.0767 m on these sheets. They printed at 75%, so ignore the "184mm" printed on them.
 - `backend/swarm/inspect.py` shares a name with the standard library. Run swarm code with `python -m swarm...` from `backend/`. `python swarm/x.py` puts that folder first on the path and breaks `import inspect`.
+- The swarm tick follows the same rule as `FlightController.tick`, and it can't wait on the network or disk either. Model calls stay on the agent's thread, which takes the runtime lock only for short hub calls.
+- Stops have no network path. `Agent.handle` runs `safety_command` before any model, and the console's HOLD, LAND and E-STOP call fixed endpoints. Keep them that way.
+- `zwarm sim` takes poses from simulator truth unless `--inside-out`. Anything that depends on a drone seeing tags, such as heading, the landing approach or a second flight, can pass there and fail for real. Test those with `--inside-out` or the `SWARM_E2E` tests.
+- Heading decides whether a drone knows where it is, since tags must stay in view. `hub.aim` writes `d.config.yaw`, so a turn outlives the mission that asked for it.
+- Open bugs and their workarounds are under Known problems in `README.md`. Delete an entry in the commit that fixes it.
+- `python -m zwarm` reads only `NVIDIA_API_KEY` from `backend/.env`. `load_dotenv` runs only under `web_server.py`, so other settings in that file do nothing here: set them in the shell. Never print the key, including in test output and error messages.
+- `nvidia/nemotron-3-super-120b-a12b` returns 404 on this account.
+- On a loaded machine the frame-rate bars in `test_sim_camera` and `test_slam_sim` fail, so rerun them alone before believing it. `test_mapping_nerf` errors without nerfstudio.
+- The console says REAL DRONES on any `fly` run, even one pointed at simulated backends.
 - Several agents may share this checkout. Stage by path or hunk, never `git add -A`.

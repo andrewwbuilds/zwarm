@@ -70,8 +70,11 @@ def cmd_markers(args) -> int:
 def cmd_fly(args) -> int:
     from zwarm.app import build, fly
 
+    path = _subset(args)
+    if path is None:
+        return 2
     print(f"Checking {args.config} before starting. Nothing flies until you approve it.", flush=True)
-    zw, readiness = fly(args.config, args.data, not args.no_model)
+    zw, readiness = fly(path, args.data, not args.no_model)
     _print_ready(readiness)
     if zw is None:
         print("Refusing to fly: fix what's listed above. `python -m zwarm preflight FILE` repeats this check.")

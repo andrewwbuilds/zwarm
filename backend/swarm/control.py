@@ -39,6 +39,7 @@ class Tracked:
     def update(self, pose: Pose) -> None:
         measured = np.array(pose.p, float)
         self.sigma, self.fix_age = pose.sigma, pose.fix_age
+        self.seen_p = measured if pose.seen_p is None else np.asarray(pose.seen_p, float)
         if pose.v is not None:
             self.t, self.p, self.v, self.yaw = pose.t, measured, np.asarray(pose.v, float), pose.yaw
             return

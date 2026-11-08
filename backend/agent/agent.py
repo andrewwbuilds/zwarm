@@ -485,6 +485,8 @@ class Agent:
                               "vision model. Report what they say and let the operator decide.")
             if turn.epoch != self._epoch:
                 raise Refused(STOPPED)
+            if turn.allowed is not None and turn.spoken_count != self._spoken:
+                raise Refused("The operator has just said something, and that comes first, so this was dropped.")
             args = self.box.check(call.name, call.arguments)
             record["arguments"] = args
             self._check_region_was_named(turn, call.name, args)

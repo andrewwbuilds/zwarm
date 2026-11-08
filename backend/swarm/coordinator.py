@@ -181,6 +181,7 @@ class Coordinator:
         self.limits = limits or Limits()
         self.airframe = airframe or Airframe()
         self.drones = {c.id: Drone(c, links[c.id], StickMapper(self.airframe)) for c in configs}
+        self.home_yaw = {c.id: c.yaw for c in configs}  # missions turn config.yaw, so this is the heading it sits on its pad with
         self.takeoff_queue: list[str] = []
         self.last_takeoff: str | None = None
         self.next_takeoff = 0.0

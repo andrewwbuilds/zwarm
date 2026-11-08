@@ -271,7 +271,13 @@ def live(root: Path, seconds: float, rate_hz: float, splat: bool, tracked: bool 
     tracks = {d: fly(world.pads[d], plan[d], seconds + 5.0, seed=int(d) * 11) for d in plan}
     fleet_now = StillFleet(world.scene, {d: (*world.pads[d], 0.05, 0.0) for d in plan})
     frames = SimFrames(fleet_now, rate_hz=rate_hz, clock=time.monotonic)
-    capture = fleet.FleetCapture(frames, root)
+    noise = random.Random(9)
+
+    def pose_of(drone: str) -> tuple:  # stands in for the tracker: the truth plus noise, read as the frame is saved
+        hover = fleet_now.drones[drone]
+        return tuple(v + noise.gauss(0, 0.05) for v in (hover.x, hover.y, hover.z))
+
+    capture = fleet.FleetCapture(frames, root, pose_of=pose_of if tracked else None)
     stop = threading.Event()
 
     def move() -> None:

@@ -137,15 +137,17 @@ class Coverage:
         target = np.asarray(target, float)
         offset = target - self.candidates
         flat = np.hypot(offset[:, 0], offset[:, 1])
-        bearing = (np.arctan2(offset[:, 1], offset[:, 0]) - self.candidate_yaws + math.pi) % (2 * math.pi) - math.pi
-        elevation = np.arctan2(offset[:, 2], flat)
-        usable = (flat >= 0.8) & (flat <= 2.6) & (np.abs(bearing) <= HFOV / 2 - EDGE_MARGIN) & (np.abs(elevation) <= VFOV / 2 - 0.05)
+        axis, left, _ = to_camera(offset, self.candidate_yaws, tilt)
+        bearing = np.arctan2(left, axis)
+        usable = (flat >= 0.5) & in_view(self.candidates, self.candidate_yaws, target, reach=RELIABLE_REACH, margin=EDGE_MARGIN, tilt=tilt)
         for q in avoid:
             usable &= np.linalg.norm(self.candidates[:, :2] - np.asarray(q, float)[:2], axis=1) >= keep_away
+        # Straight down the camera's axis is the sharpest view and the best floor position.
+        ideal = min(2.0, max(0.8, (SEARCH_Z - float(target[2])) / max(math.tan(tilt), 1e-3)))
         best, best_cost = None, math.inf
-        order = np.flatnonzero(usable)
-        for index in order:
-            cost = float(np.linalg.norm(self.candidates[index, :2] - np.asarray(p, float)[:2])) + 0.5 * abs(float(bearing[index]))
+        for index in np.flatnonzero(usable):
+            cost = (float(np.linalg.norm(self.candidates[index, :2] - np.asarray(p, float)[:2]))
+                    + 0.5 * abs(float(bearing[index])) + abs(float(flat[index]) - ideal))
             if cost >= best_cost:
                 continue
             clear = True

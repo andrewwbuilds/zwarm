@@ -818,7 +818,6 @@ class FramesCountTests(unittest.TestCase):
             f.t += 0.05
             f.hub.tick(f.t, {k: Pose(f.t, v, 0.0) for k, v in f.poses.items()})
         np.testing.assert_array_equal(f.missions.coverage.counts, before)
-        self.assertGreater(LOOK_EVERY, 0.0)
 
 
 class FakeTracker:

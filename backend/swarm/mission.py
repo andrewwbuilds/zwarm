@@ -735,8 +735,9 @@ class MissionManager:
                 self.hub._stop_search()
                 self.hub.orders.clear()
                 self._halt()
+                self.hub.co.hold_checks()
                 self.hub.co.takeoff_queue.clear()
-                self._finish("stopped", f"{self.kind.capitalize()} mission stopped. Holding position.", now)
+                self._finish("stopped", f"{self.kind.capitalize()} mission stopped. {then}", now)
             return self.status()
 
     def status(self) -> dict:

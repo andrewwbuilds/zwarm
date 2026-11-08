@@ -715,6 +715,8 @@ class MissionManager:
         with self.hub.lock:
             now = self.hub.now
             if not self.active:
+                if self.refocusable():
+                    return self.start(self.kind, region)
                 raise MissionError("There's no mission running to change. Start one first.")
             region = self.regions.resolve(region)
             work_for = {"explore": self._plan_sweep, "map": self._plan_sweep, "inspect": self._plan_survey,

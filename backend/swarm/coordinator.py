@@ -527,6 +527,8 @@ class Coordinator:
                     d.fault("takeoff", "takeoff was sent but it was not seen to climb; not sending again, the toggle "
                                        "would reverse it. It may be hovering unseen: check it by eye")
                     d.unknown_air = self.tracker is not None
+                    if not d.unknown_air:
+                        self._forget_requests(d)
                     self.takeoff_queue.clear()
         elif d.phase == Phase.GROUND and d.unknown_air:
             if d.tracked.fix_age < 1.0 and height > AIRBORNE_HEIGHT:

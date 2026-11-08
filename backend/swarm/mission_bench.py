@@ -285,10 +285,19 @@ def map_with_focus(seed):
         f.missions.focus("north")
         yield from f.until(f.over, MISSION_LIMIT, "the map to finish")
         f.missions.settle()
+        f.check(capture.names() == ["start"], f"nothing should build with drones up: {capture.calls}")
+        f.check_covered()
+        f.missions.focus("south")  # it finished, and the operator can still send them on with the same photos
+        f.check(f.missions.active, "a finished map couldn't be refocused")
+        yield from f.wait(4.0)
+        f.missions.settle()
+        f.check(capture.names() == ["start"], f"refocus should keep the same capture: {capture.calls}")
+        f.missions.stop()
+        yield from f.down()
+        yield from f.wait(1.0)
+        f.missions.settle()
         f.check(capture.names() == ["start", "stop", "build"], f"capture got {capture.calls}")
         f.check(capture.calls[0][1] == capture.calls[2][1], "built a different map from the one captured")
-        f.check_covered()
-        yield from f.down()
     return f, script()
 
 

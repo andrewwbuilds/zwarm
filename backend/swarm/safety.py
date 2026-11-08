@@ -153,7 +153,7 @@ def filter_velocities(bodies: list[Body], room: Room, limits: Limits, moving: li
     keep = limits.surface_clearance
     reach = keep + limits.max_speed / limits.gain + 0.2
     for b in free:
-        for n, distance in room.surfaces(ahead[b.id], reach):
+        for n, distance in room.surfaces(ahead[b.id], reach + b.extra_gap):
             if b.descending and n[2] > 0.5:
                 continue
             rule([(b.id, n)], -limits.gain * (distance - keep))

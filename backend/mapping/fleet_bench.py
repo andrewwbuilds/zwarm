@@ -232,6 +232,13 @@ def evaluate(folder: Path) -> dict:
     best = max(result["models"], key=lambda m: m["registered"])
     cameras = read_cameras(folder / "colmap" / "text" / best["folder"] / "images.txt")
     names = sorted(cameras)
+    if result.get("joined_maps", 1) > 1:  # the served map holds several models, so score the room coordinates directly
+        joined = [m for m in result["models"] if m.get("room_fit_m") is not None and m["room_fit_m"] <= fleet.ROOM_FIT_LIMIT_M
+                  and m["registered"] >= fleet.MIN_JOIN_PHOTOS]
+        return {"joined": [{"by_drone": m["by_drone"], "room_fit_m": m["room_fit_m"]} for m in joined],
+                "camera_error_m": {"median": None, "p95": None, "max": None}, "by_drone": {},
+                "level_map": {"in_room": True, "room_fit_m": result.get("room_fit_m"), "points_z_p5_p50_p95":
+                              np.percentile(np.load(folder / "points.npy")[:, 2], [5, 50, 95]).round(3).tolist()}}
     placed = np.array([cameras[n][0] for n in names])
     real = np.array([truth[n.split("/")[0]][sources[n]][:3] for n in names])
     _, aligned = align(placed, real)

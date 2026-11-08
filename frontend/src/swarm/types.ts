@@ -132,6 +132,7 @@ export interface Finding {
   confidence: number | null;
   status: FindingStatus;
   target: string | null;
+  views: number;
 }
 
 export interface MapStatus {

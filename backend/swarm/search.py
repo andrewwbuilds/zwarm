@@ -110,7 +110,7 @@ class Coverage:
         total = int(reachable.sum())
         return 1.0 if total == 0 else float((reachable & (self.counts >= LOOKS_NEEDED)).sum()) / total
 
-    def best(self, p, yaw: float, claimed: np.ndarray, avoid=(), keep_away: float = 0.7, banned=(), tilt: float = DEFAULT_TILT) -> Viewpoint | None:
+    def best(self, p, yaw: float, claimed: np.ndarray, avoid=(), keep_away: float = KEEP_AWAY, banned=(), tilt: float = DEFAULT_TILT) -> Viewpoint | None:
         """The viewpoint giving this drone the most new floor per second."""
         wanted = self.remaining() & ~claimed
         if not wanted.any() or not len(self.candidates) or tilt not in self.sees:

@@ -47,7 +47,7 @@ def train_nerf(dataset: Path, out: Path, iterations: int = 5000) -> Path:
         raise StepFailed(f"nerfstudio finished but wrote no model (log: {out / 'nerf_training.log'})")
     (nerf / "config_path.txt").write_text(str(configs[-1]))
     video = out / "nerf.mp4"
-    run(render_command(configs[-1], video), out / "nerf_render.log", TRUSTED_CHECKPOINTS)
+    run(render_command(configs[-1], video), out / "nerf_render.log", TRUSTED_CHECKPOINTS, timeout_s=None)
     if not video.exists():
         raise StepFailed(f"The NeRF trained but the fly-through video was not made (log: {out / 'nerf_render.log'})")
     return video

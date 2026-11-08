@@ -260,15 +260,23 @@ def real_runtime(config: SwarmFile) -> Runtime:
         for link in links.values():
             link.stop()
 
-    return Runtime(coordinator, time.monotonic, store.poses, store.moving_things, close=close)
+    runtime = Runtime(coordinator, time.monotonic, lambda: tracker.poses(time.monotonic()), close=close)
+    runtime.tracker, runtime.frames = tracker, frames
+    return runtime
 
 
-DEMO_ROOM = Box((-4.0, -3.0, 0.0), (4.0, 3.0, 2.6), "wall")
-DEMO_OBSTACLES = (Box((-0.4, -0.9, 0.0), (0.4, 0.9, 2.6), "wood"), Box((1.8, 1.2, 0.0), (2.6, 3.0, 2.6), "wood"))
-DEMO_PADS = {"1": (-2.5, -1.2), "2": (-2.5, 0.0), "3": (-2.5, 1.2)}
+DEMO_ROOM = Box((-5.0, -4.0, 0.0), (5.0, 4.0, 2.8), "wall")
+DEMO_FENCE = ((-2.8, -2.4, 0.0), (1.7, 2.4, 2.4))
+DEMO_OBSTACLES = (Box((-0.7, -0.6, 0.0), (-0.3, 0.6, 2.8), "wood"), Box((0.8, 1.3, 0.0), (1.4, 2.4, 0.9), "wood"))
+DEMO_PADS = {"1": (-2.5, 1.2), "2": (-2.5, 0.0), "3": (-2.5, -1.2)}
 
 
-def sim_runtime(seed: int = 1, conditions: Conditions | None = None) -> Runtime:
+def sim_runtime(seed: int = 1, conditions: Conditions | None = None, inside_out: bool = False, video_rate: float = 6.0) -> Runtime:
+    """A simulated fleet on the real tag layout.
+
+    Poses come straight from the simulator with added noise, or with inside_out from rendering and
+    reading each drone's frames. That is slower than real time at full rate, so video_rate is lowered.
+    """
     scene = Scene(name="demo", bounds=DEMO_ROOM, boxes=DEMO_OBSTACLES)
     fleet = SimFleet(scene, DEMO_PADS, seed, conditions)
     configs = [DroneConfig(k, (v[0], v[1], 0.0)) for k, v in DEMO_PADS.items()]

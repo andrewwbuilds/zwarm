@@ -356,8 +356,7 @@ class Agent:
         except NemotronError:
             pass  # the raw event already reached the operator through the event log
         finally:
-            self.busy = False
-            self._turn_lock.release()
+            self._end_thinking()
 
     # ---------------------------------------------------------------- stop-type commands
     def halt(self, verb: str) -> dict:

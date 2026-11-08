@@ -59,7 +59,7 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
   };
 
   return (
-    <section className="zw-3d" aria-label="3D map">
+    <section className={big ? "zw-3d zw-3d-big" : "zw-3d"} aria-label="3D map">
       <header>
         <h2>3D map</h2>
         <button type="button" className="zw-btn zw-btn-small" disabled={building} onClick={() => void build()}>

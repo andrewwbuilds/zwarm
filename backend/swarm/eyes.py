@@ -262,6 +262,7 @@ class SimEyes:
                     found.append(seen)
         if self.rng.random() < self.false_rate:
             label = self.rng.choice(sorted(LABELS))
-            found.append(Detection(label, self.rng.uniform(-HFOV / 2, HFOV / 2), self.rng.uniform(-VFOV / 2, VFOV / 2),
-                                   self.rng.uniform(0.5, REACH), (0.4, 0.4, 0.4), self.rng.uniform(0.42, 0.7)))
+            bearing, elevation = self.rng.uniform(-HFOV / 2, HFOV / 2), self.rng.uniform(-VFOV / 2, VFOV / 2)
+            found.append(Detection(label, bearing, elevation, self.rng.uniform(0.5, REACH), (0.4, 0.4, 0.4),
+                                   self.rng.uniform(0.42, 0.7), foot=(bearing, elevation)))
         return found

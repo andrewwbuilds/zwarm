@@ -724,8 +724,11 @@ class MissionManager:
             self.say("mission", f"Focus moved to {spoken(region)}." + (f" {who} moving there." if who else ""), event="focus", region=region)
             return self.status()
 
-    def stop(self) -> dict:
-        """End the mission. Drones hold where they are, except any already on their way down."""
+    def stop(self, then: str = "Holding position.") -> dict:
+        """End the mission. Drones hold where they are, except any already on their way down.
+
+        then says what happens to the drones next, for whoever reads the event.
+        """
         with self.hub.lock:
             now = self.hub.now
             if self.active:

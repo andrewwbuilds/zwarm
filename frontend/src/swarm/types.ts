@@ -141,6 +141,9 @@ export interface MapStatus {
   photos: number;
   byDrone: Record<string, number>;
   registered: number;
+  points: number;
+  step: string | null;
+  warnings: string[];
   error: string | null;
 }
 

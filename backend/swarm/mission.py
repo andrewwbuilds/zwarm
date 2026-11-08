@@ -627,6 +627,12 @@ class MissionManager:
             return True
         return any(d.phase == Phase.AIR and not d.landing_requested and d.id not in self.out for d in self.hub.co.drones.values())
 
+    def give_up_if_slow(self, d, order, now: float) -> None:
+        """The hub allows a move 75 s, which is a lot of a battery to spend blocked by other drones."""
+        if order is not None and order.stage == "go" and now - order.since > MOVE_LIMIT_S:
+            order.stage, order.why = "failed", "took too long"
+            self.hub.co._set_goal(d, d.tracked.p.copy())
+
     def _flight_seconds(self, drone_id: str, now: float) -> float:
         return max(0.0, now - self.took_off[drone_id]) if drone_id in self.took_off else 0.0
 

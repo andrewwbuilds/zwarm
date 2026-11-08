@@ -123,7 +123,10 @@ class StickMapper:
         if along <= 0.0:
             return
         estimate = max(self.GAIN_RANGE[0], min(self.GAIN_RANGE[1], self.scale * along / asked))
-        self.scale += (estimate - self.scale) * min(1.0, self.LEARN_RATE * dt)
+        # Believing a drone is weaker makes it fly faster, and a few seconds of being slowed by
+        # anything would otherwise double its real speed. Too high a gain only means a slow drone.
+        rate = self.LEARN_RATE if estimate > self.scale else self.LEARN_RATE * self.DOWN_RATE_SHARE
+        self.scale += (estimate - self.scale) * min(1.0, rate * dt)
 
     def sticks(self, velocity, yaw: float, yaw_target: float, dt: float) -> tuple[float, float, float, float]:
         frame = self.airframe

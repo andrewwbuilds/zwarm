@@ -210,9 +210,9 @@ def main(argv=None) -> int:
     sub.add_argument("--port", type=int, default=PORT)
     sub.set_defaults(run=cmd_fly)
 
-    sub = commands.add_parser("check", help="check links and tracking without sending any command")
+    sub = commands.add_parser("check", help="links, video and tags in view, without sending a flight command")
     sub.add_argument("config")
-    sub.add_argument("--seconds", type=float, default=10.0)
+    sub.add_argument("--seconds", type=float, default=15.0)
     sub.set_defaults(run=cmd_check)
 
     sub = commands.add_parser("markers", help="write printable ArUco markers")

@@ -10,7 +10,7 @@ from unittest import mock
 
 import numpy as np
 
-from agent.agent import DIGEST_BUDGET_S, TURN_BUDGET_S, TURN_WAIT_S, Agent
+from agent.agent import DIGEST_BUDGET_S, TURN_BUDGET_S, TURN_WAIT_S
 from agent.nemotron import NemotronClient, NemotronError
 from agent.tools import READ_ONLY, Refused, Toolbox, region_mentioned
 from mapping.curate import raw_name

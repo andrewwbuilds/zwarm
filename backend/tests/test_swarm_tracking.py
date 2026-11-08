@@ -354,6 +354,10 @@ class HeadingLimitTests(unittest.TestCase):
         self.assertNotEqual(allowed, 0.0)
         self.assertTrue(anchors_in_view(tracker.anchors, Lens.from_fov(), math.radians(45), at_far_edge, allowed))
 
+    def test_with_no_tag_in_reach_it_keeps_its_current_heading(self):
+        tracker = InsideOutTracker({"a": DroneOptics(0.0, 0.0, yaw=0.4)}, grid())
+        self.assertEqual(tracker.allowed_yaw("a", (9.0, 9.0, 1.0), 1.5), 0.4)
+
     def test_a_heading_that_sees_tags_is_left_alone(self):
         tracker = InsideOutTracker({"a": DroneOptics(0.0, 0.0)}, grid())
         self.assertEqual(tracker.allowed_yaw("a", (-1.0, 0.0, 1.0), 0.0), 0.0)

@@ -378,7 +378,7 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 | "no pose", lands within a blink of a video stall | Video gaps longer than allowed | `backend/swarm/coordinator.py:32` `LOST_LAND_S` **safety** | Raise, 2.5 to 4 |
 | "flying at X m/s" while plainly slow | Noisy speed from the tags | `backend/swarm/coordinator.py:42` `OVERSPEED_FACTOR` **safety** | Raise, 3 to 4 |
 | Goals near a wall refused | Margin bigger than the room allows | `limits.surface_margin` in `real.json` **safety** | Lower, 0.1 to 0.05. Or widen the fence |
-| `closest` under 0.4 m | Tracking worse than assumed | `limits.pose_error`, `limits.margin` in `real.json` | Raise, 0.06 to 0.1 and 0.14 to 0.25 |
+| `pair_lowest_m` under 0.35 m | Tracking worse than assumed | `limits.pose_error`, `limits.margin` in `real.json` | Raise, 0.06 to 0.1 and 0.14 to 0.25. This takes usable room away, so check `limits.max_speed` first |
 | Drones stall each other, nothing moves | Margin too big for this room | Same | Lower, and spread the pads |
 | Climbs past its height, then comes back | Climb too fast for this hold | `limits.max_climb` in `real.json` | Lower, 0.3 to 0.2 |
 

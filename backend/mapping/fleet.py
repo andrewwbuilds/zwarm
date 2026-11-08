@@ -226,7 +226,7 @@ def colmap_steps(root: str, width: int, height: int, threads: int, gpu: bool, ma
         ("matching", ["exhaustive_matcher", "--database_path", f"{root}/colmap/database.db",
                       "--FeatureMatching.use_gpu", gpu_flag, "--FeatureMatching.num_threads", str(threads)]),
         ("mapper", ["mapper", "--database_path", f"{root}/colmap/database.db", "--image_path", f"{root}/images",
-                    "--output_path", f"{root}/colmap/sparse", "--Mapper.num_threads", str(threads)]),
+                    "--output_path", f"{root}/colmap/sparse", "--Mapper.num_threads", str(threads), *mapper]),
     ]
 
 

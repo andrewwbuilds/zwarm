@@ -12,17 +12,28 @@ from pathlib import Path
 
 import numpy as np
 
+from sim.scene import Box, Scene
+from swarm.control import Pose
+from swarm.coordinator import Coordinator, DroneConfig, Phase, SIGMA_HOLD, SIGMA_LAND
+from swarm.room import Room
+from swarm.server import SwarmFile
+from swarm.sim_anchors import FloorCamera, VideoConditions
 from swarm.tracking import (
-    CameraModel,
-    PoseStore,
-    Sighting,
-    camera_position,
-    flat_marker_corners,
-    in_view,
-    lens_from_checkerboards,
-    locate_camera,
-    marker_image,
-    read_markers,
+    Anchor,
+    AnchorReader,
+    Estimator,
+    Fix,
+    InsideOutTracker,
+    DroneOptics,
+    Lens,
+    SwarmFileError,
+    anchors_in_view,
+    anchors_section,
+    fit_focal,
+    grid_layout,
+    load_anchors,
+    solve_fix,
+    tag_grid,
 )
 
 WIDTH, HEIGHT = 1920, 1080

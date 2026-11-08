@@ -484,7 +484,6 @@ class Coordinator:
             # Nothing real to judge it by, and the estimate would only echo the command. Wait.
             check.stage_at = now
             check.samples = []
-            check.recent = []
             return np.zeros(3)
         if check.stage % 2 == 1:
             coast = float(np.linalg.norm(d.tracked.p[:2] - check.stop_at[:2]))

@@ -456,7 +456,7 @@ class Agent:
         steps = [_step("take_off", {}), *([mission] if mission else [])]
         with self._state:
             if turn.epoch != self._epoch:
-                raise Refused("The operator just gave a stop command, so this was dropped.")
+                raise Refused(STOPPED)
             if turn.plan is None:
                 self._plan_count += 1
                 turn.plan = {"id": f"plan-{self._plan_count}", "created": self.clock()}

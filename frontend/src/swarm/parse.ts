@@ -255,9 +255,13 @@ export function parseEvents(raw: unknown): LogEvent[] {
 function parseToolCall(v: unknown): ToolCall {
   if (typeof v === "string") return { text: v, detail: null, refused: false };
   const call = record(v);
-  const name = firstText(call, ["text", "name", "tool"]) ?? "tool";
-  const args = brief(call.args ?? call.arguments);
-  return { text: args && !call.text ? `${name} ${args}` : name, ...toolDetail(call) };
+  return { text: callText(call) ?? text(call.text) ?? "tool", detail: resultWords(call.result ?? call.refused), refused: isRefused(call) };
+}
+
+// A plan decision can be turned down with a 200 and {ok: false, reply}, when the plan has gone stale.
+export function parseDecision(raw: unknown): Decision {
+  const r = record(raw);
+  return { ok: r.ok !== false, reply: text(r.reply) ?? "" };
 }
 
 export function parseChat(raw: unknown): ChatReply {

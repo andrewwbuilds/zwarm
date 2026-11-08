@@ -375,9 +375,30 @@ def _similarity(placed: np.ndarray, tracked: np.ndarray) -> tuple:
         flip[2, 2] = -1
     rotation = u @ flip @ vt
     scale = float(np.trace(np.diag(d) @ flip) / max((a * a).sum() / len(a), 1e-12))
-    offset = mean_t - scale * rotation @ mean_p
-    errors = np.linalg.norm(scale * placed @ rotation.T + offset - tracked, axis=1)
-    return rotation, scale, offset, float(np.median(errors))
+    return rotation, scale, mean_t - scale * rotation @ mean_p
+
+
+def fit_to_room(placed: np.ndarray, tracked: np.ndarray) -> tuple:
+    """Carry map positions onto tracked ones, ignoring cameras far from the rest: one wild photo mustn't move the fit.
+
+    Returns (rotation, scale, offset, distance of each camera from its tracked position, in metres).
+    """
+    keep = np.ones(len(placed), bool)
+    for _ in range(6):
+        rotation, scale, offset = _similarity(placed[keep], tracked[keep])
+        errors = np.linalg.norm(scale * placed @ rotation.T + offset - tracked, axis=1)
+        close = errors <= max(0.3, 2.0 * float(np.median(errors[keep])))
+        if close.sum() < max(6, len(placed) // 2) or np.array_equal(close, keep):
+            break
+        keep = close
+    return rotation, scale, offset, errors
+
+
+def inside_flight(cloud: np.ndarray, centres: np.ndarray, reach_m: float = CLOUD_REACH_M) -> np.ndarray:
+    """Which points lie within reach of where the cameras were. A wrongly placed photo scatters points far outside."""
+    low, high = np.percentile(centres, 5, axis=0), np.percentile(centres, 95, axis=0)
+    return ((cloud[:, :2] >= low[:2] - reach_m) & (cloud[:, :2] <= high[:2] + reach_m)).all(axis=1) \
+        & (cloud[:, 2] >= -1.0) & (cloud[:, 2] <= high[2] + reach_m)
 
 
 def read_tracked(folder: Path) -> dict[str, list[float]]:

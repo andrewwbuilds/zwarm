@@ -494,10 +494,7 @@ def demo_world(seed: int = 11) -> DemoWorld:
 
     def clear(anchor: Anchor) -> bool:
         reach = paper_width(anchor) / 2
-        for box in boxes:
-            if box.lo[0] - reach < anchor.x < box.hi[0] + reach and box.lo[1] - reach < anchor.y < box.hi[1] + reach:
-                return False
-        return all(math.hypot(anchor.x - d.where[0], anchor.y - d.where[1]) > d.size / 2 + reach for d in damage if d.where[2] == 0.0)
+        return not any(t.lo[0] - reach < anchor.x < t.hi[0] + reach and t.lo[1] - reach < anchor.y < t.hi[1] + reach for t in keep_off)
 
     edge = TAG_WIDTH_M * INNER_CELLS / TOTAL_CELLS
     anchors = {a.id: a for a in grid_layout((-2.5, -2.0), (2.5, 2.0), TAG_SPACING_M, edge) if clear(a)}

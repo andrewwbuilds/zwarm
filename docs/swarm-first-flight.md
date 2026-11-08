@@ -99,6 +99,6 @@ Go to two drones, in separate parts of the grid, and then have them pass each ot
 - **Everything real is unmeasured:** lens, sharpness, exposure, video delay, stick response, hover height, and how well the stock hold copes with the tilted camera.
 - **Dim light hurts.** Blur shortens the read range. Light the floor well.
 - **Touchdown is modelled.** Tags leave the view below about 0.2 m, so "landed" on the console is an estimate. Confirm by eye before touching a drone.
-- **Floors the flow sensor can't read.** In simulation on the old tracker, the post-takeoff check caught most of these but not all, and 2 of 40 flights still collided. Don't fly over a plain, shiny floor.
+- **Floors the flow sensor can't read.** In simulation on the old tracker, the post-takeoff check caught most of these but not all, and there were still 2 collisions in 40 flights. Don't fly over a plain, shiny floor.
 - **Batteries aren't monitored.** Nothing reports charge to the swarm.
 - **E-STOP drops the drones.** Use Land unless something is about to go wrong.

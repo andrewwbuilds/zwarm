@@ -514,6 +514,13 @@ class InsideOutTracker:
         small = cv2.resize(gray, (64, 36), interpolation=cv2.INTER_AREA).astype(np.float32)
         with self.lock:
             prior = self.estimators[drone_id].yaw
+            last = self.small.get(drone_id)
+            if last is not None:
+                difference = small - last
+                # Without its mean, so the camera's exposure settling doesn't look like movement.
+                self.changes[drone_id].append((t, float(np.abs(difference - difference.mean()).mean())))
+            self.small[drone_id] = small
+            self.frame_at[drone_id] = t
         fix = solve_fix(found, lens, math.radians(optics.tilt_deg), t, prior, self.fence)
         with self.lock:
             self.frames[drone_id] += 1

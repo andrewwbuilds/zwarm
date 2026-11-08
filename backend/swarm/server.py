@@ -94,11 +94,14 @@ class Runtime:
     def airborne(self) -> bool:
         return any(d.phase in (Phase.TAKEOFF, Phase.CHECK, Phase.AIR, Phase.LANDING) for d in self.co.drones.values())
 
-    def shut_down(self) -> None:
-        """Never leave drones hovering because the program quit: land them first."""
+    def land_everything(self) -> None:
+        """Land anything in the air and wait for it. The loop and the HTTP routes keep running, so E-STOP still works."""
         with self.lock:
+            first = self.land_by is None
+            if first:
+                self.land_by = time.monotonic() + SHUTDOWN_LAND_S
             flying = self.airborne()
-            if flying:
+            if first and flying:
                 logger.warning("[swarm] shutting down with drones in the air: landing them where they are")
                 self.co.land_here()
         deadline = time.monotonic() + SHUTDOWN_LAND_S

@@ -75,7 +75,8 @@ class EventLog:
         self.clock = clock
         self.lock = threading.Lock()
         self.items: deque = deque(maxlen=keep)
-        self.count = 0
+        # Numbers carry on rising across a restart, or a console tab left open would wait for this run to catch up.
+        self.count = int(time.time() * 1000)
 
     def add(self, kind: str, text: str, data=None) -> None:
         with self.lock:

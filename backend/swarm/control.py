@@ -42,6 +42,10 @@ class Tracked:
         measured = np.array(pose.p, float)
         self.sigma, self.fix_age = pose.sigma, pose.fix_age
         self.seen_p = measured if pose.seen_p is None else np.asarray(pose.seen_p, float)
+        if pose.seen_p is not None or pose.fix_age == 0.0:
+            when = pose.t - pose.fix_age
+            if not self.seen_log or when > self.seen_log[-1][0] + 1e-6:
+                self.seen_log.append((when, float(self.seen_p[2])))
         if pose.v is not None:
             self.t, self.p, self.v, self.yaw = pose.t, measured, np.asarray(pose.v, float), pose.yaw
             return

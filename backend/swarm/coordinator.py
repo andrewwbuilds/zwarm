@@ -265,7 +265,7 @@ class Coordinator:
             return problems
         for drone_id, goal in goals.items():
             d = self.drones[drone_id]
-            d.landing_requested = False
+            d.landing_requested = d.land_here_wanted = False
             self._set_goal(d, goal)
         return []
 

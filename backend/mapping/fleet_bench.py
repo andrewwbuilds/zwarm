@@ -235,7 +235,11 @@ def evaluate(folder: Path) -> dict:
         per_drone[drone] = {"placed": len(mine), "median_m": round(float(np.median(mine)), 3), "p95_m": round(float(np.percentile(mine, 95)), 3)}
     level = result["level"]
     rotation, scale, offset = np.array(level["rotation"]), level["scale"], np.array(level["offset"])
-    level_z = (scale * placed @ rotation.T + offset)[:, 2]
+    in_level = scale * placed @ rotation.T + offset
+    # The level map should differ from the room only by a shift: same way up, same heading, about the same size.
+    a, b = in_level - in_level.mean(axis=0), real - real.mean(axis=0)
+    turn = math.degrees(math.atan2(float((a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]).sum()), float((a[:, :2] * b[:, :2]).sum())))
+    cloud = np.load(folder / "points.npy")
     return {"camera_error_m": {"median": round(float(np.median(errors)), 3), "p95": round(float(np.percentile(errors, 95)), 3),
                                "max": round(float(errors.max()), 3)},
             "by_drone": per_drone, "level_camera_height": {"median": round(float(np.median(level_z)), 3),

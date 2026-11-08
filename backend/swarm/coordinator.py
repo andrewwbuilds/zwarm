@@ -130,6 +130,7 @@ class Drone:
     sticks_wrong: bool = False  # failed its check in a way that means steering it would make things worse
     unknown_air: bool = False  # takeoff was sent and nothing was seen after, so it may or may not be up
     came_down: bool = False  # it looked to be on the floor. If it turns out not to be, it goes back to holding
+    down_at: float = 0.0  # when it looked to come down
     was_down: bool = False  # it looked down and then wasn't, so it gets no more toggles without the operator
     land_here_wanted: bool = False  # asked to land on the spot when no toggle could go out yet
     check_held: bool = False  # the operator said hold: no test moves until they ask for work again

@@ -472,18 +472,26 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
     for model in sorted(models, key=lambda m: -m.registered):
         text = folder / "colmap" / "text" / model.path.name
         to_text(model.path, text)
-        summaries.append({"folder": model.path.name, "registered": model.registered, "points": model.points,
-                          "error_px": round(model.error_px, 3),
-                          "by_drone": photos_by_drone(read_cameras(text / "images.txt"))})
-    text = folder / "colmap" / "text" / best.path.name
-    cameras = read_cameras(text / "images.txt")
-    xyz, rgb = read_points(text / "points3D.txt")
-    rotation, scale, offset = level_map(cameras, xyz)
-    fit = check_against_room(cameras, read_tracked(folder))
-    agrees = fit is not None and fit["median_error_m"] <= ROOM_FIT_LIMIT_M
-    if agrees:
-        rotation, scale, offset = fit["rotation"], fit["scale"], fit["offset"]
-    level = scale * xyz @ rotation.T + offset if len(xyz) else xyz
+        cameras = read_cameras(text / "images.txt")
+        parts.append({"model": model, "cameras": cameras, "cloud": read_points(text / "points3D.txt"),
+                      "fit": check_against_room(cameras, tracked)})
+    summaries = [{"folder": part["model"].path.name, "registered": part["model"].registered, "points": part["model"].points,
+                  "error_px": round(part["model"].error_px, 3), "by_drone": photos_by_drone(part["cameras"]),
+                  "room_fit_m": part["fit"]["median_error_m"] if part["fit"] else None} for part in parts]
+    joined = [part for part in parts if part["fit"] and part["fit"]["median_error_m"] <= ROOM_FIT_LIMIT_M
+              and part["model"].registered >= MIN_JOIN_PHOTOS]
+    main = parts[0]
+    if joined:  # room coordinates, so sub-maps that share no view still line up
+        clouds = [(part["fit"]["scale"] * part["cloud"][0] @ part["fit"]["rotation"].T + part["fit"]["offset"], part["cloud"][1])
+                  for part in joined]
+        level, rgb = np.vstack([c[0] for c in clouds]), np.vstack([c[1] for c in clouds])
+        rotation, scale, offset = joined[0]["fit"]["rotation"], joined[0]["fit"]["scale"], joined[0]["fit"]["offset"]
+        served = joined
+    else:
+        xyz, rgb = main["cloud"]
+        rotation, scale, offset = level_map(main["cameras"], xyz)
+        level = scale * xyz @ rotation.T + offset if len(xyz) else xyz
+        served = [main]
     write_ply(folder / "cloud.ply", level.astype(np.float32), rgb)
     np.save(folder / "points.npy", np.hstack([level, rgb]).astype(np.float32))
     try:

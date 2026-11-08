@@ -92,8 +92,23 @@ def region_mentioned(text: str, region: str) -> bool:
     return all(any(_sounds_like(word, part) for word in words) for part in region.split("-"))
 
 
+_SIDES = ("north", "south", "east", "west")
+# Close enough to a region's name to pass as a typo, but ordinary words that mean something else.
+_NOT_REGIONS = {"least", "beast", "feast", "yeast", "wrest", "worth", "forth", "notch", "youth", "mouth", "sooth", "enter", "renter",
+                "fiddle", "riddle", "meddle", "muddle"}
+
+
 def _sounds_like(word: str, name: str) -> bool:
-    return name in word or (len(word) >= 3 and difflib.SequenceMatcher(None, word, name).ratio() >= 0.75)
+    """A region's name, or what speech to text may have made of it. Another side's name never counts."""
+    if word == name or word.startswith(name):  # north, northern, northeast
+        return True
+    if word in _SIDES or word in _NOT_REGIONS:
+        return False
+    if word.endswith(name) and word[:-len(name)] in _SIDES:  # the east in southeast
+        return True
+    if word == "nor" and name == "north":
+        return True
+    return len(word) >= 4 and difflib.SequenceMatcher(None, word, name).ratio() >= 0.8
 
 
 def _tool(name: str, description: str, properties: dict | None = None, required: tuple = ()) -> dict:

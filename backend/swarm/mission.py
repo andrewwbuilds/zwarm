@@ -189,7 +189,6 @@ class RegionCoverage(Coverage):
                 keep |= sees[:, floor].any(axis=1)
         self.candidates, self.candidate_yaws = self.all_candidates[keep], self.all_yaws[keep]
         self.sees = {tilt: sees[keep] for tilt, sees in self.all_sees.items()}
-        self.in_region = self.regions.mask(self.region, self.cells)
 
     def _reachable(self) -> np.ndarray:
         return super()._reachable() & self.in_region

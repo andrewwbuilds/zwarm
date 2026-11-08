@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 DIRECT = ("estop", "land", "land_here", "hold")
 MAX_INPUT = 800
+MAX_REPLY = 800
 MAX_ROUNDS = 5  # model calls in one turn
 MAX_CALLS = 4  # tool calls the model may make in one round
 HISTORY = 12  # messages of conversation kept

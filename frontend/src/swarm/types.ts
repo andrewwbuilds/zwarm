@@ -114,6 +114,11 @@ export interface ChatReply {
   toolCalls: ToolCall[];
 }
 
+export interface Decision {
+  ok: boolean;
+  reply: string;
+}
+
 export type FindingStatus = "pending" | "confirmed" | "dismissed";
 
 export interface Finding {

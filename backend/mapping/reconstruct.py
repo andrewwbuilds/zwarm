@@ -121,7 +121,7 @@ def train(images: Path, model: Model, out: Path, steps: int = 7000) -> Path:
     shutil.rmtree(splat, ignore_errors=True)
     splat.mkdir(parents=True)
     run([BRUSH, dataset, "--total-steps", steps, "--export-every", steps, "--export-path", splat,
-         "--export-name", "map_{iter}.ply"], out / "training.log")
+         "--export-name", "map_{iter}.ply"], out / "training.log", timeout_s=None)
     exports = sorted(splat.glob("map_*.ply"), key=lambda p: int(re.search(r"map_(\d+)", p.name).group(1)))
     if not exports:
         raise StepFailed(f"Brush finished but wrote no splat (log: {out / 'training.log'})")

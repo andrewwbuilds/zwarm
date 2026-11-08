@@ -550,6 +550,8 @@ class Coordinator:
             # slower than it is makes it fly too fast. Steady flight can correct it downward later.
             d.mapper.scale = max(d.mapper.scale, min(StickMapper.GAIN_RANGE[1], speed / min(CHECK_SPEED, self.limits.max_speed)))
             home = check.home
+            # The first floor marker can be read during the climb, so that height may be far too low.
+            home[2] = max(home[2], d.tracked.p[2])
             d.check = None
             d.phase = Phase.AIR
             self._set_goal(d, home)

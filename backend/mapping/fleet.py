@@ -512,8 +512,8 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
                   "error_px": round(part["model"].error_px, 3), "by_drone": photos_by_drone(part["cameras"]),
                   "room_fit_m": part["fit"]["median_error_m"] if part["fit"] else None,
                   "room_agreement": part["fit"]["agrees"] if part["fit"] else None} for part in parts]
-    joined = [part for part in parts if part["fit"] and part["fit"]["agrees"] >= MIN_ROOM_AGREEMENT
-              and part["model"].registered >= MIN_JOIN_PHOTOS]
+    distinct = distinct_maps(parts)
+    joined = [part for part in distinct if part["fit"] and part["fit"]["agrees"] >= MIN_ROOM_AGREEMENT]
     main = parts[0]
     if joined:  # room coordinates, so sub-maps that share no view still line up
         clouds = [(part["fit"]["scale"] * part["cloud"][0] @ part["fit"]["rotation"].T + part["fit"]["offset"], part["cloud"][1])

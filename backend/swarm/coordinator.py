@@ -621,8 +621,11 @@ class Coordinator:
 
     def _check_step(self, d: Drone, now: float) -> np.ndarray:
         check = d.check
-        if d.tracked.fix_age > CHECK_NEEDS_FIX_S:
-            # Nothing real to judge it by, and the estimate would only echo the command. Wait.
+        if check is None:  # nothing to do here, and raising would cost every drone its sticks
+            d.phase = Phase.AIR
+            return np.zeros(3)
+        if d.check_held or d.tracked.fix_age > CHECK_NEEDS_FIX_S:
+            # Held by the operator, or nothing real to judge it by, and the estimate would only echo the command. Wait.
             check.stage_at = now
             check.samples = []
             return np.zeros(3)

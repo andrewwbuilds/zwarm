@@ -604,8 +604,10 @@ class FleetCapture:
         with self.lock:
             self.step = step
 
-    def _build(self, name: str, splat: bool) -> None:
+    def _build(self, name: str, splat: bool, capture: threading.Thread | None = None) -> None:
         folder = self.root / name
+        if capture is not None:
+            capture.join()  # choose photos only once the last frame is on disk
         try:
             runner = pick_runner()
         except StepFailed as error:

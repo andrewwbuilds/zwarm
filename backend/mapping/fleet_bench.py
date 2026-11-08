@@ -335,6 +335,9 @@ def main() -> int:
                                            "masked", "seconds", "warnings")}
     report["models"] = [{k: m[k] for k in ("registered", "points", "by_drone")} for m in result["models"]]
     report["truth"] = evaluate(folder)
+    best = max(result["models"], key=lambda m: m["registered"])
+    report["lens_px"] = [line.split()[4] for line in (folder / "colmap" / "text" / best["folder"] / "cameras.txt").read_text().splitlines()
+                         if not line.startswith("#")]
     print("sim:", json.dumps(report, indent=1))
     return 0
 

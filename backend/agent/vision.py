@@ -34,7 +34,7 @@ MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 FALLBACK_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b"
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
-TIMEOUT_S = 60.0
+TIMEOUT_S = 40.0  # the slowest answer seen on 60 test photos took 25 s, and a hung model should lose quickly
 RETRIES = 2  # extra tries per model after a 429 or a 5xx
 BACKOFF_S = 2.0
 MAX_TOKENS = 4096  # reasoning models spend hundreds to thousands of tokens before they answer

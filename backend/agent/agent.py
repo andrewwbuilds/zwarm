@@ -480,6 +480,9 @@ class Agent:
                 raise Refused(call.problem)
             if turn.allowed is not None and call.name not in turn.allowed:
                 raise Refused(f"{call.name} isn't available when reporting an event.")
+            if turn.read_findings and call.name not in READ_ONLY:
+                raise Refused(f"{call.name} can't run in the same turn as reading findings, because their words came from a "
+                              "vision model. Report what they say and let the operator decide.")
             if turn.epoch != self._epoch:
                 raise Refused(STOPPED)
             args = self.box.check(call.name, call.arguments)

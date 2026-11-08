@@ -338,6 +338,7 @@ def main() -> int:
         print(f"sim: rendered {sum(d['frames'] for d in timing['drones'])} frames in {timing['wall_s']:.0f} s")
     if args.render_only:
         return 0
+    write_tracked(folder, args.track_noise)
     fleet.HFOV_DEG = args.hfov
     started = time.perf_counter()
     result = fleet.build_map(folder, args.cap, fleet.LocalRunner(), lambda s: print(f"  {time.perf_counter() - started:6.1f} s  {s}", flush=True),

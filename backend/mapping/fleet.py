@@ -689,6 +689,8 @@ class FleetCapture:
                     key = drone_folder(drone)
                     if frame is None or seen.get(drone) == frame.number or counts.get(key, 0) >= MAX_FRAMES_PER_DRONE:
                         continue
+                    if self.flying is not None and not self.flying(drone):
+                        continue
                     seen[drone] = frame.number
                     raw = folder / key / "raw"
                     raw.mkdir(parents=True, exist_ok=True)

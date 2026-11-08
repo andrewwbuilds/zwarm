@@ -958,8 +958,13 @@ class MissionManager:
                 text += " Nothing flew, so no map will be built."
         if was_kind == "inspect":
             self._inspector_end()
+        if state == "failed":
+            # Nobody is flying the old goals to any purpose now, and when a drone comes back it should stay put.
+            self.hub.orders.clear()
+            self._halt()
+        self.out.clear()
         event = {"done": "done", "stopped": "stopped"}.get(state, "failed")
-        self.say("mission", text, event=event, mission=was_kind, region=self.region, target=self.target,
+        self.say("fault" if state == "failed" else "mission", text, event=event, mission=was_kind, region=self.region, target=self.target,
                  share_seen=round(self._share_seen(), 3), elapsed_s=round(now - self.started_at, 1))
 
     def _start_capture(self, name: str) -> None:

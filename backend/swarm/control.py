@@ -36,6 +36,7 @@ class Tracked:
         self.sigma = 0.0
         self.fix_age = 0.0
         self.seen_p = np.zeros(3)
+        self.seen_log: deque = deque(maxlen=60)  # (when, height) of the latest real sightings
 
     def update(self, pose: Pose) -> None:
         measured = np.array(pose.p, float)

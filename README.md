@@ -109,12 +109,17 @@ None of this predicts a real flight. Nemotron was live unless a line says otherw
 Not run: voice input, `MAP_BUILD_SSH` against a real host, `zwarm sim --inside-out` in this check, and E-STOP or a finished COLMAP build on the rig.
 
 ### Known problems
-All four are open. The timings come from the simulator and the rig, so real ones will differ.
+The four flight bugs from that check were fixed afterward, so the numbers above predate them. Rechecked in the simulator: `swarm.mission_bench` 28 of 28, `--floor` 38 of 38, the `SWARM_E2E` tests 3 of 3, and the map, gaps, focus and land sentences with live Nemotron. The full test suite and the rig weren't rerun.
 
-1. **The focus sentence dead-ends once a map mission has finished.** A whole-room map finished 57 s in on `zwarm sim` and 25 s after all three were up on the rig, and the build then starts by itself. From there `focus_region` is refused because no mission is running, and a new map is refused for the whole build, 313 s in the simulator. The operator may see only "Nothing was started... Say it again", and saying it again doesn't help. The runbook's Stage 5 waits 90 s before this sentence, so on these timings it fails as written. Say it soon after the map starts. If that's too late, say "Explore the north side", which the refusal offers and nobody has run.
-2. **A second flight in one `fly` process fails, 3 of 3 drones on the rig.** `hub.aim` stores the mission heading in `d.config.yaw`, and `Coordinator.reset_to_pads` never restores it. Each drone turned to its old heading during the takeoff check, saw no tags from the pad row, and landed blind within about 20 s. `zwarm sim` can't show this, because its positions come from truth. Restart `fly` between flights, which the runbook's between-flights steps don't say. `POST /reset-pads` alone isn't enough.
-3. **The return to the pads can turn the cameras away from the tags.** `_look_along_path` points the nose along the path, so "land" from the north half flies nose south. In 1 of 3 rig flights, 2 of 3 drones went "position uncertain" and landed blind. One came down 0.85 m from its pad and 0.56 m from its neighbour. The other two flights landed within about 0.3 m of the pads. There's no tested workaround. "Land here" skips the return flight, though nobody has tried it for this. Look at each drone before touching it.
-4. **A COLMAP step can outlive `fly` after Ctrl-C.** Seen once: `exhaustive_matcher` at 1128% CPU with parent pid 1, surviving SIGTERM until `kill -9`. It can starve the next flight's control loop, so run `pkill -9 colmap` before restarting `fly`.
+- A map no longer starts COLMAP while anything is flying. Photos keep saving until everyone is down, so "focus on the north side" works after a map has finished.
+- A new flight starts on the pad heading, and drones keep that heading on the way home so they can still see tags.
+- COLMAP steps are killed when `fly` exits. A `kill -9` of `fly` itself can't clean up, so check with `pgrep colmap` after one.
+
+Still open:
+
+- **Nothing has flown on real drones.** Tag reads on real video, stick scale and COLMAP on real frames are unmeasured.
+- `blank_floor` in `swarm bench` passes 15 of 20 seeds.
+- `agent.eval`: "Do the usual." from the ground makes a plan instead of asking. Nothing flies without Approve.
 
 # Turbodrone
 Reverse-engineered API and client for controlling some of the best-selling ~$50 "toy" drones on Amazon from a computer replacing the closed-source mobile apps they come with.

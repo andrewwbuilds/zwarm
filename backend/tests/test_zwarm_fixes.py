@@ -441,7 +441,6 @@ class FindingsCantSteer(unittest.TestCase):
     def test_nothing_moves_in_the_same_turn_as_reading_them(self):
         fleet = FakeFleet("mapping")
         self.findings(fleet)
-        from tests.test_agent import Scripted
         client = Scripted(use(call("list_findings")), use(call("land")), say("Urgent. Say land if you want it."))
         agent = fleet.agent(client)
         result = agent.handle("check the findings and deal with anything urgent")

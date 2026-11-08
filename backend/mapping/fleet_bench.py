@@ -188,7 +188,8 @@ def _render_drone(job: tuple) -> dict:
             "mean_jpeg_kb": sum(sizes) / max(len(sizes), 1) / 1000, "truth": truth}
 
 
-def render_flights(folder: Path, seconds: float, layout: str, world: str = "demo", walls: str = "brick", scale: float = 0.54) -> dict:
+def render_flights(folder: Path, seconds: float, layout: str, world: str = "demo", walls: str = "brick", scale: float = 0.54,
+                   rough: bool = False) -> dict:
     """Write each drone's frames to folder/drones/<id>/raw, as FleetCapture would. Returns timing and truth."""
     shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir(parents=True)

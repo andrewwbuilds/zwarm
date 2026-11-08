@@ -20,7 +20,7 @@ import time
 import numpy as np
 
 from swarm import bench, floor_bench
-from swarm.coordinator import Phase
+from swarm.coordinator import Coordinator, DroneConfig, Phase
 from swarm.eyes import EDGE_MARGIN, RELIABLE_REACH, SimEyes, in_view
 from swarm.hub import Hub
 from swarm.hub_bench import FURNITURE, THREE, HubFlight, on_floor

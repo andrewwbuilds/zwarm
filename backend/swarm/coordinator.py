@@ -281,7 +281,7 @@ class Coordinator:
 
     def hold(self) -> None:
         for d in self.drones.values():
-            d.landing_requested = False
+            d.landing_requested = d.land_here_wanted = False
             if d.phase == Phase.AIR:
                 self._set_goal(d, d.tracked.p.copy())
         self.takeoff_queue.clear()

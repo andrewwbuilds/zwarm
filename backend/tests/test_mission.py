@@ -772,8 +772,14 @@ class MapTests(unittest.TestCase):
         f.missions.start("map")
         f.missions.settle()
         name = capture.start.call_args.args[0]
-        capture.build.assert_not_called()
         f.missions.stop()
+        f.run(0.5)
+        f.missions.settle()
+        capture.build.assert_not_called()  # COLMAP takes every core, and they're still flying
+        capture.stop.assert_not_called()
+        for d in f.co.drones.values():
+            d.phase = Phase.GROUND  # touched down
+        f.run(0.1)
         f.missions.settle()
         capture.stop.assert_called_once()
         capture.build.assert_called_once_with(name)

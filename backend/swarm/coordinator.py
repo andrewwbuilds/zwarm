@@ -452,6 +452,7 @@ class Coordinator:
         """Treat it as on the floor: no sticks, and above all no toggle. A sighting up high brings it back."""
         d.phase = Phase.GROUND
         d.unknown_air = d.came_down = True
+        d.down_at = self.now
         d.goal = None
         d.path = []
         self._forget_requests(d)

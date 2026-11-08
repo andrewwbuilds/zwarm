@@ -101,8 +101,7 @@ class Coverage:
     def remaining(self) -> np.ndarray:
         """Floor patches that can be seen from somewhere and haven't been looked at enough."""
         self._refresh()
-        reachable = self.sees.any(axis=0) if len(self.sees) else np.zeros(len(self.cells), bool)
-        return self.open & reachable & (self.counts < LOOKS_NEEDED)
+        return self.open & self._reachable() & (self.counts < LOOKS_NEEDED)
 
     def share_seen(self) -> float:
         self._refresh()

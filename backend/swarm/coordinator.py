@@ -820,6 +820,10 @@ class Coordinator:
         d.last_replan = now
         cylinders = []
         for other in self.drones.values():
+            q = other.tracked.p
+            if other is not d and other.phase == Phase.GROUND and other.came_down:
+                cylinders.append(((float(q[0]), float(q[1])), self.limits.separation + DOWN_GAP))
+                continue
             if other is d or other.phase != Phase.AIR or np.linalg.norm(other.tracked.v[:2]) > 0.25:
                 continue
             q = other.tracked.p

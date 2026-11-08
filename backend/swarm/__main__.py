@@ -38,20 +38,33 @@ def cmd_fly(args) -> int:
     return 0
 
 
-def cmd_markers(args) -> int:
-    """Printable marker images for drones, things to avoid, and anchors."""
-    import cv2
+def cmd_layout(args) -> int:
+    """Write the swarm file's anchors section for a grid of already printed tags."""
+    import numpy as np
 
-    from swarm.tracking import marker_image
+    from swarm.tracking import Lens, anchors_in_view, anchors_section, load_anchors, tag_grid
 
-    folder = Path(args.out)
-    folder.mkdir(parents=True, exist_ok=True)
-    for marker in args.ids:
-        cv2.imwrite(str(folder / f"marker-{marker:02d}.png"), cv2.copyMakeBorder(
-            marker_image(marker), 80, 80, 80, 80, cv2.BORDER_CONSTANT, value=255))
-    print(f"Wrote {len(args.ids)} markers to {folder}. Print them without scaling, then measure the black")
-    print("square: that size goes in the swarm file. The white border must stay. Mount drone markers")
-    print("flat with the top of the page toward the nose.")
+    if args.tag_width_m is not None and args.white_square_m is not None:
+        raise SystemExit("give --white-square-m or --tag-width-m, not both")
+    edge = args.white_square_m if args.tag_width_m is None else args.tag_width_m * 5 / 9
+    tags = tag_grid(tuple(args.origin), args.spacing, args.columns, args.rows, args.start_id, args.across_deg, args.rotation_deg)
+    section = anchors_section(None if edge is None else round(edge, 5), tags)
+    Path(args.out).write_text(json.dumps({"anchors": section}, indent=1))
+    xs, ys = [t["x"] for t in tags], [t["y"] for t in tags]
+    fence = {"lo": [min(xs) - 0.8, min(ys) - 0.4, 0.0], "hi": [max(xs) - 0.3, max(ys) + 0.4, 2.2]}
+    print(f"Wrote {args.out}: tags {tags[0]['tag']} to {tags[-1]['tag']}.")
+    print(f"  tag {tags[0]['tag']} at ({tags[0]['x']}, {tags[0]['y']}), tag {tags[-1]['tag']} at ({tags[-1]['x']}, {tags[-1]['y']}), "
+          f"tops pointing {args.rotation_deg:g} degrees from +x. The top is the side opposite the printed label.")
+    print(f"  Suggested fence, for drones facing +x: {json.dumps(fence)}")
+    if edge is None:
+        print("  white_square_edge_m is null: fill it in from a ruler. The swarm refuses to fly without it.")
+        return 0
+    anchors = load_anchors(section)
+    lens = Lens.from_fov()
+    counts = [len(anchors_in_view(anchors, lens, np.radians(45.0), (x, y, 1.0), 0.0))
+              for x in np.arange(fence["lo"][0], fence["hi"][0] + 1e-6, 0.1) for y in np.arange(fence["lo"][1], fence["hi"][1] + 1e-6, 0.1)]
+    print(f"  From 1 m up, facing +x, inside that fence: at least 1 tag readable from {np.mean(np.array(counts) >= 1) * 100:.0f}% of "
+          f"spots, at least 2 from {np.mean(np.array(counts) >= 2) * 100:.0f}%, by geometry alone.")
     return 0
 
 

@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 LOOK_EVERY = 0.2  # seconds between looks through each camera
 POSE_HISTORY = 60  # ticks of pose kept, about 3 s, to match a late picture with where the drone was
+FENCE_SLACK = 0.5  # how far outside the fence a position may land before it's thrown away
 OBSTACLE_MARGIN = 0.1  # added around a seen thing, since its size and place are estimates
 OBSTACLE_MOVE = 0.15  # the map only changes when the estimate has shifted this far, since every change replans
 TURN_FIRST = math.radians(25)  # turn to look where it's going before moving off

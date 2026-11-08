@@ -345,69 +345,231 @@ def anchors_in_view(anchors: dict[str, Anchor], lens: Lens, tilt: float, p, yaw:
     return out
 
 
-class PoseStore:
-    """The newest pose from any camera. Called from camera threads and read by the coordinator."""
+# Uncertainty growth while carrying the pose forward. Estimates, widened on purpose.
+HOLD_DRIFT = 0.04  # m/s: position hold with neutral sticks still wanders
+SPEED_ERROR = 0.3  # share of commanded speed the drone may not actually be doing
+YAW_DRIFT = math.radians(1.5)  # rad/s with no yaw stick
+PAD_SIGMA = 0.1  # how carefully a drone is expected to be set on its pad
+PAD_YAW_SIGMA = math.radians(15)
+FIX_MODEL_AFTER_S = 0.4  # with no sighting for this long, trust the command for speed
+RESPONSE_S = 0.5
+GATE_M = 0.45
+LANDING_DESCENT = 0.45  # m/s, an estimate of the stock auto-land
 
-    def __init__(self, marker_to_drone: dict[int, str], mount_height: float = 0.0):
-        self.marker_to_drone = marker_to_drone
-        self.mount_height = mount_height  # how far the marker sits above the floor when landed
+
+class Estimator:
+    """One drone's pose. Sightings arrive late, so each is compared with where we thought it was then."""
+
+    def __init__(self, x: float, y: float, yaw: float):
+        self.p = np.array([x, y, 0.0])
+        self.v = np.zeros(3)
+        self.yaw = yaw
+        self.sigma_xy = PAD_SIGMA
+        self.sigma_z = 0.03
+        self.sigma_yaw = PAD_YAW_SIGMA
+        self.command = np.zeros(3)
+        self.yaw_rate = 0.0
+        self.flying = False
+        self.landing = False
+        self.t: float | None = None
+        self.last_fix: Fix | None = None
+        self.fix_at = -math.inf
+        self.history: deque = deque(maxlen=120)
+        self.rejected: list[Fix] = []
+        self.fixes = 0
+        self.rejections = 0
+
+    def advance(self, now: float) -> None:
+        if self.t is None:
+            self.t = now
+        dt = now - self.t
+        if dt <= 0.0:
+            return
+        self.t = now
+        if not self.flying:
+            self.v = np.zeros(3)
+            self.history.append((now, self.p.copy(), self.yaw))
+            return
+        if now - self.fix_at > FIX_MODEL_AFTER_S:
+            self.v += (self.command - self.v) * min(1.0, dt / RESPONSE_S)
+            if self.landing:
+                self.v[2] = -LANDING_DESCENT
+            else:
+                self.v[2] = self.command[2]
+        self.p = self.p + self.v * dt
+        if self.p[2] < 0.0:
+            self.p[2] = 0.0
+            self.v[2] = 0.0
+        self.yaw += self.yaw_rate * dt
+        self.history.append((now, self.p.copy(), self.yaw))
+        speed = float(np.linalg.norm(self.v[:2]))
+        self.sigma_xy += (HOLD_DRIFT + SPEED_ERROR * speed + self.sigma_yaw * speed) * dt
+        self.sigma_z += (HOLD_DRIFT + 0.3 * abs(self.v[2])) * dt
+        self.sigma_yaw += (YAW_DRIFT + 0.25 * abs(self.yaw_rate)) * dt
+
+    def note_command(self, velocity, yaw_rate: float, flying: bool, landing: bool) -> None:
+        self.command = np.asarray(velocity, float).copy()
+        self.yaw_rate = yaw_rate
+        self.flying = flying
+        self.landing = landing
+
+    def add_fix(self, fix: Fix) -> bool:
+        """Blend in a sighting. A wild one is ignored, unless several in a row agree with each other."""
+        then = None
+        for t, p, yaw in reversed(self.history):
+            if t <= fix.t:
+                then = (p, yaw)
+                break
+        if then is None:
+            then = (self.p, self.yaw)
+        measured = np.array(fix.p)
+        gap = measured - then[0]
+        reach = max(GATE_M, 4 * math.hypot(self.sigma_xy, fix.sigma_xy))
+        if float(np.linalg.norm(gap[:2])) > reach:
+            self.rejections += 1
+            self.rejected.append(fix)
+            del self.rejected[:-3]
+            spread = max((np.linalg.norm(np.array(r.p[:2]) - measured[:2]) for r in self.rejected), default=0.0)
+            if len(self.rejected) < 3 or spread > 0.25:
+                return False
+            # Three that agree: it's the estimate that's wrong, so start again from them.
+            self.sigma_xy = max(self.sigma_xy, reach)
+        self.rejected.clear()
+        previous = self.last_fix
+        self.last_fix = fix
+        self.fix_at = fix.t
+        self.fixes += 1
+        gain_xy = self.sigma_xy ** 2 / (self.sigma_xy ** 2 + fix.sigma_xy ** 2)
+        gain_z = self.sigma_z ** 2 / (self.sigma_z ** 2 + fix.sigma_z ** 2)
+        gain_yaw = self.sigma_yaw ** 2 / (self.sigma_yaw ** 2 + fix.sigma_yaw ** 2)
+        change = np.array([gain_xy * gap[0], gain_xy * gap[1], gain_z * gap[2]])
+        self.p = self.p + change
+        if self.p[2] < 0.0:
+            self.p[2] = 0.0
+        self.history = deque(((t, p + change, yaw) for t, p, yaw in self.history), maxlen=self.history.maxlen)
+        if previous is not None and 0.0 < fix.t - previous.t < 0.5:
+            dt = fix.t - previous.t
+            self.v = self.v + 0.25 * np.array([gain_xy * gap[0], gain_xy * gap[1], gain_z * gap[2]]) / max(dt, 0.04)
+        turn = (fix.yaw - then[1] + math.pi) % (2 * math.pi) - math.pi
+        self.yaw += gain_yaw * turn
+        self.sigma_xy = math.sqrt(1 - gain_xy) * self.sigma_xy
+        self.sigma_z = math.sqrt(1 - gain_z) * self.sigma_z
+        self.sigma_yaw = math.sqrt(1 - gain_yaw) * self.sigma_yaw
+        return True
+
+    def pose(self, now: float) -> Pose:
+        return Pose(now, tuple(float(v) for v in self.p), self.yaw, sigma=max(self.sigma_xy, 0.5 * self.sigma_z),
+                    v=self.v.copy(), fix_age=now - self.fix_at)
+
+
+@dataclass(frozen=True)
+class DroneOptics:
+    x: float
+    y: float
+    yaw: float = 0.0
+    tilt_deg: float = DEFAULT_TILT_DEG
+    lens: Lens | None = None
+
+
+class InsideOutTracker:
+    """Every drone's Estimator, and what feeds it. Frames can arrive on any thread."""
+
+    def __init__(self, drones: dict[str, DroneOptics], anchors: dict[str, Anchor], fence=None, video_latency: float = 0.15):
+        self.drones = drones
+        self.anchors = anchors
+        self.fence = fence
+        self.video_latency = video_latency  # receiving a frame to when it was really taken: an estimate
         self.lock = threading.Lock()
-        self.fresh: dict[str, Pose] = {}
-        self.best_size: dict[str, tuple[float, float]] = {}
-        self.moving: dict[int, Tracked] = {}
-        self.counts: dict[str, int] = {}
-        self.others = 0
-
-    def add(self, t: float, sightings: list[Sighting]) -> None:
-        with self.lock:
-            for s in sightings:
-                drone_id = self.marker_to_drone.get(s.marker)
-                x, y, z = s.position
-                if drone_id is not None:
-                    # With overlapping cameras, a much smaller view of a recently seen marker is
-                    # the less accurate one, so it doesn't replace the closer camera's.
-                    size, at = self.best_size.get(drone_id, (0.0, -math.inf))
-                    if s.size_px < 0.6 * size and t - at < 0.1:
-                        continue
-                    self.best_size[drone_id] = (s.size_px, t)
-                    self.fresh[drone_id] = Pose(t, (x, y, z - self.mount_height), s.yaw)
-                    self.counts[drone_id] = self.counts.get(drone_id, 0) + 1
-                elif s.marker in MOVING_IDS:
-                    tracked = self.moving.setdefault(s.marker, Tracked())
-                    tracked.update(Pose(t, (x, y, z), s.yaw))
-                else:
-                    self.others += 1
-
-    def poses(self) -> dict[str, Pose]:
-        with self.lock:
-            fresh, self.fresh = self.fresh, {}
-            return fresh
-
-    def moving_things(self, now: float, radius: float = 0.3) -> list[Moving]:
-        with self.lock:
-            return [Moving(f"marker-{marker}", tracked.now(now), tracked.v.copy(), radius)
-                    for marker, tracked in self.moving.items() if tracked.age(now) < MOVING_STALE_S]
-
-
-class CameraWorker:
-    """Reads one camera as fast as it delivers, always working on the newest frame."""
-
-    def __init__(self, source, camera: CameraModel, marker_size: float, store: PoseStore, clock=time.monotonic):
-        self.source = source
-        self.camera = camera
-        self.marker_size = marker_size
-        self.store = store
-        self.clock = clock
+        self.estimators = {k: Estimator(d.x, d.y, d.yaw) for k, d in drones.items()}
+        self.readers = {k: AnchorReader(anchors) for k in drones}
+        self.seen: dict[str, tuple[str, ...]] = {k: () for k in drones}
+        self.seen_at: dict[str, float] = {k: -math.inf for k in drones}
+        self.frames: dict[str, int] = {k: 0 for k in drones}
         self.stopping = threading.Event()
-        self.thread = threading.Thread(target=self.run, daemon=True, name=f"camera-{source}")
-        self.frames = 0
-        self.last_frame = 0.0
-        self.error: str | None = None
-        self.width = int(camera.matrix[0, 2] * 2)  # replaced by the real size once a frame arrives
-        self.height = int(camera.matrix[1, 2] * 2)
+        self.threads: list[threading.Thread] = []
 
-    def start(self) -> None:
-        self.thread.start()
+    def add_frame(self, drone_id: str, t: float, image: np.ndarray) -> Fix | None:
+        """Process one frame, taken at time t. Safe to call from a camera thread."""
+        optics = self.drones[drone_id]
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
+        lens = (optics.lens or Lens.from_fov()).for_size(gray.shape[1], gray.shape[0])
+        found = self.readers[drone_id].find(gray)
+        with self.lock:
+            prior = self.estimators[drone_id].yaw
+        fix = solve_fix(found, lens, math.radians(optics.tilt_deg), t, prior, self.fence)
+        with self.lock:
+            self.frames[drone_id] += 1
+            if found:
+                self.seen[drone_id] = tuple(anchor.id for anchor, _ in found)
+                self.seen_at[drone_id] = t
+            if fix is not None:
+                self.estimators[drone_id].add_fix(fix)
+        return fix
+
+    def poses(self, now: float) -> dict[str, Pose]:
+        with self.lock:
+            out = {}
+            for k, estimator in self.estimators.items():
+                estimator.advance(now)
+                out[k] = estimator.pose(now)
+            return out
+
+    def note_command(self, drone_id: str, velocity, yaw_rate: float, flying: bool, landing: bool) -> None:
+        with self.lock:
+            self.estimators[drone_id].note_command(velocity, yaw_rate, flying, landing)
+
+    def reset(self, drone_id: str) -> None:
+        """The drone has been put back on its pad by hand."""
+        d = self.drones[drone_id]
+        with self.lock:
+            self.estimators[drone_id] = Estimator(d.x, d.y, d.yaw)
+
+    def expected(self, drone_id: str, height: float = 1.0) -> list[str]:
+        """The anchors this drone should see hovering over its pad."""
+        d = self.drones[drone_id]
+        return anchors_in_view(self.anchors, d.lens or Lens.from_fov(), math.radians(d.tilt_deg), (d.x, d.y, height), d.yaw)
+
+    def report(self, now: float) -> dict[str, dict]:
+        with self.lock:
+            return {k: {
+                "seeing": list(self.seen[k]) if now - self.seen_at[k] < 1.0 else [],
+                "last_seen_s": None if not math.isfinite(self.seen_at[k]) else round(now - self.seen_at[k], 2),
+                "frames": self.frames[k],
+                "fixes": self.estimators[k].fixes,
+                "rejected": self.estimators[k].rejections,
+                "sigma_m": round(self.estimators[k].sigma_xy, 3),
+            } for k in self.drones}
+
+    def allowed_yaw(self, drone_id: str, p, yaw: float) -> float:
+        """The nearest heading to yaw from which this drone would still see a tag."""
+        d = self.drones[drone_id]
+        lens = d.lens or Lens.from_fov()
+        tilt = math.radians(d.tilt_deg)
+        for step in range(0, 181, 15):
+            for sign in (1, -1):
+                turned = yaw + sign * math.radians(step)
+                if anchors_in_view(self.anchors, lens, tilt, p, turned):
+                    return turned
+        return yaw
+
+    def start(self, frames) -> None:
+        """Read each drone's newest frame from `frames.latest(drone_id)`, which swarm.frames provides."""
+        for drone_id in self.drones:
+            thread = threading.Thread(target=self._read, args=(drone_id, frames), daemon=True, name=f"anchors-{drone_id}")
+            thread.start()
+            self.threads.append(thread)
+
+    def _read(self, drone_id: str, frames) -> None:
+        last = None
+        while not self.stopping.is_set():
+            frame = frames.latest(drone_id)
+            if frame is None or frame.number == last:
+                self.stopping.wait(0.005)
+                continue
+            last = frame.number
+            image = cv2.imdecode(np.frombuffer(frame.jpeg, np.uint8), cv2.IMREAD_GRAYSCALE)
+            if image is not None:
+                self.add_frame(drone_id, frame.t - self.video_latency, image)
 
     def stop(self) -> None:
         self.stopping.set()

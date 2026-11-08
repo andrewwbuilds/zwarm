@@ -1582,6 +1582,7 @@ requires-dist = [
     { name = "starlette", specifier = ">=1.10.0" },
     { name = "ultralytics", marker = "extra == 'follow'", specifier = ">=8.4.203" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
+    { name = "websockets", specifier = ">=17.4" },
 ]
 provides-extras = ["follow"]
 

@@ -469,7 +469,7 @@ class Hub:
         self._stop_search()
         self.orders.clear()
         self.co.land(self.now)
-        return "Coming back to the pads to land."
+        return "Coming back to the pads to land." + self._unsure_note()
 
     @_action
     def land_here(self) -> str:

@@ -503,6 +503,11 @@ def _rounded(value, depth: int = 0):
     return _plain(value, MAX_SUMMARY)
 
 
+def _mission_summary(status: dict) -> dict:
+    """Without per-drone tasks. Right after a change they all still say holding, and the model repeats that as news."""
+    return _rounded({k: v for k, v in status.items() if k not in ("tasks", "flight_s")})
+
+
 def _finding(finding) -> dict:
     row = finding if isinstance(finding, dict) else vars(finding)
     keep = {key: row.get(key) for key in ("id", "drone", "x", "y", "severity", "confidence", "status", "target")}

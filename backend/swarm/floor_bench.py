@@ -130,7 +130,7 @@ def wall_gap(seed):
 
 
 def under_table(seed):
-    """A table sits on two of the tags, so they can't be seen. The drones fly over it."""
+    """A table sits on two of the tags, so they can't be seen. It's on the map, so the drones go around it, not over it."""
     f = FloorFlight(seed, boxes=[Box((-0.3, -1.3, 0.0), (0.6, 0.3, 0.7), "wood")])
     high = 1.25
     return f, _there_and_back(f, {"a": (1.2, 1.2, high), "b": (1.2, 0.0, high), "c": (1.2, -1.2, high)}, _home(THREE))

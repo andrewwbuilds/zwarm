@@ -150,6 +150,17 @@ Real cameras use `swarm/yolo_eyes.py`, which needs `uv sync --inexact --extra fo
 
 Limits: YOLO only recognises the labels in `eyes.LABELS`, so a plain box or a wall is invisible to it. It hasn't been measured on real footage from a tilted camera. In simulation, a person known only from the cameras can still reach a drone (30 of 40 flights clean), so keep people out of the flying space. Only `talk` and the bench run the hub today: `swarm/server.py` still calls the coordinator directly.
 
+## Missions (simulator tested)
+`backend/swarm/mission.py` holds what the swarm is trying to do and who does which part: `start(kind, region, target)`, `focus(region)`, `stop()`, `status()` and `gaps()`. Explore shares out a region's unseen floor, map adds photo capture and starts the build when it ends, inspect visits viewpoints around things and floor, and search hands over to the hub. A drone that drops out frees its work for the others, and each drone heads back in time to land by its flight limit. Hold, land and E-stop through the hub end a mission, with or without the model. Why it works this way: `docs/decisions/0005-mission-manager.md`.
+
+From `backend`:
+```
+uv run python -m swarm.mission_bench            # the fixed test set, about a minute
+uv run python -m swarm.mission_bench --floor    # plus flights on simulated floor tags, a few minutes each
+uv run python -m unittest tests.test_mission
+```
+Limits: nothing here has flown. Coverage means the floor was in the picture for about a second, worked out from pose, not that a map of it came out well. The flight limit counts one flight, so a second flight on the same battery only gets a warning. Regions come from the fence, so north is +x unless `north_yaw_deg` says otherwise.
+
 ## Damage inspection (simulator tested)
 `backend/swarm/inspect.py` watches each flying drone's video during an inspect mission, sends sharp new views to a vision model on worker threads, and stores what it reports under `~/Developer/datasets/zwarm/` with a photo. Every finding stays pending until a person confirms or dismisses it. Why it works this way: `docs/decisions/0003-damage-inspection.md`.
 

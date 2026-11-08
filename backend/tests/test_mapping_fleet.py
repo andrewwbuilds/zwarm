@@ -421,7 +421,17 @@ class RoomFitTests(unittest.TestCase):
         folded = where.copy()
         folded[:, 0] = np.abs(where[:, 0])  # half the room laid on top of the other half
         fit = check_against_room(self.cameras(folded, self.spin()), {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where)})
-        self.assertGreater(fit["median_error_m"], fleet.ROOM_FIT_LIMIT_M)
+        self.assertLess(fit["agrees"], fleet.MIN_ROOM_AGREEMENT)
+
+    def test_a_few_wild_cameras_dont_condemn_a_good_map(self):
+        rng = np.random.default_rng(4)
+        where = np.column_stack([rng.uniform(-3, 3, 60), rng.uniform(-2, 2, 60), np.ones(60)])
+        placed = where.copy()
+        placed[:4] += [[9.0, 7.0, 3.0], [-8.0, 5.0, 2.0], [7.0, -9.0, -2.0], [-6.0, -8.0, 4.0]]
+        fit = check_against_room(self.cameras(placed, self.spin()), {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where)})
+        self.assertLess(fit["median_error_m"], 0.05)
+        self.assertGreater(fit["agrees"], 0.9)
+        self.assertAlmostEqual(fit["scale"], 1 / 0.3, delta=0.05)
 
     def test_too_few_tracked_photos_gives_no_verdict(self):
         where = np.column_stack([np.arange(5.0), np.zeros(5), np.ones(5)])

@@ -464,64 +464,79 @@ class Hub:
         self._stop_search()
         self.orders.clear()
         center = (self.co.room.lo[:2] + self.co.room.hi[:2]) / 2
-        problems = self.co.formation(c.shape, center, 1.0, SEARCH_Z)
-        return f"Can't do that: {'; '.join(problems)}." if problems else f"Forming a {c.shape}."
+        problems = self.co.formation(shape, center, 1.0, SEARCH_Z)
+        return f"Can't do that: {'; '.join(problems)}." if problems else f"Forming a {shape}."
 
-    def _do_goto(self, c) -> str:
+    def _flying_for(self, drone: str | None) -> tuple[list, str | None]:
         flying = [d for d in self.co.drones.values() if d.phase == Phase.AIR and not d.landing_requested]
-        if c.drone is not None and c.drone not in self.co.drones:
-            return f"There is no drone called {c.drone}."
-        if c.drone is not None:
-            flying = [d for d in flying if d.id == c.drone]
-            if not flying:
-                return f"{c.drone} isn't flying."
-        if not flying:
-            return "Nothing is flying yet."
-        if c.point is not None:
-            goal = np.array([c.point[0], c.point[1], c.point[2] if len(c.point) > 2 else SEARCH_Z])
-            d = min(flying, key=lambda x: float(np.linalg.norm(x.tracked.p - goal)))
-            problems = self.co.check_goals({d.id: goal})
-            if problems:
-                return f"Can't go there: {'; '.join(problems)}."
-            face = None
-            where = _where(goal)
-        else:
-            things = self.memory.find(c.label)
-            if not things:
-                return f"I haven't seen a {c.label}. Say \"find the {c.label}\" to look for one."
-            thing = things[0]
-            d = min(flying, key=lambda x: float(np.linalg.norm(x.tracked.p - thing.p)))
-            others = [x.tracked.p for x in flying if x is not d]
-            view = Coverage(self.co.room).standoff(d.tracked.p, thing.p, avoid=others)
-            if view is None:
-                return f"I can't find a clear place to see the {c.label} from."
-            goal, face, where = view.p, view.yaw, f"the {c.label}"
-        self._stop_search()
-        self.order(d, goal, face, self.now)
-        return f"{d.id} is going to {where}."
+        if drone is None:
+            return flying, None if flying else "Nothing is flying yet."
+        if drone not in self.co.drones:
+            return [], f"There is no drone called {drone}."
+        flying = [d for d in flying if d.id == drone]
+        return flying, None if flying else f"{drone} isn't flying."
 
-    def _do_find(self, c) -> str:
-        if not self.eyes.knows(c.label):
-            return f"The camera can't recognise \"{c.label}\", so I didn't start a search."
+    @_action
+    def go_to(self, x: float, y: float, z: float | None = None, drone: str | None = None) -> str:
+        """Send one drone to a room position in metres: the named one, or else the nearest."""
+        flying, problem = self._flying_for(drone)
+        if problem:
+            return problem
+        goal = np.array([x, y, SEARCH_Z if z is None else z], float)
+        d = min(flying, key=lambda f: float(np.linalg.norm(f.tracked.p - goal)))
+        problems = self.co.check_goals({d.id: goal})
+        if problems:
+            return f"Can't go there: {'; '.join(problems)}."
+        self._stop_search()
+        self.order(d, goal, None, self.now)
+        return f"{d.id} is going to {_where(goal)}."
+
+    @_action
+    def go_to_thing(self, label: str, drone: str | None = None) -> str:
+        """Send one drone to a clear view of a remembered thing."""
+        flying, problem = self._flying_for(drone)
+        if problem:
+            return problem
+        things = self.memory.find(label)
+        if not things:
+            return f"I haven't seen a {label}. Search for one first."
+        thing = things[0]
+        d = min(flying, key=lambda f: float(np.linalg.norm(f.tracked.p - thing.p)))
+        others = [f.tracked.p for f in flying if f is not d]
+        view = Coverage(self.co.room).standoff(d.tracked.p, thing.p, avoid=others)
+        if view is None:
+            return f"I can't find a clear place to see the {label} from."
+        self._stop_search()
+        self.order(d, view.p, view.yaw, self.now)
+        return f"{d.id} is going to the {label}."
+
+    @_action
+    def find(self, label: str) -> str:
+        """Search the room until it's confirmed or all the floor has been seen. See hub.search.state."""
+        if not self.eyes.knows(label):
+            return f"The camera can't recognise \"{label}\", so I didn't start a search."
         drones = self.co.drones.values()
         if all(d.phase in (Phase.GROUND, Phase.LANDING, Phase.STOPPED) for d in drones) and not self.co.takeoff_queue:
-            return f"Nothing is flying. Say \"take off\" first, then ask me to find the {c.label}."
-        hints = [t for t in self.memory.find(c.label) if self.now - t.last_seen <= HINT_MAX_AGE_S and not t.moves]
+            return f"Nothing is flying. Take off first, then ask me to find the {label}."
+        hints = [t for t in self.memory.find(label) if self.now - t.last_seen <= HINT_MAX_AGE_S and not t.moves]
         self._stop_search()
-        self.search = Search(self, c.label, self.now, hints[0] if hints else None)
+        self.search = Search(self, label, self.now, hints[0] if hints else None)
         if hints:
-            return f"I last saw a {c.label} near {_where(hints[0].p)}. Checking there first, then the rest of the room."
-        return f"Looking for a {c.label}."
+            return f"I last saw a {label} near {_where(hints[0].p)}. Checking there first, then the rest of the room."
+        return f"Looking for a {label}."
 
-    def _do_where(self, c) -> str:
-        things = self.memory.find(c.label)
+    @_action
+    def where(self, label: str) -> str:
+        things = self.memory.find(label)
         if not things:
-            return f"I haven't seen a {c.label}."
+            return f"I haven't seen a {label}."
         parts = [f"{_where(t.p)}, seen {_ago(self.now - t.last_seen)} by {_names(t.seen_by)}" for t in things[:3]]
         doubt = "" if things[0].sure else " I'm not certain it's really one."
-        return f"{c.label.capitalize()}: " + "; ".join(parts) + "." + doubt
+        return f"{label.capitalize()}: " + "; ".join(parts) + "." + doubt
 
-    def _do_list(self, c) -> str:
+    @_action
+    def seen(self) -> str:
+        """Everything the fleet remembers."""
         things = self.memory.known()
         if not things:
             return "Nothing yet."

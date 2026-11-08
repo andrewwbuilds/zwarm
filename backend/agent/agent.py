@@ -566,6 +566,12 @@ class Agent:
         results = []
         ok = True
         epoch = self._epoch
+        # All of it, before any of it: a mission refused after takeoff would leave the fleet hovering with nothing to do.
+        for step in plan["steps"]:
+            try:
+                self.box.check(step["tool"], {k: v for k, v in step["args"].items() if k != "note"})
+            except Refused as refused:
+                return {"ok": False, "reply": str(refused), "plan": _shown(plan), "results": [{"ok": False, "refused": str(refused)}]}
         for step in plan["steps"]:
             try:
                 given = {k: v for k, v in step["args"].items() if k != "note"}

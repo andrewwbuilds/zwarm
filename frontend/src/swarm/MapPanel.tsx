@@ -25,7 +25,7 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
   const [asked, setAsked] = useState(false);
 
   const stamp = status ? `${status.name}/${status.state}/${status.registered}` : "";
-  const hasResult = status !== null && (status.registered > 0 || DONE.test(status.state));
+  const hasResult = status !== null && (status.registered > 0 || status.state === DONE);
 
   useEffect(() => {
     if (!hasResult) return;

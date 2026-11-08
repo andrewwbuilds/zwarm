@@ -249,7 +249,7 @@ class StopWordsTests(unittest.TestCase):
                      "don't stop and land", "stop, don't land", "stop and don't land", "don't come back and land", "don't bring them down",
                      "do not bring them home", "why did they come back and land", "bring them to the north side", "come back to the north side",
                      "stop mapping and come back to the north side", "stop and focus on the north", "bring them back north",
-                     "land them on the couch", "should we bring them down"):
+                     "land them on the couch", "should we bring them down", "finish the mission and land"):
             self.assertIsNone(self.verb(text), text)
 
     def test_naming_one_drone_is_refused(self):

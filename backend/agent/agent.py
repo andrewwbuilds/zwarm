@@ -441,7 +441,7 @@ class Agent:
         self._remember([*spoken, {"role": "assistant", "content": final}])
         return {"reply": final, "plan": _shown(turn.plan), "tool_calls": turn.records}
 
-    def _honest(self, final: str, turn: _Turn) -> str:
+    def _honest(self, final: str, turn: _Turn, text: str = "") -> str:
         """A turn where every action was refused can't claim progress, so the tools' own words replace it.
 
         Seen live: a start_mission refused because every drone had stopped, then "I've prepared an explore

@@ -17,7 +17,7 @@ Go down this list until the drones stop.
 4. **Tunnels gone?** `ssh zwarm-pi-01 'curl -s -X POST 127.0.0.1:8000/flight/estop'`, and the same for `zwarm-pi-02` and `zwarm-pi-03`.
 5. **Nothing else works:** catch it or wait. With no link its sticks centre and it hovers until the battery gets low.
 
-Ctrl-C on `fly` lands anything in the air and then quits, in up to 25 s.
+Ctrl-C on `fly` lands anything in the air and then quits, in up to 25 s. The console stays up through the landing, so E-STOP still works. A second Ctrl-C doesn't skip the landing, and closing the terminal lands them too.
 
 Someone else's hand near E-STOP during every flight if you can get one. Nobody stands inside the fence.
 

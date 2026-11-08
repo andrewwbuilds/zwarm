@@ -180,6 +180,13 @@ class RegionCoverage(Coverage):
 
     def _narrow(self) -> None:
         keep = self.regions.mask(self.region, self.all_candidates)
+        self.in_region = self.regions.mask(self.region, self.cells)
+        if not keep.any() and len(self.all_candidates):
+            # A narrow fence or furniture can leave a region with nowhere to hold. Look into it from outside.
+            floor = self.in_region & self.open
+            keep = np.zeros(len(self.all_candidates), bool)
+            for sees in self.all_sees.values():
+                keep |= sees[:, floor].any(axis=1)
         self.candidates, self.candidate_yaws = self.all_candidates[keep], self.all_yaws[keep]
         self.sees = {tilt: sees[keep] for tilt, sees in self.all_sees.items()}
         self.in_region = self.regions.mask(self.region, self.cells)

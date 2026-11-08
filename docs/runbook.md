@@ -203,6 +203,7 @@ Read `video_change` for this drone from `curl -s localhost:8010/state | jq '.anc
 | "barely responded to the sticks" | See `speed_per_stick` in the tuning table. This is the most likely real-world mismatch: the value is an estimate |
 | "kept going after being told to stop", "drifted" | Flow sensor can't read the floor. Fix the floor first |
 | "position uncertain, holding", then lands | Lost its tags. Check the light and hover height. See `SIGMA_HOLD` |
+| "landed blind and touchdown was never seen" | Same, and it came down where it was. **LOOK AT IT.** Anyone else flying stays 1.5 m away for 10 s, then 0.75 m (`DOWN_SETTLED_S`, `DOWN_GAP`), and carries on. reset-pads refuses until everything is down, so finish or land, then fetch it |
 
 ### Stage 2: one drone short move
 

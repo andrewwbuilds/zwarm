@@ -119,6 +119,7 @@ class Drone:
     check: ResponseCheck | None = None
     check_results: list[dict] = field(default_factory=list)
     sticks_wrong: bool = False  # failed its check in a way that means steering it would make things worse
+    unknown_air: bool = False  # takeoff was sent and nothing was seen after, so it may or may not be up
 
     @property
     def id(self) -> str:

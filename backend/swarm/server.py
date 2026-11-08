@@ -173,7 +173,7 @@ def build_app(runtime: Runtime) -> FastAPI:
     async def lifespan(app: FastAPI):
         runtime.start()
         yield
-        runtime.shut_down()
+        await asyncio.to_thread(runtime.shut_down)
 
     app = FastAPI(title="Swarm", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])

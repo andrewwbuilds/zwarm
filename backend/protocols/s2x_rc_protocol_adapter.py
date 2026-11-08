@@ -115,6 +115,25 @@ class S2xRCProtocolAdapter(BaseProtocolAdapter):
             print(f"  Checksum: 0x{packet[18]:02x}")
             print()
     
+    def read_link_quality(self):
+        """The newest link-quality byte from the drone, or None if it has gone quiet. Never waits or raises.
+
+        Called from /capabilities and not from the control loop, so it can't cost a control packet.
+        About 90 up close and 50 far away (docs/research/S2x.md). A socket left unread for a long
+        time holds old replies, so the first read after a gap can be stale.
+        """
+        for _ in range(MOST_REPLIES_READ):
+            try:
+                reply = self.sock.recv(16, socket.MSG_DONTWAIT)
+            except OSError:  # nothing waiting raises too
+                break
+            if len(reply) == 5 and reply.startswith(LINK_REPLY):
+                self.link_quality = reply[4]
+                self.link_quality_at = time.monotonic()
+        if time.monotonic() - self.link_quality_at > LINK_REPLY_FRESH_S:
+            return None
+        return self.link_quality
+
     def toggle_debug(self):
         """Toggle debug packet logging"""
         self.debug_packets = not self.debug_packets

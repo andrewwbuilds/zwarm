@@ -49,6 +49,7 @@ ACTIVE_STATES = ("starting", "running", "analyzing")  # MissionManager.active
 FLYING_PHASES = ("takeoff", "check", "air")
 
 
+_ALL_WORDS = ("all", "whole", "entire", "full", "everything", "everywhere", "room")
 _VAGUE = re.compile(r"(these |those |all |the )*(things?|stuff|objects?|items?|everything|anything|them|it)?")
 
 

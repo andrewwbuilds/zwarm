@@ -89,7 +89,7 @@ class Search:
         self.coverage = hub.new_coverage()
         self.state = "searching"  # searching, closing, found, exhausted, failed, stopped
         self.views: dict[str, object] = {}
-        self.dwell: dict[str, float] = {}
+        self.dwell: dict[str, tuple[float, int]] = {}  # arrived when, and how many looks its view had by then
         self.banned: list[np.ndarray] = []
         self.hint = hint.id if hint else None
         self.thing_id: int | None = None

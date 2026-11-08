@@ -351,7 +351,7 @@ class Agent:
                     final = reply.content
                     break
                 self._use_all(turn, reply.tool_calls, messages)
-            if final and turn.epoch == self._epoch:
+            if final and turn.epoch == self._epoch and turn.spoken_count == self._spoken:
                 self._emit("report", final[:400], {"source": "agent", "events": [kind for kind, _, _ in batch]})
         except NemotronError:
             pass  # the raw event already reached the operator through the event log

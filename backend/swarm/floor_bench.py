@@ -268,6 +268,11 @@ def late_video(seed):
     return _crossing(seed, video=VideoConditions(latency_s=0.25))
 
 
+def slow_video(seed):
+    """Only 4 frames a second get through, as on a weak link or an overloaded Mac."""
+    return _crossing(seed, frame_rate=4.0)
+
+
 def wrong_lens(seed):
     """The lens is really 82 degrees wide and the tracker assumes 90: what flying without `fit-focal` risks."""
     return _crossing(seed, video=VideoConditions(fov_deg=82.0))

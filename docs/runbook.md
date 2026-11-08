@@ -395,8 +395,9 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 | Symptom | Likely cause | Change | Direction |
 |---|---|---|---|
 | Lands too early, or battery sags first | Real battery differs | `flight_limit_s` in `real.json` | Match your battery, minus a minute. Weak ones sink at the end |
-| Coverage too slow | Long dwell | `backend/swarm/mission.py:55` `DWELL_S` and `backend/swarm/search.py:21` `LOOKS_NEEDED` | Lower, 1.0 to 0.5, and 5 to 3 |
-| Inspection too slow | Too many views | `backend/swarm/mission.py:66` `MAX_THINGS` and `backend/swarm/mission.py:56` `VIEW_DWELL_S` | Lower, 8 to 4, and 4 to 2.5 |
+| Coverage too slow | Long dwell | `backend/swarm/mission.py:57` `DWELL_S` and `backend/swarm/search.py:21` `LOOKS_NEEDED` | Lower, 1.0 to 0.5, and 5 to 3 |
+| Mission fails after a tracking or link gap the drones would have come back from | Gap longer than a mission waits with nobody able to work | `backend/swarm/mission.py:55` `ALL_LOST_S` | Raise, 15 to 30 |
+| Inspection too slow | Too many views | `backend/swarm/mission.py:68` `MAX_THINGS` and `backend/swarm/mission.py:58` `VIEW_DWELL_S` | Lower, 8 to 4, and 4 to 2.5 |
 | No findings, and frames marked blurry | Real video softer than the guess | `backend/swarm/inspect.py:50` `MIN_SHARPNESS` | Lower, using the sharpness preflight printed |
 | False alarms | Model reading compression as damage | `backend/swarm/inspect.py:43` `LOW_CONFIDENCE` | Raise to 0.7, so more are marked long shots |
 | Vision answers slowly | Slow model | `NEMOTRON_VISION_MODEL` in `backend/.env` | Name the 3 s model first |

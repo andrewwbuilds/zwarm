@@ -5,6 +5,7 @@ Works the same with simulated drones or real ones. The frontend's /swarm page ta
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import math

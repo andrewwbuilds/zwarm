@@ -156,7 +156,7 @@ def filter_velocities(bodies: list[Body], room: Room, limits: Limits, moving: li
         for n, distance in room.surfaces(ahead[b.id], reach + b.extra_gap):
             if b.descending and n[2] > 0.5:
                 continue
-            rule([(b.id, n)], -limits.gain * (distance - keep))
+            rule([(b.id, n)], -limits.gain * (distance - keep - b.extra_gap))
         for thing in moving:
             offset = (ahead[b.id] - (thing.p + thing.v * limits.lookahead))[:2]
             distance = float(np.linalg.norm(offset))

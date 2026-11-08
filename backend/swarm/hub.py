@@ -542,14 +542,17 @@ class Hub:
             return "Nothing yet."
         return "I've seen: " + "; ".join(f"{t.label} at {_where(t.p)}" for t in things) + "."
 
-    def _do_forget(self, c) -> str:
-        count = self.memory.forget_label(c.label)
+    @_action
+    def forget(self, label: str | None = None) -> str:
+        """Forget every thing with this label, or everything when label is None."""
+        count = self.memory.forget_label(label)
         self._sync_obstacles()
-        if c.label is None:
+        if label is None:
             return f"Forgot all {count} things."
-        return f"Forgot {count} {c.label}." if count else f"I had nothing about a {c.label}."
+        return f"Forgot {count} {label}." if count else f"I had nothing about a {label}."
 
-    def _do_status(self, c) -> str:
+    @_action
+    def status(self) -> str:
         parts = []
         for d in self.co.drones.values():
             fault = f" ({'; '.join(d.faults.values())})" if d.faults else ""

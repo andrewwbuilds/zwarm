@@ -94,6 +94,25 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual((status["name"], status["state"]), ("m", "capturing"))
         self.assertEqual(self.capture.stop()["state"], "captured")
 
+    def test_stop_never_waits_for_a_slow_disk(self):
+        release, writing = threading.Event(), threading.Event()
+        real = Path.write_bytes
+
+        def slow(path, data):
+            writing.set()
+            release.wait(5)
+            return real(path, data)
+        self.addCleanup(release.set)
+        with mock.patch.object(Path, "write_bytes", slow):
+            self.capture.start("m")
+            self.frames.show("1", 1)
+            self.assertTrue(writing.wait(3))
+            started = time.perf_counter()
+            self.assertEqual(self.capture.stop()["state"], "captured")
+            self.assertLess(time.perf_counter() - started, 0.1)
+            release.set()
+            self.capture.capture_thread.join(3)
+
     def test_stop_with_nothing_running_is_harmless(self):
         self.assertEqual(self.capture.stop()["state"], "idle")
 

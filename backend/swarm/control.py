@@ -7,6 +7,7 @@ ground speed using its optical-flow sensor. So the swarm only ever asks for a ve
 from __future__ import annotations
 
 import math
+from collections import deque
 from dataclasses import dataclass
 
 import numpy as np

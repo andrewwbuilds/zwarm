@@ -252,6 +252,8 @@ def evaluate(folder: Path) -> dict:
             "by_drone": per_drone,
             "level_map": {"camera_height": round(float(np.median(in_level[:, 2])), 3), "true_camera_height": round(float(np.median(real[:, 2])), 3),
                           "heading_off_deg": round(turn, 1), "size_vs_truth": round(float(np.linalg.norm(a[:, :2]) / max(np.linalg.norm(b[:, :2]), 1e-9)), 3),
+                          "in_room": result.get("in_room"), "room_fit_m": result.get("room_fit_m"),
+                          "off_from_true_room_m": round(float(np.median(np.linalg.norm(in_level - real, axis=1))), 3),
                           "points_z_p5_p50_p95": np.percentile(cloud[:, 2], [5, 50, 95]).round(3).tolist()}}
 
 

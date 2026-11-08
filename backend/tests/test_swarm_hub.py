@@ -370,6 +370,26 @@ class HubRuleTests(unittest.TestCase):
             self.t += 0.05
             self.hub.tick(self.t, {k: Pose(self.t, v, 0.0) for k, v in self.poses.items()})
 
+    def test_a_drone_going_home_to_land_keeps_its_starting_heading(self):
+        d = self.co.drones["a"]
+        self.run_ticks()
+        self.hub.aim(d, 2.5)
+        d.landing_requested = True
+        d.path, d.leg = [np.array([-2.0, -1.0, 1.0]), np.array([-4.0, -1.0, 1.0])], 1
+        self.hub._look_along_path(d)
+        self.assertEqual(d.config.yaw, self.co.home_yaw["a"])
+        d.landing_requested = False
+        self.hub._look_along_path(d)
+        self.assertAlmostEqual(abs(d.config.yaw), np.pi, places=6)  # any other flight still looks where it's going
+
+    def test_the_next_flight_starts_on_the_pad_heading_not_the_last_missions(self):
+        d = self.co.drones["a"]
+        self.hub.aim(d, 2.5)
+        for drone in self.co.drones.values():
+            drone.phase = Phase.GROUND
+        self.assertEqual(self.co.reset_to_pads(), [])
+        self.assertEqual(d.config.yaw, self.co.home_yaw["a"])
+
     def box_ahead_of_a(self):
         return [Detection("couch", 0.0, 0.0, 2.0, (0.6, 0.6, 1.0), 0.9)]
 

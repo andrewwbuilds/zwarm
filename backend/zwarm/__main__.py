@@ -116,6 +116,17 @@ def main(argv=None) -> int:
     sub.add_argument("--watch", action="store_true", help="print tags and pose until Ctrl-C, safe with a drone in the air")
     sub.set_defaults(run=cmd_preflight)
 
+    sub = commands.add_parser("markers", help="write printable floor tags and their swarm file section")
+    sub.add_argument("--out", default="markers")
+    sub.add_argument("--tag-width-mm", type=float, default=138.0, help="the whole tag; 138 matches the sheets already printed")
+    sub.add_argument("--ids", help="print only these, for example 3,7; anchors.json still lists the whole grid")
+    sub.add_argument("--origin", type=float, nargs=2, default=(-2.0, 2.0), metavar=("X", "Y"), help="the centre of the first tag")
+    sub.add_argument("--spacing", type=float, default=1.0, help="metres between tag centres")
+    sub.add_argument("--columns", type=int, default=5)
+    sub.add_argument("--rows", type=int, default=5)
+    sub.add_argument("--start-id", type=int, default=0)
+    sub.set_defaults(run=cmd_markers)
+
     args = parser.parse_args(argv)
     return args.run(args)
 

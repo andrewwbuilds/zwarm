@@ -320,6 +320,7 @@ class Inspector:
             self.views = []
             self.spots = []
             self.counts = self._zero()
+            self.told_dropped = 0
             if not self.threads:
                 self.threads = [threading.Thread(target=self._watch, daemon=True, name="inspect-watch")]
                 self.threads += [threading.Thread(target=self._work, daemon=True, name=f"inspect-vision-{i}") for i in range(self.workers)]

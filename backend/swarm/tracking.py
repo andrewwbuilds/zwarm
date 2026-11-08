@@ -391,6 +391,16 @@ class Estimator:
             self.v = np.zeros(3)
             self.history.append((now, self.p.copy(), self.yaw))
             return
+        if dt > COMMAND_EXPIRES_S:
+            # Nothing has updated this for a while, as when the coordinator hangs. The backend centred
+            # the sticks long ago, so the drone isn't still doing what it was last told.
+            self.command = np.zeros(3)
+            self.yaw_rate = 0.0
+            self.p = self.p + self.v * COMMAND_EXPIRES_S
+            self.v = np.zeros(3)
+            moved = 0.0
+        else:
+            moved = dt
         if now - self.fix_at > FIX_MODEL_AFTER_S:
             self.v += (self.command - self.v) * min(1.0, dt / RESPONSE_S)
             if self.landing:

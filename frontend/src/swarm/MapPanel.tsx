@@ -45,6 +45,8 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
   }, [api, stamp, hasResult]);
 
   const building = asked || status?.state === BUILDING;
+  const capturing = status?.state === "capturing";
+  const built = status?.state === "done";
 
   const build = async () => {
     setProblem(null);

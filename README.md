@@ -250,6 +250,8 @@ Needs `NVIDIA_API_KEY` in `backend/.env` for the planner and vision; `fly --no-m
 
 Say "take off" and press Approve, then "Map this entire area in 3D", "Which areas haven't been explored yet?", "Stop mapping and focus on the north side", "Inspect the couch for damage", "stop" and "land". The console's HOLD, LAND and E-STOP end the mission as well as the moves, and work with the model down.
 
+**To fly for real, follow [the runbook](docs/runbook.md):** setup, preflight, a staged flight test, a demo-day checklist, a fallback demo and a tuning table. Copy `backend/zwarm/real.example.json` to start.
+
 Limits: nothing here has flown or seen real video. Every number so far is from the simulator. A map takes minutes to build, and building beside other heavy work on this Mac took 8 to 9 minutes for 240 photos.
 
 ## Setup

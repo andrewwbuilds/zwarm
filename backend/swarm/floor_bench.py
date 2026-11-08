@@ -35,6 +35,9 @@ CROSSING = {"a": (-2.5, 1.2), "b": (-2.5, -1.2), "c": (-0.5, -2.1)}
 CROSSED = {"a": (1.2, -1.2, Z), "b": (1.2, 1.2, Z), "c": (-0.5, 2.1, Z)}
 
 
+_default_limits = None  # set by fly() for the length of one flight
+
+
 class FloorFlight(bench.Flight):
     def __init__(self, seed, pads=THREE, boxes=(), conditions=None, limits=None, video=None, tags=None, assumed_fov=90.0):
         scene = Scene(name="hall", bounds=HALL, boxes=tuple(boxes))

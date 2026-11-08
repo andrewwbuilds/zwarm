@@ -285,6 +285,7 @@ class Agent:
             if self._plan is None or self._plan["id"] != str(plan_id):
                 return {"ok": False, "reply": "That plan is already gone.", "plan": None}
             plan, self._plan = self._plan, None
+        self._note(f"the operator rejected the plan, so it's gone and nothing flew: {plan['summary']}")
         self._emit("mission", "Plan rejected. Nothing flew.", {"plan": plan["id"], "ok": True})
         return {"ok": True, "reply": "Plan rejected. Nothing flew.", "plan": _shown(plan)}
 

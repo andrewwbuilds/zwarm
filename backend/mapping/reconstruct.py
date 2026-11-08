@@ -82,7 +82,7 @@ def run(command: list, log: Path, env: dict | None = None, timeout_s: float | No
                     _running.discard(process)
     except subprocess.TimeoutExpired:
         raise StepFailed(f"{Path(str(command[0])).name} {command[1] if len(command) > 1 else ''} was stopped after {timeout_s:.0f} s (log: {log})") from None
-    if result.returncode != 0:
+    if returncode != 0:
         tail = "\n".join(log.read_text(errors="replace").splitlines()[-8:])
         raise StepFailed(f"{Path(str(command[0])).name} {command[1] if len(command) > 1 else ''} failed (log: {log}):\n{tail}")
 

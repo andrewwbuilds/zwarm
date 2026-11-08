@@ -144,6 +144,8 @@ export default function Conversation({ api, events, agent, plan }: Props) {
   const [local, setLocal] = useState<LocalLine[]>([]);
   const [draft, setDraft] = useState("");
   const [running, setRunning] = useState(0);
+  // The mic's callback outlives the render it was made in, so it reads the count from here.
+  const runningNow = useRef(0);
   const [listening, setListening] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const listener = useRef<Listener | null>(null);

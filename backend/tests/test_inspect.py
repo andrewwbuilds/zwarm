@@ -1,5 +1,6 @@
 """Damage inspection: reading the model's answers, keeping findings, choosing frames. No network here."""
 
+import http.client
 import io
 import json
 import math

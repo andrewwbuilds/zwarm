@@ -15,8 +15,8 @@ from agent.nemotron import NemotronClient, NemotronError
 from agent.tools import READ_ONLY, Refused, Toolbox, region_mentioned
 from mapping.curate import raw_name
 from mapping.fleet import FleetCapture, MapError
+from mapping.reconstruct import StepFailed, run
 from swarm.coordinator import Phase, ResponseCheck
-from swarm.memory import Memory
 from swarm.mission import ALL_LOST_S, VIEW_BLOCKED_S, MissionError
 from swarm.room import Obstacle, Room
 from swarm.control import Pose

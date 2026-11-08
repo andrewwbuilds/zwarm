@@ -870,10 +870,9 @@ class MissionManager:
     def _furniture(self) -> list[Furniture]:
         """What's on the map from the start. The hub's own entries are things the memory already has."""
         items = []
-        for o in self.hub.co.room.obstacles.values():
-            if not o.name.startswith("seen-"):
-                lo, hi = np.array(o.lo, float), np.array(o.hi, float)
-                items.append(Furniture(o.name, (lo + hi) / 2, hi - lo))
+        for o in self.hub.co.room.listed():
+            lo, hi = np.array(o.lo, float), np.array(o.hi, float)
+            items.append(Furniture(o.name, (lo + hi) / 2, hi - lo))
         return items
 
     def _thing_tasks(self, thing, tilt: float, count: int) -> list[ViewTask]:

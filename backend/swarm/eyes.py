@@ -241,10 +241,13 @@ class SimEyes:
                 continue
             center = item.center
             lo, hi = np.array(item.lo), np.array(item.hi)
-            nearest = np.clip(cam, lo, hi)  # the part closest to the camera, which a wide thing shows first
-            points = [center, np.array([center[0], center[1], np.clip(cam[2], lo[2], hi[2])]), nearest + (center - nearest) * 0.05]
-            if self._visible(cam, yaw, points, skip=(item.lo, item.hi)):
-                seen = self._report(drone_id, key, cam, yaw, item.label, center, item.size, item.confidence)
+            near = np.clip(cam, lo, hi)  # the part closest to the camera, which a wide thing shows first
+            near = near + (center - near) * 0.05
+            points = [np.array([x, y, z]) for x, y in ((center[0], center[1]), (near[0], near[1])) for z in (lo[2], center[2], hi[2])]
+            skip = (item.lo, item.hi)
+            if self._visible(cam, yaw, tilt, points, skip=skip):
+                foot = self._foot(cam, center, lo[2], min(item.size[0], item.size[1]) / 2) if lo[2] < 0.05 else None
+                seen = self._report(drone_id, key, cam, yaw, tilt, item.label, center, item.size, item.confidence, foot, skip)
                 if seen is not None:
                     found.append(seen)
         for key, walker in enumerate(self.walkers, start=len(self.items)):

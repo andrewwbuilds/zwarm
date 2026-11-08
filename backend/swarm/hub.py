@@ -412,6 +412,10 @@ class Hub:
                 order.stage = "done"
 
     def _look_along_path(self, d) -> None:
+        if d.landing_requested:
+            # Pads sit at the grid's edge. Facing the way it started keeps tags in view; facing its path home would lose them.
+            self.aim(d, self.co.home_yaw[d.id])
+            return
         if not d.path or d.leg >= len(d.path):
             return
         offset = d.path[d.leg] - d.tracked.p

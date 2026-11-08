@@ -391,6 +391,17 @@ class Agent:
         self._remember([*spoken, {"role": "assistant", "content": final}])
         return {"reply": final, "plan": _shown(turn.plan), "tool_calls": turn.records}
 
+    def _honest(self, final: str, turn: _Turn) -> str:
+        """A turn where every action was refused can't claim progress, so the tools' own words replace it.
+
+        Seen live: a start_mission refused because every drone had stopped, then "I've prepared an explore
+        mission, press Approve". The operator must not be told a plan exists when none does.
+        """
+        actions = [r for r in turn.records if r["name"] not in READ_ONLY]
+        if actions and turn.plan is None and not any(r["ok"] for r in actions) and _CLAIMS.search(final or ""):
+            return _result_words(actions[-1]["result"])
+        return final
+
     def _dropped(self, turn: _Turn) -> dict:
         return {"reply": "You gave a stop command while I was thinking, so I dropped that request.", "plan": None,
                 "tool_calls": turn.records}

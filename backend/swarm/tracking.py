@@ -202,45 +202,146 @@ def lens_from_checkerboards(images: list[np.ndarray], inner_corners: tuple[int, 
     return Lens(matrix, distortion.ravel(), size[0], size[1], float(error))
 
 
+class AnchorReader:
+    """Finds known tags in a frame. This is the only place a detector is called, for real and simulated
+    frames alike. Not thread safe: each drone has its own."""
+
+    MAX_HAMMING = 1  # corrected bits accepted: more risks reading the wrong tag, which is a wrong position
+    MIN_MARGIN = 15.0  # how clearly the bits read
+
+    def __init__(self, anchors: dict[str, Anchor], decimate: float = 1.0):
+        from pupil_apriltags import Detector  # only the machine running the swarm needs this
+
+        self.anchors = anchors
+        self.detector = Detector(families=TAG_FAMILY, quad_decimate=decimate, nthreads=1)
+        self.unknown: set[int] = set()
+
+    def find(self, gray: np.ndarray) -> list[tuple[Anchor, np.ndarray]]:
+        out = []
+        for detection in self.detector.detect(gray):
+            if detection.hamming > self.MAX_HAMMING or detection.decision_margin < self.MIN_MARGIN:
+                continue
+            anchor = self.anchors.get(f"tag:{detection.tag_id}")
+            if anchor is None:
+                self.unknown.add(int(detection.tag_id))
+                continue
+            # The detector goes bottom-left, bottom-right, top-right, top-left; local_corners starts top-left.
+            out.append((anchor, np.asarray(detection.corners, np.float64)[::-1].copy()))
+        return out
+
+
 @dataclass(frozen=True)
-class Sighting:
-    marker: int
-    position: tuple[float, float, float]
+class Fix:
+    """One frame's measurement of where the drone is."""
+
+    t: float
+    p: tuple[float, float, float]
     yaw: float
-    size_px: float
+    anchors: tuple[str, ...]
+    range_m: float
+    reprojection_px: float
+    sigma_xy: float
+    sigma_z: float
+    sigma_yaw: float
 
 
-def read_markers(image: np.ndarray, camera: CameraModel, marker_size: float, marker_detector=None) -> list[Sighting]:
-    """Every marker in the image with a believable pose, in world coordinates."""
-    corners, ids, _ = (marker_detector or detector()).detectMarkers(image)
-    if ids is None:
-        return []
-    to_camera, _ = cv2.Rodrigues(camera.rvec)
-    to_world = to_camera.T
-    local = local_corners(marker_size)
+def _body_from_camera(to_world: np.ndarray, tilt: float) -> tuple[float, float]:
+    """(heading, tilt of the body away from level), undoing the camera's mount angle.
+
+    Uses both the camera's forward and up axes, so it still works looking straight down.
+    """
+    forward = to_world[:, 2]
+    up = -to_world[:, 1]
+    cos_t, sin_t = math.cos(tilt), math.sin(tilt)
+    nose = cos_t * forward + sin_t * up
+    body_up = -sin_t * forward + cos_t * up
+    return math.atan2(nose[1], nose[0]), math.acos(max(-1.0, min(1.0, float(body_up[2]))))
+
+
+def _fix_noise(count: int, range_m: float, side_px: float) -> tuple[float, float, float]:
+    """How far off a sighting may be. Fitted to the simulator's camera; see docs/research."""
+    side = max(side_px, 8.0)
+    if count >= 2:
+        return 0.015 + 0.012 * range_m, 0.02 + 0.015 * range_m, math.radians(1.5)
+    pixel_angle = 1.0 / side
+    return 0.02 + 0.5 * range_m * pixel_angle, 0.03 + 0.5 * range_m * pixel_angle, math.radians(2.0) + 0.5 * pixel_angle
+
+
+def solve_fix(seen: list[tuple[Anchor, np.ndarray]], lens: Lens, tilt: float, t: float, prior_yaw: float | None = None,
+              fence=None) -> Fix | None:
+    """The drone's pose from the anchors in one frame, or None if nothing believable comes out."""
+    if not seen:
+        return None
+    world = np.concatenate([anchor.corners() for anchor, _ in seen])
+    pixels = np.concatenate([quad for _, quad in seen])
+    try:
+        count, rvecs, tvecs, errors = cv2.solvePnPGeneric(world, pixels, lens.matrix, lens.distortion, flags=cv2.SOLVEPNP_IPPE)
+    except cv2.error:
+        return None
+    # A flat marker has two possible poses. Keep the one with the body level, and if both are
+    # nearly level, the one that agrees with where we thought the nose was pointing.
+    best, best_score = None, math.inf
+    for i in range(count):
+        rotation, _ = cv2.Rodrigues(rvecs[i])
+        to_world = rotation.T
+        heading, body_tilt = _body_from_camera(to_world, tilt)
+        if body_tilt > MAX_BODY_TILT:
+            continue
+        position = -to_world @ tvecs[i].ravel()
+        if position[2] <= 0.0:
+            continue
+        score = body_tilt
+        if prior_yaw is not None:
+            score += 0.5 * abs((heading - prior_yaw + math.pi) % (2 * math.pi) - math.pi)
+        if score < best_score:
+            best, best_score = (rvecs[i], tvecs[i]), score
+    if best is None:
+        return None
+    rvec, tvec = cv2.solvePnPRefineLM(world, pixels, lens.matrix, lens.distortion, best[0], best[1])
+    rotation, _ = cv2.Rodrigues(rvec)
+    to_world = rotation.T
+    heading, body_tilt = _body_from_camera(to_world, tilt)
+    position = -to_world @ tvec.ravel()
+    projected, _ = cv2.projectPoints(world, rvec, tvec, lens.matrix, lens.distortion)
+    reprojection = float(np.sqrt(np.mean(np.sum((projected.reshape(-1, 2) - pixels) ** 2, axis=1))))
+    if body_tilt > MAX_BODY_TILT or reprojection > MAX_REPROJECTION_PX or position[2] <= 0.0:
+        return None
+    if fence is not None and (np.any(position[:2] < np.asarray(fence[0])[:2] - 1.5) or np.any(position[:2] > np.asarray(fence[1])[:2] + 1.5)):
+        return None
+    centers = np.array([[anchor.x, anchor.y, 0.0] for anchor, _ in seen])
+    range_m = float(np.min(np.linalg.norm(centers - position, axis=1)))
+    if range_m > MAX_READ_RANGE_M:
+        return None
+    side = float(np.max([np.mean(np.linalg.norm(quad - np.roll(quad, 1, axis=0), axis=1)) for _, quad in seen]))
+    sigma_xy, sigma_z, sigma_yaw = _fix_noise(len(seen), range_m, side)
+    return Fix(t, (float(position[0]), float(position[1]), float(position[2]) - CAMERA_HEIGHT_M), heading,
+               tuple(anchor.id for anchor, _ in seen), range_m, reprojection, sigma_xy, sigma_z, sigma_yaw)
+
+
+def anchors_in_view(anchors: dict[str, Anchor], lens: Lens, tilt: float, p, yaw: float, max_range: float = READABLE_M,
+                    margin_px: float = 20.0) -> list[str]:
+    """Which anchors should be fully in view and readable from a pose, by geometry alone."""
+    cos_y, sin_y = math.cos(yaw), math.sin(yaw)
+    cos_t, sin_t = math.cos(tilt), math.sin(tilt)
+    nose = np.array([cos_y, sin_y, 0.0])
+    left = np.array([-sin_y, cos_y, 0.0])
+    world_up = np.array([0.0, 0.0, 1.0])
+    forward = cos_t * nose - sin_t * world_up
+    down = -(sin_t * nose + cos_t * world_up)
+    right = -left
+    to_camera = np.array([right, down, forward])
+    camera = np.array([p[0], p[1], p[2] + CAMERA_HEIGHT_M])
     out = []
-    for found, marker_id in zip(corners, ids.ravel()):
-        marker_id = int(marker_id)
-        if marker_id in ANCHOR_IDS:
+    for anchor in anchors.values():
+        points = to_camera @ (anchor.corners() - camera).T
+        if np.any(points[2] <= 0.02):
             continue
-        pixels = found.reshape(4, 2).astype(np.float64)
-        count, rvecs, tvecs, errors = cv2.solvePnPGeneric(
-            local, pixels, camera.matrix, camera.distortion, flags=cv2.SOLVEPNP_IPPE_SQUARE)
-        # A flat marker has two possible poses. Drones fly nearly level, so keep the one facing up.
-        best = None
-        for i in range(count):
-            rotation, _ = cv2.Rodrigues(rvecs[i])
-            world_rotation = to_world @ rotation
-            tilt = math.acos(max(-1.0, min(1.0, float(world_rotation[2, 2]))))
-            if best is None or tilt < best[0]:
-                best = (tilt, world_rotation, tvecs[i].ravel(), float(np.ravel(errors)[i]))
-        tilt, world_rotation, translation, error = best
-        if tilt > MAX_TILT or error > MAX_REPROJECTION_PX:
+        if np.linalg.norm(np.array([anchor.x, anchor.y, 0.0]) - camera) > max_range:
             continue
-        position = to_world @ (translation - camera.tvec)
-        nose = world_rotation[:, 1]  # the marker's printed top edge
-        side = float(np.mean(np.linalg.norm(pixels - np.roll(pixels, 1, axis=0), axis=1)))
-        out.append(Sighting(marker_id, tuple(float(v) for v in position), math.atan2(nose[1], nose[0]), side))
+        u = lens.matrix[0, 0] * points[0] / points[2] + lens.matrix[0, 2]
+        v = lens.matrix[1, 1] * points[1] / points[2] + lens.matrix[1, 2]
+        if u.min() >= margin_px and u.max() <= lens.width - margin_px and v.min() >= margin_px and v.max() <= lens.height - margin_px:
+            out.append(anchor.id)
     return out
 
 

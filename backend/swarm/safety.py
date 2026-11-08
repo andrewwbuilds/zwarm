@@ -62,7 +62,7 @@ class Body:
     v: np.ndarray
     want: np.ndarray = field(default_factory=lambda: np.zeros(3))
     controllable: bool = True
-    extra_gap: float = 0.0  # how much further to stay away, for a pose that has gone stale
+    extra_gap: float = 0.0  # how much further to stay away, for a pose that may be off
     descending: bool = False  # landing: the floor is where it's meant to go
 
 

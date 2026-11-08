@@ -518,7 +518,12 @@ def build_splat(folder: Path, steps: int = SPLAT_STEPS) -> Path:
 
 # ---------------------------------------------------------------- the part everyone else calls
 class FleetCapture:
-    def __init__(self, frames, root, drones=None, max_photos: int | None = None, on_event=None):
+    def __init__(self, frames, root, drones=None, max_photos: int | None = None, on_event=None, pose_of=None):
+        """pose_of(drone) -> tracked (x, y, z) or None, optional and called off the flight loop.
+
+        With it, a finished map is checked against the tracked positions and placed in room coordinates.
+        Without it, the map is levelled with a rough scale and no one can tell if its shape is wrong.
+        """
         self.frames = frames
         self.root = Path(root)
         self.drones = list(drones) if drones is not None else None

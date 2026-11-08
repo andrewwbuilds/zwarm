@@ -445,7 +445,9 @@ class Agent:
         """A turn where every action was refused can't claim progress, so the tools' own words replace it.
 
         Seen live: a start_mission refused because every drone had stopped, then "I've prepared an explore
-        mission, press Approve". The operator must not be told a plan exists when none does.
+        mission, press Approve". The operator must not be told a plan exists when none does. Also seen live,
+        with no tool called at all: after a rejected plan, "it is waiting for your approval", and after a
+        finished mission, "the fleet is already exploring the north side".
         """
         actions = [r for r in turn.records if r["name"] not in READ_ONLY]
         if actions and turn.plan is None and not any(r["ok"] for r in actions) and _CLAIMS.search(final or ""):

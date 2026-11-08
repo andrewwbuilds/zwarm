@@ -249,7 +249,9 @@ uv run python -m unittest tests.test_flight_safety tests.test_zwarm_fixes tests.
 
 Needs `NVIDIA_API_KEY` in `backend/.env` for the planner and vision; `fly --no-model` runs on fixed phrases only. Optional: `MAP_BUILD_SSH` builds maps on another machine. `NEMOTRON_MODEL` and `NEMOTRON_VISION_MODEL` change the models. `fly` refuses to start, and says why, if any backend, its video, the detector or the key is missing. A swarm file may also set `north_yaw_deg` and `flight_limit_s`. `--inside-out` in the simulator takes positions from reading floor tags in rendered frames, as a real flight does. Add `?api=8013` to the console for another port.
 
-Say "take off" and press Approve, then "Map this entire area in 3D", "Which areas haven't been explored yet?", "Stop mapping and focus on the north side", "Inspect the couch for damage", "stop" and "land". The console's HOLD, LAND and E-STOP end the mission as well as the moves, and work with the model down.
+Say "take off" and press Approve, then "Map this entire area in 3D", "Which areas haven't been explored yet?", "Stop mapping and focus on the north side", "Inspect the couch for damage", "stop" and "land". The console's HOLD, LAND and E-STOP end the mission as well as the moves, and work with the model down. Ctrl-C lands anything in the air with the API still up, so E-STOP works until they're down, and a second Ctrl-C doesn't skip it. Requests that change anything are refused from web pages that aren't on this Mac or its local network; curl and scripts aren't affected.
+
+No land toggle goes to a drone that looks to be on the floor, because that toggle would start its motors. See [ADR 0007](docs/decisions/0007-no-blind-toggle-to-a-floor-drone.md). `MAP_STEP_TIMEOUT_S` limits one COLMAP step, 1800 s by default.
 
 **To fly for real, follow [the runbook](docs/runbook.md):** setup, preflight, a staged flight test, a demo-day checklist, a fallback demo and a tuning table. Copy `backend/zwarm/real.example.json` to start.
 

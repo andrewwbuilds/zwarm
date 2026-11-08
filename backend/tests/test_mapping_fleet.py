@@ -655,6 +655,9 @@ class BuildStateTests(unittest.TestCase):
         self.tmp = TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+        raw = self.root / "m" / "drones" / "1" / "raw"
+        raw.mkdir(parents=True)
+        (raw / raw_name(0, 0)).write_bytes(b"jpeg")  # build() refuses a name with no frames
         self.events = []
         self.capture = FleetCapture(FakeFrames(), self.root, on_event=lambda *a: self.events.append(a))
 

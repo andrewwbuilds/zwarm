@@ -1,5 +1,10 @@
 from protocols.base_protocol_adapter import BaseProtocolAdapter
 import socket
+import time
+
+LINK_REPLY = b"\xff\x53\x54\x08"  # the drone answers every control packet with this and one link-quality byte
+LINK_REPLY_FRESH_S = 3.0
+MOST_REPLIES_READ = 4096
 
 class S2xRCProtocolAdapter(BaseProtocolAdapter):
     """Protocol adapter for S2x drones (S20, S29)"""

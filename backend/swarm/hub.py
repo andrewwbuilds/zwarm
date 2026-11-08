@@ -284,7 +284,8 @@ class Hub:
             detections = self.eyes.look(d.id, now)
             if detections is None:
                 continue
-            p, yaw = d.tracked.p.copy(), d.tracked.yaw
+            # A real camera's picture is already old by now, and it's the drone's pose back then that counts.
+            p, yaw = self._pose_at(d.id, now - max((x.age for x in detections), default=0.0))
             seen_now = set()
             for detection in detections:
                 where = locate(p, yaw, detection)

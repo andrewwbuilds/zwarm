@@ -274,6 +274,12 @@ def judge(item: dict, answer: dict, fleet: FakeFleet, model_calls: int) -> list[
             problems.append(f"expected {want['name']}, got {used}")
         elif not any(_args_match(want.get("args", {}), c.get("arguments", {})) for c in matching):
             problems.append(f"expected {want['name']} {want.get('args')}, got {[c.get('arguments') for c in matching]}")
+    if "any_of" in expect and not any(
+            all(any(c["name"] == w["name"] and _args_match(w.get("args", {}), c.get("arguments", {})) for c in calls) for w in option)
+            for option in expect["any_of"]):
+        problems.append(f"expected one of {expect['any_of']}, got {[(c['name'], c.get('arguments')) for c in calls]}")
+    if "tools_any" in expect and not set(expect["tools_any"]) & set(used):
+        problems.append(f"expected one of {expect['tools_any']}, got {used}")
     for name in expect.get("forbid", []):
         if name in used:
             problems.append(f"must not call {name}")

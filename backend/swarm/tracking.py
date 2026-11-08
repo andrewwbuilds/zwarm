@@ -199,43 +199,7 @@ def lens_from_checkerboards(images: list[np.ndarray], inner_corners: tuple[int, 
     if len(seen) < 5:
         raise ValueError(f"the checkerboard was found in only {len(seen)} images; at least 5 are needed")
     error, matrix, distortion, _, _ = cv2.calibrateCamera(world, seen, size, None, None)
-    return CameraModel(matrix, distortion.ravel(), reprojection_px=float(error))
-
-
-def locate_camera(image: np.ndarray, camera: CameraModel, anchors: dict[int, tuple], anchor_size: float) -> CameraModel:
-    """Work out where a camera is from the anchors it can see."""
-    corners, ids, _ = detector().detectMarkers(image)
-    world, pixels = [], []
-    for found, marker_id in zip(corners, () if ids is None else ids.ravel()):
-        if int(marker_id) in anchors:
-            world.append(flat_marker_corners(anchors[int(marker_id)], anchor_size))
-            pixels.append(found.reshape(4, 2))
-    if len(world) < 2:
-        raise ValueError(f"only {len(world)} anchors in view; at least 2 are needed, and 4 spread out is better")
-    world = np.concatenate(world)
-    pixels = np.concatenate(pixels)
-    ok, rvec, tvec = cv2.solvePnP(world, pixels, camera.matrix, camera.distortion, flags=cv2.SOLVEPNP_ITERATIVE)
-    if not ok:
-        raise ValueError("could not solve for the camera's position")
-    projected, _ = cv2.projectPoints(world, rvec, tvec, camera.matrix, camera.distortion)
-    error = float(np.sqrt(np.mean(np.sum((projected.reshape(-1, 2) - pixels) ** 2, axis=1))))
-    return CameraModel(camera.matrix, camera.distortion, rvec.ravel(), tvec.ravel(), error)
-
-
-def camera_position(camera: CameraModel) -> np.ndarray:
-    rotation, _ = cv2.Rodrigues(camera.rvec)
-    return -rotation.T @ camera.tvec
-
-
-def in_view(camera: CameraModel, point, width: int, height: int, margin_px: float = 60.0) -> bool:
-    """Whether a marker at this world point would be fully inside this camera's image."""
-    rotation, _ = cv2.Rodrigues(camera.rvec)
-    if (rotation @ np.asarray(point, float) + camera.tvec)[2] <= 0:
-        return False
-    pixels, _ = cv2.projectPoints(np.asarray(point, float).reshape(1, 3), camera.rvec, camera.tvec,
-                                  camera.matrix, camera.distortion)
-    u, v = pixels.ravel()
-    return margin_px <= u <= width - margin_px and margin_px <= v <= height - margin_px
+    return Lens(matrix, distortion.ravel(), size[0], size[1], float(error))
 
 
 @dataclass(frozen=True)

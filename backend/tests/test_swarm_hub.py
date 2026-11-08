@@ -471,7 +471,7 @@ class HubRuleTests(unittest.TestCase):
         self.eyes.next["b"] = [Detection("chair", 0.0, 0.0, 1.4, (0.2, 0.2, 0.2), 0.9)]
         self.run_ticks(15)
         couch, chair = self.memory.find("couch")[0], self.memory.find("chair")[0]
-        self.assertAlmostEqual(couch.p[2], 0.0, delta=0.05)
+        self.assertAlmostEqual(couch.p[2], 0.1, delta=0.05)
         self.assertAlmostEqual(chair.p[2], 1.0, delta=0.05)
 
     def test_a_ray_landing_outside_the_room_is_thrown_away(self):

@@ -735,6 +735,16 @@ class Coordinator:
         return (d.phase in (Phase.AIR, Phase.CHECK, Phase.LANDING) and d.link.connected
                 and d.tracked.age(now) <= STALE_S and not d.sticks_wrong and d.tracked.sigma <= SIGMA_HOLD)
 
+    def _safe_want(self, d: Drone, now: float) -> np.ndarray:
+        """A failure deciding where one drone goes must not cost the whole fleet its sticks."""
+        try:
+            return self._want(d, now)
+        except Exception:
+            if "internal" not in d.faults:
+                logger.exception("[swarm] %s: deciding its velocity failed", d.id)
+            d.fault("internal", "deciding its velocity failed; it's holding. See the log")
+            return np.zeros(3)
+
     def _want(self, d: Drone, now: float) -> np.ndarray:
         limits = self.limits
         if d.phase == Phase.CHECK:

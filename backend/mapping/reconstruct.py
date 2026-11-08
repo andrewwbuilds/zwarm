@@ -37,11 +37,14 @@ def tool(name: str) -> str:
     return found
 
 
-def run(command: list, log: Path, env: dict | None = None) -> None:
-    """Run a command, sending its output to a log file. Raises with the log's tail on failure."""
+def run(command: list, log: Path, env: dict | None = None, timeout_s: float | None = STEP_TIMEOUT_S) -> None:
+    """Run a command, sending its output to a log file. Raises with the log's tail on failure or on running out of time."""
     log.parent.mkdir(parents=True, exist_ok=True)
-    with open(log, "w") as f:
-        result = subprocess.run([str(c) for c in command], stdout=f, stderr=subprocess.STDOUT, env={**os.environ, **(env or {})})
+    try:
+        with open(log, "w") as f:
+            result = subprocess.run([str(c) for c in command], stdout=f, stderr=subprocess.STDOUT, env={**os.environ, **(env or {})}, timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        raise StepFailed(f"{Path(str(command[0])).name} {command[1] if len(command) > 1 else ''} was stopped after {timeout_s:.0f} s (log: {log})") from None
     if result.returncode != 0:
         tail = "\n".join(log.read_text(errors="replace").splitlines()[-8:])
         raise StepFailed(f"{Path(str(command[0])).name} {command[1] if len(command) > 1 else ''} failed (log: {log}):\n{tail}")

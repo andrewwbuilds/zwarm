@@ -233,7 +233,7 @@ def evaluate(folder: Path) -> dict:
     cameras = read_cameras(folder / "colmap" / "text" / best["folder"] / "images.txt")
     names = sorted(cameras)
     if result.get("joined_maps", 1) > 1:  # the served map holds several models, so score the room coordinates directly
-        joined = [m for m in result["models"] if m.get("room_fit_m") is not None and m["room_fit_m"] <= fleet.ROOM_FIT_LIMIT_M
+        joined = [m for m in result["models"] if (m.get("room_agreement") or 0) >= fleet.MIN_ROOM_AGREEMENT
                   and m["registered"] >= fleet.MIN_JOIN_PHOTOS]
         return {"joined": [{"by_drone": m["by_drone"], "room_fit_m": m["room_fit_m"]} for m in joined],
                 "camera_error_m": {"median": None, "p95": None, "max": None}, "by_drone": {},

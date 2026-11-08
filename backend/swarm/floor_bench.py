@@ -28,7 +28,7 @@ from swarm.tracking import AnchorReader, DroneOptics, InsideOutTracker, Lens, an
 
 WHITE_SQUARE_M = 0.0767  # the printed tags
 HALL = Box((-5.0, -4.0, 0.0), (5.0, 4.0, 2.8), "wall")
-FENCE = ((-2.8, -2.4, 0.0), (1.7, 2.4, 2.4))  # the tag grid, plus room to see its first row from behind it
+FENCE = ((-3.0, -2.5, 0.0), (1.7, 2.5, 2.4))  # the tag grid, plus room to see its first row from behind it
 Z = 1.0
 THREE = {"a": (-2.5, 1.2), "b": (-2.5, 0.0), "c": (-2.5, -1.2)}
 CROSSING = {"a": (-2.5, 1.2), "b": (-2.5, -1.2), "c": (-0.5, -2.1)}

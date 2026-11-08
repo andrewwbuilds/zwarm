@@ -356,6 +356,9 @@ COMMAND_EXPIRES_S = 0.3  # the backend centres the sticks this long after the la
 RESPONSE_S = 0.5
 GATE_M = 0.45
 LANDING_DESCENT = 0.45  # m/s, an estimate of the stock auto-land
+STILL_CHANGE = 0.5  # estimate, not measured on a drone: below this the picture isn't moving. See video_change in /state
+STILL_WINDOW_S = 2.0
+STILL_MIN_FRAMES = 6
 
 
 class Estimator:

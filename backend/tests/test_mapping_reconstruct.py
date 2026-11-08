@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from mapping.reconstruct import Model, StepFailed, best_model, coverage_warnings, parse_analysis, reconstruct
+from mapping.reconstruct import Model, StepFailed, run, stop_running, best_model, coverage_warnings, parse_analysis, reconstruct
 
 SAMPLE = """Rigs: 1
 Cameras: 1

@@ -255,7 +255,7 @@ def evaluate(folder: Path) -> dict:
     turn = math.degrees(math.atan2(float((a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0]).sum()), float((a[:, :2] * b[:, :2]).sum())))
     cloud = np.load(folder / "points.npy")
     return {"camera_error_m": {"median": round(float(np.median(errors)), 3), "p95": round(float(np.percentile(errors, 95)), 3),
-                               "max": round(float(errors.max()), 3)},
+                               "max": round(float(errors.max()), 3), "share_within_0.5m": round(float((errors <= 0.5).mean()), 3)},
             "by_drone": per_drone,
             "level_map": {"camera_height": round(float(np.median(in_level[:, 2])), 3), "true_camera_height": round(float(np.median(real[:, 2])), 3),
                           "heading_off_deg": round(turn, 1), "size_vs_truth": round(float(np.linalg.norm(a[:, :2]) / max(np.linalg.norm(b[:, :2]), 1e-9)), 3),

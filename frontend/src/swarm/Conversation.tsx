@@ -21,7 +21,7 @@ const MAX_RUNNING = 2;
 
 // The backend acts on these with no model, so a busy model is no reason to hold one back. It decides
 // what really counts, so sending one extra sentence by mistake costs nothing.
-const STOP_WORDS = /\b(stop|hold|land|halt|abort|freeze|e-?stop|emergency)\b/i;
+const STOP_WORDS = /\b(stop|hold|land|halt|abort|freeze|e-?stop|emergency|down|home|come back|bring)\b/i;
 const STOP_MAX_WORDS = 6;
 
 function isStopPhrase(text: string): boolean {

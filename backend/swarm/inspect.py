@@ -432,6 +432,14 @@ class Inspector:
                     state.window = None
                     if self.watching:
                         self._consider(window.best, state)
+            dropped = self.counts["dropped"]
+            tell = dropped > self.told_dropped and time.monotonic() >= self.next_behind
+            if tell:
+                self.told_dropped = dropped
+                self.next_behind = time.monotonic() + FAULT_EVERY_S
+        if tell:
+            self._emit("fault", f"Vision is falling behind: {dropped} photos were dropped without being checked, so some views may need another look.",
+                       {"dropped": dropped})
 
     def _consider(self, look: Look, state: _Drone) -> None:
         """Decide whether this frame is worth a vision call. Holds the lock, so it stays quick."""

@@ -413,7 +413,7 @@ class Toolbox:
     def _run_focus_region(self, args: dict) -> dict:
         with self.lock:
             status = self.missions.focus(args["region"])
-        return {"ok": True, "text": f"Mission moved to {_region_words(args['region'])}.", "mission": _rounded(status)}
+        return {"ok": True, "text": f"Mission moved to {_region_words(args['region'])}.", "mission": _mission_summary(status)}
 
     def _run_stop_mission(self, args: dict) -> dict:
         with self.lock:

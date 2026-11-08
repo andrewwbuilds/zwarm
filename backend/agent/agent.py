@@ -401,6 +401,7 @@ class Agent:
                 raise Refused(STOPPED)
             args = self.box.check(call.name, call.arguments)
             record["arguments"] = args
+            self._check_region_was_named(turn, call.name, args)
             if self.box.needs_approval(call.name, args):
                 result = self._plan_step(turn, call.name, args)
             else:

@@ -47,6 +47,7 @@ EVENTS_PER_ANSWER = 500
 FRAME_WAIT_S = 8.0  # how long preflight waits for a first frame from each drone
 TICK_S_KEPT = 400  # ticks behind the timing numbers in /zwarm/state, about 20 s
 MAX_POINTS = 50000
+SAME_BUTTON_S = 0.5
 
 
 def plain(value, depth: int = 0):

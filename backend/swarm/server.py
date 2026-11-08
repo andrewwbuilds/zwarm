@@ -330,7 +330,7 @@ def real_runtime(config: SwarmFile) -> Runtime:
 
     def visible(p) -> bool:
         lens = first.lens or Lens.from_fov()
-        return bool(anchors_in_view(config.anchors, lens, math.radians(first.tilt_deg), p, math.radians(config.drones[0].yaw_deg)))
+        return bool(anchors_in_view(config.anchors, lens, math.radians(first.tilt_deg), p, math.radians(config.drones[0].yaw_deg), blockers=tracker.blockers()))
 
     coordinator = Coordinator(config.room, configs, links, config.limits, visible=visible, tracker=tracker)
     for link in links.values():

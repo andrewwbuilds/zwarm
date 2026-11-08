@@ -512,11 +512,15 @@ class Coordinator:
                                 "or the heading is wrong; landing it where it is")
             self._toggle_land(d, now)
             return np.zeros(3)
-        if elapsed >= length - CHECK_SAMPLE_S:
-            check.samples.append(float(d.tracked.v @ direction))
         if elapsed < length:
-            return direction * CHECK_SPEED if moving else np.zeros(3)
-        measured = sum(check.samples) / max(len(check.samples), 1)
+            return direction * min(CHECK_SPEED, self.limits.max_speed) if moving else np.zeros(3)
+        # The start of a move is still getting going, so judge its second half, and the end of a stop.
+        since = now - (CHECK_MOVE_S / 2 if moving else CHECK_SAMPLE_S)
+        window = [(t, x) for t, x in check.samples if t >= since]
+        if len(window) < 2:  # sightings are sparse: use what there is
+            window = check.samples[-2:]
+        span = max(window[-1][0] - window[0][0], 0.25) if window else 1.0
+        measured = (window[-1][1] - window[0][1]) / span if window else 0.0
         check.samples = []
         check.stage += 1
         check.stage_at = now

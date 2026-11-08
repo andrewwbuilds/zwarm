@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from swarm.eyes import EDGE_MARGIN, HFOV, RELIABLE_REACH, VFOV, blocked
+from swarm.eyes import DEFAULT_TILT, EDGE_MARGIN, RELIABLE_REACH, blocked, in_view, to_camera
 from swarm.room import Room
 
 CELL = 0.5

@@ -203,6 +203,10 @@ class Search:
                     if now - arrived_at < DWELL_S:
                         claimed[view.cells] = True
                         continue
+                    if len(view.cells) and looks == looks_then:
+                        # Its floor wasn't seen from there, such as when the tracker overruled the
+                        # heading. Offering the same viewpoint again would never end the search.
+                        self.banned.append(order.goal.copy())
                 hub.orders.pop(d.id, None)
                 self.views.pop(d.id, None)
                 self.dwell.pop(d.id, None)

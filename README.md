@@ -137,6 +137,21 @@ Timing on an M2 Max: the point cloud is seconds, the splat about 3 minutes, and 
 
 Tips: fly slowly and smoothly, keep textured surfaces in view (blank walls cannot be mapped), and look at each area from several angles. The build step reports how many photos it could place and warns about gaps.
 
+## Swarm flight (simulator tested, not yet flown)
+`backend/swarm/` flies several drones at once, keeps them apart and steers them around mapped obstacles. A coordinator on the Mac plans each drone's path, then a safety filter adjusts every drone's velocity together. Each drone works out its own position by reading the 25 printed `tagStandard41h12` tags on the floor through its own camera, tilted 45 degrees down.
+
+Follow [the first-flight guide](docs/swarm-first-flight.md) for real drones. To try it without them:
+```
+cd backend
+uv run python -m swarm sim --inside-out     # then open /swarm in the frontend
+uv run python -m swarm floor-bench          # the fixed test set, real tag detector on simulated frames
+uv run python -m swarm bench                # avoidance alone, with a simulated tracker
+uv run python -m swarm.read_range           # how far a tag reads
+SWARM_E2E=1 uv run python -m unittest tests.test_swarm_floor_e2e   # through real backends
+```
+
+Limits: it only avoids obstacles listed in the swarm file or reported by the fleet. Lens, sharpness, exposure and stick response on the real drone are all unmeasured, so simulated accuracy may not carry over.
+
 ## Shared memory, search and commands (simulator tested)
 `backend/swarm/hub.py` gives the fleet one shared memory. Drones can't talk to each other, so whatever one camera sees goes into a SQLite database on the Mac, and the coordinator flies every drone around it. Say `find the backpack` and the drones share out the floor, confirm any find with a close look, and report back.
 

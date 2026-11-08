@@ -54,6 +54,8 @@ TILT_DEG = 45.0  # estimate: the S20's fixed camera tilt
 HFOV_DEG = 90.0  # estimate: a starting point that COLMAP refines
 FLIGHT_HEIGHT_M = 1.0  # sets the map's scale, which is therefore only rough
 SPLAT_STEPS = 5000
+MIN_FIT_PHOTOS = 12  # fewer tracked photos than this can't say much about the map's shape
+ROOM_FIT_LIMIT_M = 0.5  # tracked positions and the map disagree by more than this: the map is probably warped
 SAFE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 SSH_ROOT = "zwarm-maps"
 

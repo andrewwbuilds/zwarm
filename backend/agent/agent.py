@@ -407,7 +407,6 @@ class Agent:
             turn = _Turn(self._epoch if epoch is None else epoch, said=" ".join([*(str(m.get("content") or "") for m in last[:1] + last[-1:]), text]))
         started = len(history) + 1
         messages = [{"role": "system", "content": self._system()}, *history, {"role": "user", "content": text}]
-        tools = self.box.schemas()
         final = ""
         deadline = self.clock() + self.turn_budget_s
         for _ in range(MAX_ROUNDS):

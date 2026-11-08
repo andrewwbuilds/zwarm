@@ -327,7 +327,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  grid-template-rows: minmax(0, 1fr) clamp(190px, 29vh, 300px);
+  grid-template-rows: minmax(0, 1fr) clamp(180px, 27vh, 300px);
   grid-template-areas: "map map" "findings cloud";
   background: var(--zw-ground);
 }

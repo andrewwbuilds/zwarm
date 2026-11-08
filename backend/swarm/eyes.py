@@ -44,6 +44,7 @@ class Detection:
     confidence: float
     age: float = 0.0  # seconds between the picture being taken and this report
     foot: tuple[float, float] | None = None  # (bearing, elevation) of the nearest point where it meets the floor
+    rough_range: bool = False  # it's cut off by the picture, so range says little and mustn't overrule the foot
 
 
 class Eyes(Protocol):

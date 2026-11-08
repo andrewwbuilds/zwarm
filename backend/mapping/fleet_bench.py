@@ -312,6 +312,7 @@ def main() -> int:
     parser.add_argument("--hfov", type=float, default=fleet.HFOV_DEG, help="starting guess for the lens")
     parser.add_argument("--reuse", help="build from another run's frames instead of rendering, naming its folder under --root")
     parser.add_argument("--rough", action="store_true", help="different lens per drone, distortion, motion blur, exposure drift")
+    parser.add_argument("--track-noise", type=float, default=0.05, help="metres of noise on simulated tracked positions; below 0 for none")
     parser.add_argument("--render-only", action="store_true")
     parser.add_argument("--live", action="store_true", help="run capture and build against SimFrames in real time")
     parser.add_argument("--rate", type=float, default=5.0, help="frames a second per drone in --live")

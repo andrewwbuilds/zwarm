@@ -407,7 +407,7 @@ class Estimator:
                 self.v[2] = -LANDING_DESCENT
             else:
                 self.v[2] = self.command[2]
-        self.p = self.p + self.v * dt
+        self.p = self.p + self.v * moved
         if self.p[2] < 0.0:
             self.p[2] = 0.0
             self.v[2] = 0.0

@@ -168,6 +168,10 @@ class RegionCoverage(Coverage):
         if self._version == self.room.version:
             return
         super()._refresh()
+        listed = sorted(o.name for o in self.room.listed())
+        if listed != self.usable_for:
+            # Listed furniture hides tags, so what could be held before may not be now. Sightings come and go, and don't change it.
+            self.usable_for, self.usable_known = listed, {}
         if self.usable is not None and len(self.candidates):
             keep = np.array([self._can_hold(p, yaw) for p, yaw in zip(self.candidates, self.candidate_yaws)], bool)
             self.candidates, self.candidate_yaws = self.candidates[keep], self.candidate_yaws[keep]

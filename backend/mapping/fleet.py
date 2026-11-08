@@ -442,6 +442,7 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
               fix_lens: bool = False) -> dict:
     """Everything from saved frames to a finished map. Raises StepFailed or ToolMissing with a readable message."""
     times, started = {}, time.perf_counter()
+    (folder / "result.json").unlink(missing_ok=True)  # a restart mustn't serve the old map if this build fails
 
     def step(name: str) -> None:
         times[name] = time.perf_counter()

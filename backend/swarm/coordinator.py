@@ -211,6 +211,8 @@ class Coordinator:
                 problems.append(f"{d.id} may be on the floor or hovering unseen: check it by eye, then reset it")
             if self.tracker is not None and not self.tracker.expected(d.id):
                 problems.append(f"{d.id} would see no floor markers hovering over its pad")
+            if self.tracker is not None and self.tracker.video_age(d.id, now) > VIDEO_STALE_S:
+                problems.append(f"{d.id} has sent no video for {VIDEO_STALE_S:.0f} s or more, and it would fly with no position")
         for i, a in enumerate(drones):
             for b in drones[i + 1:]:
                 gap = float(np.linalg.norm(np.array(a.config.pad[:2]) - np.array(b.config.pad[:2])))

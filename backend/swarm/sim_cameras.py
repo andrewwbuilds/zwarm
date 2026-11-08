@@ -462,30 +462,31 @@ def demo_world(seed: int = 11) -> DemoWorld:
     Materials and marks are chosen to read at the video's real size, not to look nice up close.
     """
     rng = np.random.default_rng(seed)
+    # Things stand between the rows of the tag grid, so every tag stays readable and in the open.
     generator = Box((1.4, -2.0, 0.0), (2.3, -1.25, 0.6), "metal")
-    crate = Box((1.5, 1.0, 0.0), (2.2, 1.7, 0.55), "wood")
-    cabinet = Box((-0.9, -2.3, 0.0), (0.0, -1.6, 0.5), "white")
-    workbench = Box((-1.0, 1.4, 0.0), (0.3, 2.1, 0.7), "wood")
+    crate = Box((1.525, 0.9, 0.0), (2.225, 1.6, 0.55), "wood")
+    cabinet = Box((-1.1, -2.4, 0.0), (-0.2, -1.7, 0.5), "white")
+    workbench = Box((-1.1, 0.85, 0.0), (-0.15, 1.65, 0.7), "wood")
     furniture = {"generator": generator, "crate": crate, "cabinet": cabinet, "workbench": workbench}
-    hidden = (("backpack", Box((0.55, 1.95, 0.0), (0.9, 2.25, 0.45), "fabric")),
-              ("suitcase", Box((-2.6, -2.3, 0.0), (-2.05, -1.95, 0.6), "leather")),
-              ("chair", Box((2.4, -0.7, 0.0), (2.85, -0.25, 0.85), "wood")),
+    hidden = (("backpack", Box((0.5, 1.95, 0.0), (0.85, 2.25, 0.45), "fabric")),
+              ("suitcase", Box((-2.6, -2.4, 0.0), (-2.05, -2.1, 0.6), "leather")),
+              ("chair", Box((2.5, -0.225, 0.0), (2.95, 0.225, 0.85), "wood")),
               ("potted plant", Box((-0.2, -0.2, 0.0), (0.2, 0.2, 0.7), "foliage")))
 
-    damage = (Damage("long crack across the floor", "crack", "floor", (0.9, 0.55, 0.0), 1.4, "high"),
-              Damage("burn mark on the floor", "scorch", "floor", (-1.2, -0.8, 0.0), 0.8, "high"),
+    damage = (Damage("long crack across the floor", "crack", "floor", (1.0, 0.0, 0.0), 1.4, "high"),
+              Damage("burn mark on the floor", "scorch", "floor", (-0.625, -1.0, 0.0), 0.8, "high"),
               Damage("burn mark on top of the generator", "scorch", "generator", (1.85, -1.62, 0.6), 0.5, "high"),
-              Damage("split in the side of the crate", "crack", "crate", (1.5, 1.35, 0.3), 0.6, "medium", (-1.0, 0.0)),
-              Damage("rust on top of the cabinet", "rust", "cabinet", (-0.45, -1.95, 0.5), 0.55, "medium"),
-              Damage("small crack in the floor", "crack", "floor", (2.4, 0.6, 0.0), 0.6, "low"))
+              Damage("split in the side of the crate", "crack", "crate", (1.525, 1.25, 0.3), 0.6, "medium", (-1.0, 0.0)),
+              Damage("rust on top of the cabinet", "rust", "cabinet", (-0.65, -2.05, 0.5), 0.55, "medium"),
+              Damage("small crack in the floor", "crack", "floor", (2.0, -0.9, 0.0), 0.6, "low"))
     width, depth = FENCE[1][0] - FENCE[0][0], FENCE[1][1] - FENCE[0][1]
-    paint = (flat_decal(floor_image(rng, width, depth), (FENCE[0][0] + FENCE[1][0]) / 2, (FENCE[0][1] + FENCE[1][1]) / 2, depth, width),
-             flat_decal(crack_image(rng, 1.4, 0.7), 0.9, 0.55, 1.4, 0.7, yaw_deg=90.0),
-             flat_decal(scorch_image(rng), -1.2, -0.8, 0.8, 0.8),
+    floor = flat_decal(floor_image(rng, width, depth), (FENCE[0][0] + FENCE[1][0]) / 2, (FENCE[0][1] + FENCE[1][1]) / 2, depth, width)
+    marks = (flat_decal(crack_image(rng, 1.4, 0.7), 1.0, 0.0, 1.4, 0.7, yaw_deg=90.0),
+             flat_decal(scorch_image(rng), -0.625, -1.0, 0.8, 0.8),
              flat_decal(scorch_image(rng), 1.85, -1.62, 0.5, 0.5, z=0.6),
              side_decal(crack_image(rng, 0.6, 0.4, thick_m=0.016), crate, "-x", 0.0, 0.3, 0.6, 0.4),
-             flat_decal(rust_image(rng), -0.45, -1.95, 0.55, 0.55, z=0.5),
-             flat_decal(crack_image(rng, 0.6, 0.35, thick_m=0.012), 2.4, 0.6, 0.6, 0.35, yaw_deg=30.0))
+             flat_decal(rust_image(rng), -0.65, -2.05, 0.55, 0.55, z=0.5),
+             flat_decal(crack_image(rng, 0.6, 0.35, thick_m=0.012), 2.0, -0.9, 0.6, 0.35, yaw_deg=30.0))
 
     # A tag can't lie under furniture, and staged damage shouldn't deface one.
     boxes = (*furniture.values(), *(box for _, box in hidden))

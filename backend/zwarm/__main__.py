@@ -14,7 +14,12 @@ from zwarm.app import PORT
 def _serve(zw, app, port: int) -> None:
     from swarm.server import serve
 
-    serve(app, zw.runtime, port, log_level="warning", timeout_graceful_shutdown=2)
+    try:
+        serve(app, zw.runtime, port, log_level="warning", timeout_graceful_shutdown=2)
+    finally:
+        from mapping.reconstruct import stop_running
+
+        stop_running()
 
 
 def cmd_sim(args) -> int:

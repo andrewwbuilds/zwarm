@@ -315,10 +315,12 @@ class Hub:
         for thing in list(self.memory.things.values()):
             if thing.id in seen_now or thing.moves:
                 continue
-            if not in_view(p, yaw, thing.p, reach=RELIABLE_REACH, margin=EDGE_MARGIN)[0]:
+            # Its base: a tilted camera can have the bottom of something tall in view but not its middle.
+            base = np.array([thing.p[0], thing.p[1], max(0.0, thing.p[2] - thing.size[2] / 2)])
+            if not in_view(p, yaw, base, reach=RELIABLE_REACH, margin=EDGE_MARGIN, tilt=tilt)[0]:
                 continue
             own = self.mapped.get(thing.id)
-            hidden = any(blocked(p, thing.p[None, :], o.lo, o.hi)[0] for o in self.co.room.obstacles.values() if o is not own)
+            hidden = any(blocked(p, base[None, :], o.lo, o.hi)[0] for o in self.co.room.obstacles.values() if o is not own)
             if not hidden:
                 self.memory.missed(thing.id)
 

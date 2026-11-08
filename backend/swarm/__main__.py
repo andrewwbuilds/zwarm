@@ -96,9 +96,10 @@ def _detections(config, drone_id: str, seconds: float):
     return out, reader
 
 
-def cmd_locate_camera(args) -> int:
+def cmd_fit_focal(args) -> int:
+    """Fit a drone's focal length from two or more tags in view, and optionally store it."""
     from swarm.server import SwarmFile
-    from swarm.tracking import CameraModel, camera_position, locate_camera
+    from swarm.tracking import fit_focal
 
     config = SwarmFile.load(args.config)
     frame = next(_frames(_source(args.camera), 1, 0.0))

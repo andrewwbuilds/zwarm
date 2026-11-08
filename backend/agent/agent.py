@@ -591,7 +591,9 @@ class Agent:
     def _fallback(self, text: str, error: Exception, epoch: int | None = None) -> dict:
         """The model is down: fixed phrases only, through the same checks and the same approval."""
         note = "I can't reach the planning model, so I only follow fixed phrases right now. "
-        turn = _Turn(self._epoch)
+        turn = _Turn(self._epoch if epoch is None else epoch)
+        if turn.epoch != self._epoch:
+            return self._dropped(turn)
         command = parse(text, tuple(self.box._drones))
         call = {"takeoff": ("take_off", {}), "status": ("get_status", {}), "list": ("list_seen", {}),
                 "where": ("where_is", {"label": command.label}),

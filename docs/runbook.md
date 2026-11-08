@@ -231,7 +231,9 @@ Same one drone. In the console, by text or voice:
 
 `./fly.sh --swarm fly real.json --drones 1,2`. "Take off", Approve. "Map the north half." After 60 s, "Stop and land."
 
-**Pass:** both reach `air`, `closest` in the terminal stays at or above 0.4 m (contact is 0.24 m, **sim**), and both land. **If not:** `margin` row below. Any contact, go back to stage 2 on each drone.
+**Pass:** both reach `air`, `pair_lowest_m` in the terminal stays at or above 0.35 m, and both land. That's the closest any two drones came, by tracked position, since `fly` started. Contact is 0.24 m (**sim**). **If not:** `margin` row below. Any contact, go back to stage 2 on each drone.
+
+`closest` in `/zwarm/state` isn't a distance, so don't judge by it. It's the gap between where two drones would stop, with height gaps stretched, minus the separation being kept. It's often below 0 in a good flight: it read as low as -0.5 in a **sim** flight whose drones never came within 0.44 m.
 
 ### Stage 5: three drones
 

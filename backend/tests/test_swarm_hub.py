@@ -445,6 +445,20 @@ class HubRuleTests(unittest.TestCase):
         with mock.patch.object(self.co, "hold", side_effect=RuntimeError("no")):
             self.assertIn("failed inside the hub", self.hub.hold())
 
+    def test_each_drone_uses_its_own_tilt(self):
+        self.hub.tilts = {"a": math.radians(45.0), "b": 0.0}
+        self.eyes.next["a"] = [Detection("couch", 0.0, 0.0, 1.4, (0.2, 0.2, 0.2), 0.9)]
+        self.eyes.next["b"] = [Detection("chair", 0.0, 0.0, 1.4, (0.2, 0.2, 0.2), 0.9)]
+        self.run_ticks(15)
+        couch, chair = self.memory.find("couch")[0], self.memory.find("chair")[0]
+        self.assertAlmostEqual(couch.p[2], 0.0, delta=0.05)
+        self.assertAlmostEqual(chair.p[2], 1.0, delta=0.05)
+
+    def test_a_ray_landing_outside_the_room_is_thrown_away(self):
+        self.eyes.next["a"] = [Detection("couch", 0.0, 0.0, 30.0, (0.2, 0.2, 0.2), 0.9)]
+        self.run_ticks(10)
+        self.assertEqual(self.memory.things, {})
+
     def test_a_tracker_can_overrule_a_turn(self):
         self.hub.limit_heading = lambda drone, yaw: 0.25
         self.hub.aim(self.co.drones["a"], 2.0)

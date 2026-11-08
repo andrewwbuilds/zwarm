@@ -630,6 +630,8 @@ class MissionManager:
         self.total_warned: set[str] = set()
         self.out: dict[str, str] = {}  # drones the current mission has lost, and why
         self.flew: set[str] = set()  # drones that have been part of the current mission
+        self.nobody_since: float | None = None  # when the last drone able to work stopped being able to
+        self.capture_failed: str | None = None
         self.bad_since: dict[str, float] = {}
         self.next_look = 0.0
         self.last_frame: dict[str, int] = {}

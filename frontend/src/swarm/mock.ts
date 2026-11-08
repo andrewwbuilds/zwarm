@@ -359,8 +359,8 @@ class MockSwarm {
     return { ok: true, reply: "" };
   }
 
-  reject(id: string): void {
-    if (this.plan?.id !== id) throw new Error("that plan is no longer waiting");
+  reject(id: string): Decision {
+    if (this.plan?.id !== id) return { ok: false, reply: "That plan is already gone." };
     this.plan = null;
     this.say("mission", "Plan rejected. Nothing took off.");
   }

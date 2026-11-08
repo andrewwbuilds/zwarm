@@ -328,9 +328,8 @@ class Agent:
                 logger.exception("[agent] handling an event failed")
 
     def _digest(self, batch: list[tuple]) -> None:
-        if not self._turn_lock.acquire(timeout=TURN_WAIT_S):
-            return
-        self.busy = True
+        """Say what an event means. Takes no turn, so a slow model here can't keep an operator's sentence waiting."""
+        self._begin_thinking()
         try:
             events = json.dumps([{"kind": kind, "text": text[:200]} for kind, text, _ in batch])
             # A finding's words came from a vision model, so they may be read but can't move anything.

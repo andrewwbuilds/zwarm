@@ -231,6 +231,23 @@ class RegionCoverage(Coverage):
         index = int(np.argmax(gain))
         return Viewpoint(self.all_candidates[index].copy(), float(self.all_yaws[index]), np.flatnonzero(sees[index] & wanted))
 
+    def leftovers(self, p, claimed: np.ndarray, avoid, keep_away: float, banned, tilt: float) -> Viewpoint | None:
+        """The closest viewpoint with anything at all left to see: the last patches best() thinks too small."""
+        wanted = self.remaining() & ~claimed
+        if not wanted.any() or tilt not in self.sees or not len(self.candidates):
+            return None
+        sees = self.sees[tilt]
+        distance = np.linalg.norm(self.candidates[:, :2] - np.asarray(p, float)[:2], axis=1)
+        distance[~(sees & wanted).any(axis=1)] = math.inf
+        for q in avoid:
+            distance[np.linalg.norm(self.candidates[:, :2] - np.asarray(q, float)[:2], axis=1) < keep_away] = math.inf
+        for q in banned:
+            distance[np.linalg.norm(self.candidates[:, :2] - np.asarray(q, float)[:2], axis=1) < 0.3] = math.inf
+        index = int(np.argmin(distance))
+        if not math.isfinite(distance[index]):
+            return None
+        return Viewpoint(self.candidates[index].copy(), float(self.candidate_yaws[index]), np.flatnonzero(sees[index] & wanted))
+
     def cover(self, name: str, limit: int) -> list[Viewpoint]:
         """A few viewpoints that between them show a region's floor, biggest view first."""
         self._refresh()

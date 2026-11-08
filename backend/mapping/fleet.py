@@ -219,6 +219,7 @@ def colmap_steps(root: str, width: int, height: int, threads: int, gpu: bool, ma
     reader += ["--ImageReader.single_camera", "1"] if shared_camera else ["--ImageReader.single_camera_per_folder", "1"]
     if masked:
         reader += ["--ImageReader.camera_mask_path", f"{root}/mask.png"]
+    mapper = ["--Mapper.ba_refine_focal_length", "0", "--Mapper.ba_refine_extra_params", "0"] if fix_lens else []
     return [
         ("features", ["feature_extractor", "--database_path", f"{root}/colmap/database.db", "--image_path", f"{root}/images",
                       *reader, "--FeatureExtraction.use_gpu", gpu_flag, "--FeatureExtraction.num_threads", str(threads)]),

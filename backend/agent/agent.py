@@ -399,7 +399,7 @@ class Agent:
                              regions=", ".join(REGIONS), count=len(co.drones), names=", ".join(co.drones),
                              limit=self.box.flight_limit_s(), snapshot=self.box.snapshot(), pending=pending)
 
-    def _think(self, text: str) -> dict:
+    def _think(self, text: str, epoch: int | None = None) -> dict:
         with self._state:
             history = [message for past in self._history for message in past]
             last = self._history[-1] if self._history else []

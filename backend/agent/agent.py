@@ -182,7 +182,7 @@ def spoken_mission(text: str) -> tuple[str, dict] | None:
 
 
 class _Turn:
-    def __init__(self, epoch: int, allowed=None, said: str | None = None):
+    def __init__(self, epoch: int, allowed=None, said: str | None = None, spoken_count: int = 0):
         self.epoch, self.allowed = epoch, allowed
         self.said = said  # what the operator's words were, when they asked for this turn
         self.plan: dict | None = None

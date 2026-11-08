@@ -158,10 +158,11 @@ class Search:
             return
         order = hub.orders.get(closer.id)
         settled = order is None or order.stage in ("done", "failed")
-        if settled and self.dwell.get(closer.id) is None:
-            self.dwell[closer.id] = now
+        if settled and closer.id not in self.dwell:
+            self.dwell[closer.id] = (now, 0)
             self.close_seen_from = thing.sightings
-        looked = self.dwell.get(closer.id) is not None and now - self.dwell[closer.id] >= CLOSE_LOOK_S
+        settled_for = now - self.dwell[closer.id][0] if closer.id in self.dwell else -1.0
+        looked = settled_for >= CLOSE_LOOK_S
         if looked and thing.sightings - self.close_seen_from >= CLOSE_SIGHTINGS and thing.sure:
             self.state = "found"
             self.found_at = thing.p.copy()

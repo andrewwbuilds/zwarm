@@ -347,7 +347,7 @@ def stop_mid_search(seed):
 
 MISSIONS = {m.__name__: m for m in (
     unseen_boxes, told_by_another, unseen_person, false_alarms, search_open, search_furniture, search_absent, search_decoy,
-    search_stale, search_lost_drone, spoken_mission, stop_mid_search,
+    search_stale, search_lost_drone, search_limited_heading, search_limited_heading_absent, spoken_mission, stop_mid_search,
 )}
 SEARCHES = {"search_open", "search_furniture", "search_absent", "search_decoy", "search_stale", "search_lost_drone", "spoken_mission"}
 

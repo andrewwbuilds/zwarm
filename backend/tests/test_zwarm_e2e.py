@@ -366,6 +366,7 @@ class StopButtons(unittest.TestCase):
     def test_a_button_drops_a_waiting_plan(self):
         f = Flight(self)
         plan = f.say("take off")["plan"]
+        self.assertIsNotNone(f.state()["pending_plan"])
         f.http.post("/hold")
         self.assertIsNone(f.state()["pending_plan"])
         self.assertFalse(f.http.post(f"/zwarm/plan/{plan['id']}/approve").json()["ok"])

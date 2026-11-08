@@ -456,6 +456,33 @@ class BuildStateTests(unittest.TestCase):
             self.assertEqual(self.capture.wait(5)["state"], "done")
         self.assertEqual(len(calls), 1)
 
+    def test_a_build_waits_for_the_last_frame_to_reach_the_disk(self):
+        release, writing, seen = threading.Event(), threading.Event(), []
+        real = Path.write_bytes
+
+        def slow(path, data):
+            writing.set()
+            release.wait(5)
+            return real(path, data)
+
+        def check(folder, *args, **kwargs):
+            seen.append(len(list((folder / "drones" / "1" / "raw").glob("*.jpg"))))
+            return self.RESULT
+        self.addCleanup(release.set)
+        self.finish()
+        frames = self.capture.frames
+        with mock.patch.object(Path, "write_bytes", slow), mock.patch("mapping.fleet.build_map", side_effect=check):
+            self.capture.start("m")
+            frames.show("1", 1)
+            self.assertTrue(writing.wait(3))
+            self.capture.stop()
+            self.capture.build("m", splat=False)
+            time.sleep(0.05)
+            self.assertEqual(seen, [])  # still held back by the write
+            release.set()
+            self.capture.wait(5)
+        self.assertEqual(seen, [1])
+
     def test_build_ends_a_running_capture_of_the_same_map(self):
         self.capture.start("m")
         with mock.patch("mapping.fleet.build_map", return_value=self.finish()):

@@ -75,8 +75,7 @@ class ResponseCheck:
     home: np.ndarray
     stage: int = 0  # even: moving, odd: stopping
     stage_at: float = 0.0
-    samples: list[float] = field(default_factory=list)
-    recent: list[float] = field(default_factory=list)
+    samples: list[tuple[float, float]] = field(default_factory=list)  # when, and how far along by the tags
     moved: float = 0.0
     stop_at: np.ndarray = field(default_factory=lambda: np.zeros(3))
     results: list[dict] = field(default_factory=list)

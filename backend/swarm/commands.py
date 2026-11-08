@@ -17,7 +17,7 @@ ALIASES = {
     "teddy": "teddy bear", "backpacks": "backpack", "chairs": "chair", "bottles": "bottle", "cups": "cup",
 }
 EXPLANATION = ('Try: "take off", "find the backpack", "where is the chair", "what have you seen", "go to 1 2", '
-               '"drone a go to the chair", "line up", "status", "forget the box", "stop", "land", "land here", '
+               '"drone a go to the chair", "line up", "status", "forget the box", "stop", "land", "stop and land", "land here", '
                'or "emergency stop".')
 
 _ESTOP = re.compile(r"(emergency stop|e stop|estop|kill (the )?motors|cut (the )?motors)")

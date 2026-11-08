@@ -125,7 +125,7 @@ def cmd_fit_focal(args) -> int:
 
 
 def cmd_check(args) -> int:
-    """Everything except flying: is each drone linked, is it tracked, and how well?"""
+    """Everything except flying: links, video, and which tags each drone can see. Sends no flight command."""
     import numpy as np
 
     from swarm.links import BackendLink

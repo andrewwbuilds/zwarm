@@ -22,8 +22,14 @@ EXPLANATION = ('Try: "take off", "find the backpack", "where is the chair", "wha
 
 _ESTOP = re.compile(r"(emergency stop|e stop|estop|kill (the )?motors|cut (the )?motors)")
 _TAKEOFF = re.compile(r"(take ?off|lift off|launch)")
-_LAND_HERE = re.compile(r"land (here|now|where you are|right here|right now)")
-_LAND = re.compile(r"(land|come back|come home|go home|return|return home|return to base)")
+# Said before a landing: "stop and land", "stop mapping and land", "wrap it up and bring them home".
+_WORK = r"(?:(?:the )?(?:mission|mapping|map|exploring|exploration|inspecting|inspection|searching|search|scanning|work)|everything|that|this|it)"
+_THEN = rf"(?:(?:stop|finish|end|wrap up|wrap it up|finish up)(?: {_WORK})?(?: and| then)? )?"
+_THEM = r"(?:them|them all|all of them|it|everyone|everybody|everything|all|the drones|all the drones|all drones|the fleet|the swarm|the team)"
+_LAND_HERE = re.compile(rf"{_THEN}(?:land (?:here|now|where you are|right here|right now)|put {_THEM} down (?:here|right here|where they are|right where they are))")
+_LAND = re.compile(rf"{_THEN}(?:land|come back|come home|go home|return|return home|return to base|come down|get down|go down|touch down"
+                   rf"|(?:come|go|fly|head|get) (?:back|home)(?: and| then)? land|return(?: and| then)? land"
+                   rf"|(?:bring|take|put|get|set) {_THEM}(?: back)? (?:down|home)|bring {_THEM} (?:back|in)|bring {_THEM} back(?: and| then)? land)")
 _HOLD = re.compile(r"(stop|stop searching|stop looking|hold|hold position|wait|stay|stay there|freeze|pause|cancel|abort)")
 _STATUS = re.compile(r"(status|report|how are you|what are you doing|where are you|who is flying)")
 _LIST = re.compile(r"(what have you (seen|found)|what did you (see|find)|what do you (see|know|remember)|"

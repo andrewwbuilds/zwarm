@@ -12,9 +12,11 @@ function statusLine(status: MapStatus | null, points: number): string {
   const drones = Object.keys(status.byDrone).length;
   const from = drones > 0 ? ` from ${drones} ${drones === 1 ? "drone" : "drones"}` : "";
   const placed = status.registered > 0 ? `, ${status.registered} placed` : "";
-  const shown = points > 0 ? `, ${points.toLocaleString()} points` : "";
+  const total = Math.max(status.points, points);
+  const shown = total > 0 ? `, ${total.toLocaleString()} points` : "";
   const state = status.state.charAt(0).toUpperCase() + status.state.slice(1);
-  return `${state}: ${photos}${from}${placed}${shown}`;
+  const step = status.step ? ` (${status.step})` : "";
+  return `${state}${step}: ${photos}${from}${placed}${shown}`;
 }
 
 export default function MapPanel({ api, status }: { api: Api; status: MapStatus | null }) {

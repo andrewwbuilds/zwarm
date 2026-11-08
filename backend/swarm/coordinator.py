@@ -826,7 +826,6 @@ class Coordinator:
                 continue
             if other is d or other.phase != Phase.AIR or np.linalg.norm(other.tracked.v[:2]) > 0.25:
                 continue
-            q = other.tracked.p
             if np.linalg.norm(q[:2] - d.tracked.p[:2]) > self.limits.separation + 0.05:
                 cylinders.append(((float(q[0]), float(q[1])), self.limits.separation))
         if cylinders:

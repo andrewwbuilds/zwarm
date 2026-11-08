@@ -126,8 +126,41 @@ def make_camera(world: str, walls: str, scale: float, seed: int, fov_deg: float 
     fov = math.radians(fov_deg)
     if world == "demo":
         scene = demo_world().scene
-        return DecalCamera(scene, scene.decals, render_scale=scale, seed=seed)
-    return Camera(replace(SCENES[world](), wall_material=walls, ceiling_material=walls), render_scale=scale, seed=seed)
+        return DecalCamera(scene, scene.decals, render_scale=scale, fov=fov, seed=seed)
+    return Camera(replace(SCENES[world](), wall_material=walls, ceiling_material=walls), render_scale=scale, fov=fov, seed=seed)
+
+
+class Rough:
+    """Faults a cheap camera has and the renderer doesn't. The amounts are guesses, not measurements of an S20."""
+
+    LENS = {"1": (86.0, -0.10), "2": (90.0, -0.16), "3": (95.0, -0.06)}  # horizontal view and radial distortion, per drone
+    EXPOSURE_S = 1 / 40
+
+    def __init__(self, drone: str, width: int = WIDTH, height: int = HEIGHT):
+        self.fov, k = self.LENS[drone]
+        self.focal = width / 2 / math.tan(math.radians(self.fov) / 2)
+        u, v = np.meshgrid(np.arange(width, dtype=np.float32), np.arange(height, dtype=np.float32))
+        x, y = (u - width / 2) / self.focal, (v - height / 2) / self.focal
+        factor = 1 + k * (x * x + y * y)
+        self.map_x = x * factor * self.focal + width / 2
+        self.map_y = y * factor * self.focal + height / 2
+        self.rng = random.Random(int(drone))
+        self.gain = 1.0
+
+    def apply(self, image: np.ndarray, moved_m: float, turned_rad: float, dt: float) -> np.ndarray:
+        image = cv2.remap(image, self.map_x, self.map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
+        sideways = abs(turned_rad) / dt * self.focal * self.EXPOSURE_S
+        along = moved_m / dt / 1.4 * self.focal * self.EXPOSURE_S
+        length = int(round(max(sideways, along)))
+        if length >= 2:
+            kernel = np.zeros((length, length), np.float32)
+            if sideways >= along:
+                kernel[length // 2, :] = 1.0 / length
+            else:
+                kernel[:, length // 2] = 1.0 / length
+            image = cv2.filter2D(image, -1, kernel)
+        self.gain = min(1.15, max(0.85, self.gain + self.rng.gauss(0, 0.01)))  # auto exposure hunting
+        return cv2.convertScaleAbs(image, alpha=self.gain)
 
 
 def _render_drone(job: tuple) -> dict:

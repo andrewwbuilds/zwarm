@@ -1232,6 +1232,20 @@ class MissionManager:
             self._finish("done", f"Searched {search.coverage.share_seen() * 100:.0f}% of the floor of {spoken(self.region)} "
                                  f"and didn't find a {self.target}.", now)
 
+    def _why_failed(self, now: float) -> str:
+        """The true reason nobody is working, since the drones may well still be up there."""
+        co = self.hub.co
+        seen = f"{self._share_seen() * 100:.0f}% of the floor seen"
+        if not self.flew:
+            problems = "; ".join(f"{d.id}: {'; '.join(d.faults.values())}" for d in co.drones.values() if d.faults)
+            return f"The {self.kind} mission ended because nothing got into the air." + (f" {problems}." if problems else "")
+        up = [d for d in co.drones.values() if d.phase == Phase.AIR and not d.landing_requested]
+        if up:
+            why = "; ".join(f"{d.id} {self._why_out(d, now)}" for d in up)
+            return (f"No drone has been able to work for {ALL_LOST_S:.0f} s ({why}), so the {self.kind} mission ended with {seen}. "
+                    "They may still be in the air: HOLD, LAND and E-STOP still apply.")
+        return f"No drones are left working, so the {self.kind} mission ended with {seen}."
+
     def _finish_done(self, now: float) -> None:
         elapsed = now - self.started_at
         if self.kind == "inspect":

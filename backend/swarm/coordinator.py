@@ -592,6 +592,15 @@ class Coordinator:
                 self._watch_for_runaway(d, now)
 
     def _begin_check(self, d: Drone, now: float) -> None:
+        if d.landing_requested or d.land_here_wanted:
+            # Asked to land while it was climbing. Now it's up, the toggle will land it. No point testing it first.
+            d.phase = Phase.AIR
+            d.check_held = False
+            if d.landing_requested:
+                self._go_to_pad(d)
+            else:
+                self._set_goal(d, d.tracked.p.copy())
+            return
         d.phase = Phase.CHECK
         d.arrived = False
         yaw = d.tracked.yaw

@@ -726,6 +726,61 @@ class TalkingTests(unittest.TestCase):
         self.assertLessEqual(len(messages), 14)
         self.assertEqual(messages[-2]["content"], "Reply 28.")
 
+    def test_past_tool_calls_stay_in_the_history_in_a_valid_order(self):
+        fleet, client, agent = fleet_agent("flying", use(call("start_mission", kind="map", region="all")), say("Mapping."), say("Fine."))
+        agent.handle("map it")
+        agent.handle("how is it")
+        roles = [m["role"] for m in client.calls[-1][0]]
+        self.assertEqual(roles, ["system", "user", "assistant", "tool", "assistant", "user"])
+        self.assertEqual(client.calls[-1][0][2]["tool_calls"][0]["function"]["name"], "start_mission")
+        self.assertEqual(client.calls[-1][0][3]["tool_call_id"], "id-start_mission")
+
+    def test_old_tool_results_are_cut_short(self):
+        fleet, client, agent = fleet_agent("inspecting", use(call("list_findings")), say("Lots."), say("Fine."))
+        fleet.findings.rows = [{"id": i, "summary": "z" * 200, "status": "pending"} for i in range(10)]
+        agent.handle("what did you find")
+        agent.handle("ok")
+        tool = next(m for m in client.calls[-1][0] if m["role"] == "tool")
+        self.assertLessEqual(len(tool["content"]), 400)
+
+    def test_a_hung_model_holds_no_lock(self):
+        release, entered = threading.Event(), threading.Event()
+
+        def hung(messages, tools):
+            entered.set()
+            release.wait(5.0)
+            return say("late")
+
+        fleet, client, agent = fleet_agent("flying", hung)
+        turn = threading.Thread(target=agent.handle, args=("hello",))
+        turn.start()
+        self.assertTrue(entered.wait(2.0))
+        got = []
+
+        def flight_loop():  # another thread, as the flight loop is
+            got.append(fleet.hub.lock.acquire(timeout=0.2))
+            fleet.hub.lock.release()
+
+        flying = threading.Thread(target=flight_loop)
+        flying.start()
+        flying.join(2.0)
+        self.assertEqual(got, [True])
+        self.assertTrue(agent.state()["busy"])
+        release.set()
+        turn.join(2.0)
+        self.assertFalse(agent.state()["busy"])
+
+    def test_gaps_name_regions_and_give_no_coordinates(self):
+        fleet, client, agent = fleet_agent("mapping", use(call("coverage_gaps")), say("East."))
+        result = agent.handle("what's left")["tool_calls"][0]["result"]
+        self.assertEqual(result["look_next"], "south-east")
+        self.assertNotIn("viewpoint", json.dumps(result))
+
+    def test_refocusing_after_a_mission_ended_suggests_the_same_kind(self):
+        fleet, client, agent = fleet_agent("mapping", use(call("focus_region", region="north")), say("Done already."))
+        fleet.missions.state = "done"
+        self.assertIn("kind map", agent.handle("focus on the north")["tool_calls"][0]["result"]["refused"])
+
     def test_events_reach_the_operator(self):
         events = []
         fleet, client, agent = fleet_agent("mapping", use(call("focus_region", region="north")), say("Moved."),

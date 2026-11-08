@@ -299,6 +299,16 @@ class Toolbox:
             self._need_a_plan_for(kind, region, target)
         return {"kind": kind, "region": region, "target": target, **({"note": note} if note else {})}
 
+    def _need_a_plan_for(self, kind: str, region: str, target: str | None) -> None:
+        """Find out now if the mission can't be planned, and not after the drones have taken off for it."""
+        preview = getattr(self.missions, "preview", None)
+        if preview is None:
+            return
+        try:
+            preview(kind, region, target)
+        except ValueError as error:  # MissionError is a ValueError whose message is for operators
+            raise Refused(f"{_plain(error, 300)} Nothing took off.") from None
+
     def _inspect_target(self, target: str | None) -> tuple[str | None, str | None]:
         """Only a thing the fleet remembers can be aimed at. Otherwise it inspects the whole region.
 

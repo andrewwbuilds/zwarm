@@ -402,9 +402,9 @@ class Agent:
     def _think(self, text: str, epoch: int | None = None) -> dict:
         with self._state:
             history = [message for past in self._history for message in past]
-            last = self._history[-1] if self._history else []
+            last = next((past for past in reversed(self._history) if not str(past[0].get("content") or "").startswith(FLEET_NOTE)), [])
             # The sentence before counts: "which side?", "the north", or "try the east?", "yes".
-            turn = _Turn(self._epoch, said=" ".join([*(str(m.get("content") or "") for m in last[:1] + last[-1:]), text]))
+            turn = _Turn(self._epoch if epoch is None else epoch, said=" ".join([*(str(m.get("content") or "") for m in last[:1] + last[-1:]), text]))
         started = len(history) + 1
         messages = [{"role": "system", "content": self._system()}, *history, {"role": "user", "content": text}]
         tools = self.box.schemas()

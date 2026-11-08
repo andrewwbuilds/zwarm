@@ -511,8 +511,13 @@ class FleetCapture:
             self.capture_thread.start()
         return self.status()
 
-    def _capture(self, name: str, stopping: threading.Event) -> None:
-        """Save each new frame from each drone. Frames may be missed if the disk is slow; the flight never waits."""
+    def _capture(self, name: str, stopping: threading.Event, previous: threading.Thread | None = None) -> None:
+        """Save each new frame from each drone. Frames may be missed if the disk is slow; the flight never waits.
+
+        Starting a map that already has frames carries on from them, so a battery swap doesn't lose a map.
+        """
+        if previous is not None:
+            previous.join()  # it may still be finishing a write
         folder = self.root / name / "drones"
         seen: dict[str, int] = {}
         counts: dict[str, int] = {}

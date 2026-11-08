@@ -382,7 +382,7 @@ class Toolbox:
             raise Refused("The map is already being built. Use map_status to follow it.")
         if state == "done" and name == status.get("name"):
             raise Refused(f"That map is already built, with {status.get('registered', 0)} photos placed.")
-        if not name or not status.get("photos"):
+        if not name or (name == status.get("name") and not status.get("photos")):
             raise Refused("There are no photos to build from yet. Run a map mission first.")
         return {"name": name}
 

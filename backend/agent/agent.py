@@ -349,9 +349,13 @@ class Agent:
         messages = [{"role": "system", "content": self._system()}, *history, {"role": "user", "content": text}]
         tools = self.box.schemas()
         final = ""
+        deadline = self.clock() + self.turn_budget_s
         for _ in range(MAX_ROUNDS):
+            left = deadline - self.clock()
+            if left <= 0:
+                break
             try:
-                reply = self.client.complete(messages, tools)
+                reply = self.client.complete(messages, tools, budget_s=min(left, getattr(self.client, "budget_s", left)))
             except NemotronError as error:
                 if not turn.records:
                     return self._fallback(text, error)

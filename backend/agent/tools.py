@@ -444,7 +444,10 @@ class Toolbox:
     def _run_map_status(self, args: dict) -> dict:
         if self.capture is None:
             return {"ok": True, "text": "Map capture isn't set up in this run."}
-        return {"ok": True, "map": _rounded(self.capture.status())}
+        status = dict(self.capture.status() or {})
+        text = (f"Map {status.get('name') or 'none yet'}: {status.get('state')}, {status.get('photos', 0)} photos, "
+                f"{status.get('registered', 0)} placed.")
+        return {"ok": True, "text": _plain(text, MAX_SUMMARY), "map": _rounded(status)}
 
     def halt(self, verb: str) -> str:
         """Hold, land, land here or estop, and end the mission so it can't send anyone back out.

@@ -735,6 +735,15 @@ class MissionManager:
                 rows.append(row)
             return rows
 
+    def coverage_map(self) -> dict:
+        """The shape /zwarm/state sends: every floor patch and how much of a full look it has had, 0 to 1."""
+        with self.hub.lock:
+            coverage = self.coverage
+            seen = np.where(coverage.ever, 1.0, np.minimum(coverage.counts / LOOKS_NEEDED, 1.0))
+            return {"cell": CELL, "share_seen": coverage.stats("all")["share_seen"],
+                    "cells": [[round(float(x), 2), round(float(y), 2), round(float(v), 2)]
+                              for (x, y, _), v in zip(coverage.cells, seen)]}
+
     @property
     def active(self) -> bool:
         return self.state in ("starting", "running", "analyzing")

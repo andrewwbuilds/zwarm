@@ -841,6 +841,9 @@ class FakeTracker:
     def expected(self, drone_id):
         return ["x"]
 
+    def blockers(self):
+        return []
+
     def note_command(self, *args):
         pass
 

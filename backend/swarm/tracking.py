@@ -506,6 +506,7 @@ class InsideOutTracker:
         self.drones = drones
         self.anchors = anchors
         self.fence = fence
+        self.room = None  # set by the coordinator. Its listed obstacles hide tags
         self.video_latency = video_latency  # receiving a frame to when it was really taken: an estimate
         self.lock = threading.Lock()
         self.estimators = {k: Estimator(d.x, d.y, d.yaw) for k, d in drones.items()}

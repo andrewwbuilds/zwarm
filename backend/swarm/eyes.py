@@ -234,6 +234,7 @@ class SimEyes:
             return None
         cam = self.fleet.truth(drone_id)
         yaw = self.fleet.drones[drone_id].sim.drone.yaw()
+        tilt = self._true_tilt(drone_id)
         found = []
         for key, item in enumerate(self.items):
             if now > item.until:

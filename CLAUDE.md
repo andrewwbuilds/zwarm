@@ -31,7 +31,14 @@ uv run python -m unittest discover tests            # all backend tests, about 1
 uv run python -m unittest tests.test_stabilizer     # one module
 uv run python -m sim.stability                      # drift benchmark, about 5 minutes
 uv run python -m sim.stability --quick --no-robust  # about 30 seconds
+uv run python -m zwarm sim [--inside-out]           # the whole app, no browser, on port 8010
+uv run python -m unittest tests.test_zwarm_e2e      # the pitch sentences with a scripted model, no network
+SWARM_E2E=1 uv run python -m unittest tests.test_swarm_e2e tests.test_swarm_floor_e2e  # real backends, simulated drones, 2 minutes
+uv run python -m swarm bench --seeds 3              # avoidance on a simulated tracker
+uv run python -m swarm.mission_bench                # missions, about a minute
+uv run python -m agent.eval                         # the live model, about 240 requests on the user's key
 cd ../frontend && npx tsc -b --noEmit && npm run lint
+npm run dev                                         # /swarm on port 5173, for a backend on 8010
 ```
 
 ## Gotchas

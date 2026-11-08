@@ -469,6 +469,7 @@ class ViewTask:
     last_holder: str | None = None
     arrived: float = 0.0
     tries: int = 0
+    blocked_since: float | None = None
 
 
 class Survey:

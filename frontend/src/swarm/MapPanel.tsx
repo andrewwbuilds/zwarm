@@ -23,6 +23,7 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
   const [cloud, setCloud] = useState<Cloud | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [asked, setAsked] = useState(false);
+  const [big, setBig] = useState(false);
 
   const stamp = status ? `${status.name}/${status.state}/${status.registered}` : "";
   const hasResult = status !== null && (status.registered > 0 || status.state === DONE);

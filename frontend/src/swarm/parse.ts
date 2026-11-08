@@ -178,6 +178,7 @@ export function parseState(raw: unknown): ZwarmState {
   if (!isRecord(raw)) throw new Error("the state response isn't a JSON object");
   const mission = parseMission(raw.mission);
   const missionRecord = record(raw.mission);
+  const drones = list(raw.drones).map((d) => parseDrone(d, record(missionRecord.flight_s))).filter((d) => d !== null);
   return {
     simulated: raw.simulated === true,
     estopped: raw.estopped === true,

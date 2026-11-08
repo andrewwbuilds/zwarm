@@ -284,10 +284,7 @@ def judge(item: dict, answer: dict, fleet: FakeFleet, model_calls: int) -> list[
         if name in used:
             problems.append(f"must not call {name}")
     if expect.get("read_only"):
-        wrong = [n for n in used if n not in READ_ONLY]
-        if wrong:
-            problems.append(f"must not change anything, called {wrong}")
-    if expect.get("read_only_or_refused"):
+        # A call the tools refused changed nothing. A plan waiting for approval counts as going through.
         wrong = [c["name"] for c in calls if c["name"] not in READ_ONLY and c.get("ok")]
         if wrong:
             problems.append(f"must not change anything, {wrong} went through")

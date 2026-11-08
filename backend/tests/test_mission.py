@@ -393,6 +393,56 @@ class StatusTests(unittest.TestCase):
         self.assertGreater(f.missions.coverage.stats("south")["share_seen"], 0.0)
 
 
+class ShareOutTests(unittest.TestCase):
+    def inspecting(self):
+        f = Fleet(inspector=mission_bench.FakeInspector())
+        f.seen_thing()
+        f.run()
+        f.missions.start("inspect", "all", "chair")
+        return f
+
+    def test_each_view_goes_to_the_closest_drone(self):
+        f = self.inspecting()
+        survey = f.hub.search
+        for task in survey.tasks:
+            task.state, task.holder = "done", None
+        f.hub.orders.clear()
+        survey.tasks[0].state = "waiting"
+        survey.tasks[0].view.p[:2] = (-2.0, 0.7)  # right next to b, across the room from nothing else
+        f.run(0.1)
+        self.assertEqual(survey.tasks[0].holder, "b")
+
+    def test_a_view_with_a_drone_already_there_waits(self):
+        f = self.inspecting()
+        survey = f.hub.search
+        for task in survey.tasks[1:]:
+            task.state = "done"
+        for task in survey.tasks:
+            task.holder = None
+        f.hub.orders.clear()
+        other = survey.tasks[1]
+        other.state, other.holder = "looking", "b"
+        f.hub.order(f.co.drones["b"], other.view.p, other.view.yaw, f.t)
+        survey.tasks[0].view.p[:2] = f.co.drones["b"].tracked.p[:2] + (0.3, 0.0)
+        survey.tasks[0].state = "waiting"
+        f.run(0.1)
+        self.assertIsNone(survey.tasks[0].holder)
+
+    def test_a_move_that_takes_too_long_is_given_up_on(self):
+        f = Fleet()
+        f.run()
+        f.missions.start("explore", "north")
+        f.run(0.5)
+        order = f.hub.orders["a"]
+        f.poses["a"] = tuple(f.co.drones["a"].tracked.p)
+        self.assertEqual(order.stage, "go")
+        goal = order.goal.copy()
+        order.since = f.t - 31.0
+        f.run(0.1)
+        self.assertTrue(any(np.allclose(goal, banned) for banned in f.hub.search.banned))
+        self.assertFalse(np.allclose(f.hub.orders["a"].goal, goal))
+
+
 class FlightLimitTests(unittest.TestCase):
     def test_a_drone_turns_back_early_enough_to_land_by_the_limit(self):
         f = Fleet(flight_limit_s=40.0)

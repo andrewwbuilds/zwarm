@@ -78,6 +78,24 @@ def region_name(value) -> str:
     return found
 
 
+def region_mentioned(text: str, region: str) -> bool:
+    """Whether these words name this region, allowing for speech to text. A model mustn't pick one by itself."""
+    words = re.sub(r"[^a-z0-9 ]+", " ", (text or "").lower().replace("'", "")).split()
+    if region == "all":
+        return any(word in _ALL_WORDS for word in words)
+    short = "".join(part[0] for part in region.split("-")) if region != "center" else None
+    if short in words:
+        return True
+    names = ("center", "centre", "middle", "central") if region == "center" else None
+    if names:
+        return any(_sounds_like(word, name) for word in words for name in names)
+    return all(any(_sounds_like(word, part) for word in words) for part in region.split("-"))
+
+
+def _sounds_like(word: str, name: str) -> bool:
+    return name in word or (len(word) >= 3 and difflib.SequenceMatcher(None, word, name).ratio() >= 0.75)
+
+
 def _tool(name: str, description: str, properties: dict | None = None, required: tuple = ()) -> dict:
     return {"type": "function", "function": {"name": name, "description": description, "parameters": {
         "type": "object", "properties": properties or {}, "required": list(required), "additionalProperties": False}}}

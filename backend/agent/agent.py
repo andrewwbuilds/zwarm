@@ -381,9 +381,12 @@ class Agent:
         final = (final or self._results_in_words(turn) or "I don't have an answer for that, so I did nothing.")[:MAX_REPLY]
         if turn.plan is not None and "approv" not in final.lower():
             final += " It is waiting for your approval."
-        with self._state:
-            self._history.extend([{"role": "user", "content": text}, {"role": "assistant", "content": final}])
-            del self._history[:-HISTORY]
+        # Tool calls stay in the history. Seeing only earlier replies, the model copies them and claims
+        # a mission started without calling anything.
+        spoken = messages[started:]
+        if spoken and spoken[-1]["role"] == "assistant" and not spoken[-1].get("tool_calls"):
+            spoken.pop()
+        self._remember([*spoken, {"role": "assistant", "content": final}])
         return {"reply": final, "plan": _shown(turn.plan), "tool_calls": turn.records}
 
     def _dropped(self, turn: _Turn) -> dict:

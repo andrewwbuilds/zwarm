@@ -117,6 +117,17 @@ class Front:
         self._watch_pairs()
         self.tick_s.append(time.perf_counter() - started)
 
+    def _watch_pairs(self) -> None:
+        """The number the runbook's separation bar reads. Only for reading, so it can't be allowed to cost a tick."""
+        try:
+            flying = [d.tracked.p for d in self.hub.co.drones.values() if d.phase in (Phase.TAKEOFF, Phase.CHECK, Phase.AIR, Phase.LANDING)]
+            gaps = [math.dist(a, b) for i, a in enumerate(flying) for b in flying[i + 1:]]
+            self.pair_m = min(gaps) if gaps else None
+            if gaps and (self.pair_lowest_m is None or self.pair_m < self.pair_lowest_m):
+                self.pair_lowest_m = self.pair_m
+        except Exception:
+            logger.exception("[zwarm] couldn't work out how far apart the drones are")
+
     def _halt(self, verb: str, button: str) -> None:
         # The console sends a stop button to two hostnames at once, and it only needs doing once.
         now = time.monotonic()

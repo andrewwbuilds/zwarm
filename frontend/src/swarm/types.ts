@@ -24,6 +24,7 @@ export interface Mission {
   region: string;
   shareSeen: number;
   target: string | null;
+  reason: string | null;
   elapsedS: number;
   tasks: Record<string, string>;
   flightS: Record<string, number>;

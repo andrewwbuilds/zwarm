@@ -486,7 +486,7 @@ class Coordinator:
             check.samples = []
             return np.zeros(3)
         if check.stage % 2 == 1:
-            coast = float(np.linalg.norm(d.tracked.p[:2] - check.stop_at[:2]))
+            coast = float(np.linalg.norm(d.tracked.seen_p[:2] - check.stop_at[:2]))
             if coast > CHECK_MAX_COAST:
                 d.check_results = check.results
                 d.check = None

@@ -283,7 +283,7 @@ class DirectCommandTests(unittest.TestCase):
     def test_landing_is_asked_for_again_after_the_mission_stops(self):
         fleet, client, agent = fleet_agent("mapping")
         order = []
-        fleet.missions.stop = lambda: order.append("stop") or fleet.hub.hold()
+        fleet.missions.stop = lambda then=None: order.append("stop") or fleet.hub.hold()
         fleet.hub.land = lambda: order.append("land") or "Coming back."
         agent.handle("land")
         self.assertEqual(order, ["land", "stop", "land"])

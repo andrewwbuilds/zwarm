@@ -267,6 +267,37 @@ def search_lost_drone(seed):
     return f, script()
 
 
+def _forward_only(drone, yaw: float) -> float:
+    """A tracker that won't let a drone face more than 60 degrees off the +x side of the room."""
+    return max(-math.pi / 3, min(math.pi / 3, (yaw + math.pi) % (2 * math.pi) - math.pi))
+
+
+def search_limited_heading(seed):
+    """The tracker overrules most turns. Whatever it does allow must still find what's ahead."""
+    target = on_floor("backpack", 2.6, 0.8 if seed % 2 else -0.8)
+    f = HubFlight(THREE, seed, items=[target])
+    f.hub.limit_heading = _forward_only
+    def script():
+        yield from f.lift()
+        yield from f.seek("backpack")
+        f.check_found(target)
+        yield from f.down()
+    return f, script()
+
+
+def search_limited_heading_absent(seed):
+    """It isn't there and some floor can't be faced. The search must still end, not retry forever."""
+    f = HubFlight(THREE, seed)
+    f.hub.limit_heading = _forward_only
+    def script():
+        yield from f.lift()
+        yield from f.seek("backpack")
+        f.check(f.hub.search.state == "exhausted", f"search ended {f.hub.search.state}: {f.hub.reports[-1:]}")
+        f.notes.append(f"saw {f.hub.search.coverage.share_seen() * 100:.0f}% of the floor at {f.fleet.t:.0f} s")
+        yield from f.down()
+    return f, script()
+
+
 # ----------------------------------------------------------------------------- commands
 def spoken_mission(seed):
     """A whole flight run only by what the operator says, checking the answers."""

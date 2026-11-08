@@ -977,6 +977,15 @@ class MissionManager:
                     self.capture_name, self.capture_failed = None, str(error)
             self.say("fault", f"Map capture didn't start: {error}", event="capture_failed")
 
+    def _drop_capture(self) -> None:
+        try:
+            self.capture.stop()
+            forget = getattr(self.capture, "forget_empty", None)
+            if forget is not None:
+                forget()
+        except Exception:
+            logger.exception("[mission] map capture didn't stop")
+
     def _stop_capture_and_build(self, name: str) -> None:
         try:
             self.capture.stop()

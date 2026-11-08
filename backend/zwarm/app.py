@@ -95,6 +95,8 @@ class Front:
         self.events: EventLog | None = None
         self.tick_s: deque = deque(maxlen=TICK_S_KEPT)
         self.tick_errors = 0
+        self.last_button: str | None = None
+        self.last_button_at = 0.0
 
     def __getattr__(self, name):
         return getattr(self.hub.co, name)

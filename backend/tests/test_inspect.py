@@ -172,7 +172,7 @@ class AnalyzeTest(unittest.TestCase):
         self.assertEqual(self.slept, [vision.BACKOFF_S, vision.BACKOFF_S * 2])
 
     def test_moves_to_the_fallback(self):
-        cases = ([http_error(404)], [TimeoutError()], [urllib.error.URLError("down")], [reply("")], [reply("a nice room")],
+        cases = ([http_error(404)], [TimeoutError()], [urllib.error.URLError("down")], [http.client.IncompleteRead(b"")], [reply("")], [reply("a nice room")],
                  [http_error(500), http_error(500), http_error(500)], [ValueError("not json")])
         for failure in cases:
             self.calls = []

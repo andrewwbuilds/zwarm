@@ -417,6 +417,32 @@ class Agent:
         self._emit("tool", f"{call.name}: {_result_words(result)}", {"name": call.name, "arguments": record["arguments"], "ok": record["ok"]})
         return result
 
+    def _check_region_was_named(self, turn: _Turn, name: str, args: dict) -> None:
+        """Where the fleet goes is the operator's choice, so the model can't fill in a region they didn't say.
+
+        Starting on the whole room is the default. Moving a mission is a choice, so "all" must be said too.
+        """
+        if turn.said is None or name not in ("start_mission", "focus_region"):
+            return
+        region = args.get("region", "all")
+        if region == "all" and name == "start_mission":
+            return
+        if not region_mentioned(turn.said, region):
+            raise Refused(f"The operator hasn't named the {region} region. Don't guess: ask them which region they mean.")
+
+    def _act(self, epoch: int, name: str, args: dict) -> dict:
+        """Run a call unless a stop command got in first.
+
+        A stop command raises the epoch before it takes the lock. So under the lock, either this sees the
+        new epoch and refuses, or it finishes first and the stop then ends what it started.
+        """
+        if name in READ_ONLY or name == "build_map":  # these may wait on disk, so they stay off the flight lock
+            return self.box.run(name, args)
+        with self.box.lock:
+            if epoch != self._epoch:
+                raise Refused(STOPPED)
+            return self.box.run(name, args)
+
     def _results_in_words(self, turn: _Turn) -> str:
         return " ".join(_result_words(r["result"]) for r in turn.records)
 

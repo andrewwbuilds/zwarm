@@ -128,7 +128,7 @@ def parse_reply(data: dict, model: str, elapsed_s: float = 0.0) -> Reply:
         for i, found in enumerate(_INLINE_CALL.findall(content)):
             try:
                 calls.append(_tool_call(json.loads(found), i))
-            except ValueError:
+            except (ValueError, TypeError, KeyError, AttributeError):
                 continue
         content = _INLINE_CALL.sub("", content).strip()
     return Reply(model, content, reasoning, calls, choices[0].get("finish_reason"), elapsed_s)

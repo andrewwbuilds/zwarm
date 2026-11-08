@@ -408,7 +408,7 @@ class Toolbox:
         with self.lock:
             status = self.missions.start(args["kind"], args["region"], args.get("target"))
         note = f" {args['note']}" if args.get("note") else ""
-        return {"ok": True, "text": f"Started: {describe('start_mission', args)}.{note}", "mission": _rounded(status)}
+        return {"ok": True, "text": f"Started: {describe('start_mission', args)}.{note}", "mission": _mission_summary(status)}
 
     def _run_focus_region(self, args: dict) -> dict:
         with self.lock:

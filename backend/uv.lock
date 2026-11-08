@@ -1570,6 +1570,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "numpy" },
     { name = "opencv-python" },
+    { name = "pupil-apriltags", marker = "sys_platform == 'darwin'" },
     { name = "python-dotenv" },
     { name = "python-multipart" },
     { name = "scipy" },

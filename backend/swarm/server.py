@@ -198,7 +198,6 @@ def build_app(runtime: Runtime) -> FastAPI:
 @dataclass
 class DroneEntry:
     id: str
-    marker: int
     backend: str
     pad: tuple[float, float]
     yaw_deg: float = 0.0

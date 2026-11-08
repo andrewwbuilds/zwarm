@@ -3,6 +3,8 @@ import time
 import os
 import logging
 
+from control.stabilizer import PILOT_SOURCES
+
 logger = logging.getLogger(__name__)
 
 class FlightController:

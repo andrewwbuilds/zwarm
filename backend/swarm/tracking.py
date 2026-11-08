@@ -552,7 +552,7 @@ class InsideOutTracker:
             } for k in self.drones}
 
     def allowed_yaw(self, drone_id: str, p, yaw: float) -> float:
-        """The nearest heading to yaw from which this drone would still see a tag."""
+        """The nearest heading to yaw from which this drone would still see a tag, or its current one."""
         d = self.drones[drone_id]
         lens = d.lens or Lens.from_fov()
         tilt = math.radians(d.tilt_deg)

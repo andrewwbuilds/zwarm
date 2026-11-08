@@ -30,7 +30,9 @@ MAX_CALLS = 4  # tool calls the model may make in one round
 HISTORY = 12  # messages of conversation kept
 TURN_WAIT_S = 30.0  # how long a sentence waits for the turn before it
 PLAN_TTL_S = 300.0  # the fleet changes, so an old approval isn't a good one
+TURN_BUDGET_S = 60.0  # one sentence, however many model calls it takes
 OBSERVE_EVERY_S = 30.0
+STOPPED = "The operator just gave a stop command, so this was dropped."
 OBSERVE_TOOLS = (*READ_ONLY, "focus_region")  # an event can't take off, start, stop or land anything
 # Worth a model's sentence. The rest (started, focus, progress) only repeat what the operator just did or can see.
 OBSERVE_EVENTS = ("drone_lost", "drone_back", "flight_limit", "reassigned", "done", "exhausted", "failed", "capture_failed",

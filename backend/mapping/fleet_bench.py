@@ -168,7 +168,8 @@ def _render_drone(job: tuple) -> dict:
     cv2.setNumThreads(1)
     raw = Path(folder) / "drones" / drone / "raw"
     raw.mkdir(parents=True, exist_ok=True)
-    camera = make_camera(world, walls, scale, seed=int(drone))
+    lens = Rough(drone) if rough else None
+    camera = make_camera(world, walls, scale, seed=int(drone), fov_deg=lens.fov if lens else 90.0)
     encoder = VideoEncoder(seed=int(drone))
     started = time.perf_counter()
     sizes, truth = [], {}

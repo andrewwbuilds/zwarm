@@ -588,7 +588,7 @@ class Agent:
         return {"ok": ok, "reply": " ".join(_result_words(r) for r in results), "plan": _shown(plan), "results": results}
 
     # ---------------------------------------------------------------- without the model
-    def _fallback(self, text: str, error: Exception) -> dict:
+    def _fallback(self, text: str, error: Exception, epoch: int | None = None) -> dict:
         """The model is down: fixed phrases only, through the same checks and the same approval."""
         note = "I can't reach the planning model, so I only follow fixed phrases right now. "
         turn = _Turn(self._epoch)

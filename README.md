@@ -161,6 +161,17 @@ uv run python -m swarm.inspect_eval --demo      # the whole inspector over the s
 ```
 Limits: all scores so far are on simulated images (85% on the 20 test photos with Nano Omni, 2 false alarms and 1 miss), and the prompt was tuned on them. Real video is unscored. Sharpness limits are guesses until they are measured on real frames: `MIN_SHARPNESS` and `BLUR_SHARE` in `swarm/inspect.py`.
 
+## Operator console
+`frontend/src/pages/SwarmPage.tsx`, at `/swarm`, is one screen for running a mission: command box with voice, the conversation with Nemotron's tool calls, plan approval, a live room map, each drone's video and flight time, findings to review and a 3D point cloud. HOLD, LAND and E-STOP call the fixed endpoints directly and never go through the chat.
+
+```
+cd frontend && npm run dev
+# http://localhost:5173/swarm                 the backend on http://localhost:8010
+# http://localhost:5173/swarm?api=8011        another port, or ?api=http://host:port
+# http://localhost:5173/swarm?mock=1          a pretend backend, nothing real or simulated
+```
+Voice uses the browser's speech recognition. Chrome and Edge need internet for it.
+
 ## Setup
 Move to the `backend` directory
 ```

@@ -776,6 +776,7 @@ class MissionManager:
         tasks: list[ViewTask] = []
         if label is not None:
             things = [t for t in memory.find(label) if not t.moves]
+            things += [item for item in self._furniture() if label in item.label]
             if not things:
                 raise MissionError(f"I haven't seen a {label}. Explore or search first, or give me a region to inspect.")
             inside = [t for t in things if region == "all" or self.regions.mask(region, t.p[None, :])[0]]

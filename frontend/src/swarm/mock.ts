@@ -195,7 +195,7 @@ class MockSwarm {
     const staged = STAGED_FINDINGS[this.staged];
     const drone = this.drones[this.staged % this.drones.length];
     this.staged += 1;
-    this.found.push({ ...staged, id: String(this.staged), t: now / 1000, drone: drone.id, z: 0.2, status: "pending" });
+    this.found.push({ ...staged, id: String(this.staged), t: now / 1000, drone: drone.id, status: "pending", views: this.staged });
     this.say("finding", `Possible damage for review: ${staged.summary}`);
   }
 

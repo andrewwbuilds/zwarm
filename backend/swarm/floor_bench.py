@@ -269,7 +269,7 @@ def late_video(seed):
 
 
 def wrong_lens(seed):
-    """The lens is really 82 degrees wide and the tracker assumes 90: the error `fit-focal` exists to remove."""
+    """The lens is really 82 degrees wide and the tracker assumes 90: what flying without `fit-focal` risks."""
     return _crossing(seed, video=VideoConditions(fov_deg=82.0))
 
 

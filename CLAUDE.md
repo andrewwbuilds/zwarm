@@ -27,7 +27,7 @@ One person talks to three cheap Wi-Fi camera drones with closed firmware, and NV
 ./fly.sh --swarm fly real.json [--drones 1,2]        # the whole app on real drones
 cd backend
 uv sync
-uv run python -m unittest discover tests            # all backend tests
+uv run python -m unittest discover tests            # all backend tests, about 10 minutes
 uv run python -m unittest tests.test_stabilizer     # one module
 uv run python -m sim.stability                      # drift benchmark, about 5 minutes
 uv run python -m sim.stability --quick --no-robust  # about 30 seconds

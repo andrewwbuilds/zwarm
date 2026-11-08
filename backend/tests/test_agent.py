@@ -245,7 +245,11 @@ class StopWordsTests(unittest.TestCase):
 
     def test_not_a_stop_command(self):
         for text in ("stop mapping", "stop mapping and focus on the north side", "don't stop", "do not land", "don't land",
-                     "no land", "stop the mission", "what does emergency stop do", "land on the table", "take off", "", "hold on a second"):
+                     "no land", "stop the mission", "what does emergency stop do", "land on the table", "take off", "", "hold on a second",
+                     "don't stop and land", "stop, don't land", "stop and don't land", "don't come back and land", "don't bring them down",
+                     "do not bring them home", "why did they come back and land", "bring them to the north side", "come back to the north side",
+                     "stop mapping and come back to the north side", "stop and focus on the north", "bring them back north",
+                     "land them on the couch", "should we bring them down"):
             self.assertIsNone(self.verb(text), text)
 
     def test_naming_one_drone_is_refused(self):

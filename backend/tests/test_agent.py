@@ -994,7 +994,7 @@ class RealFleetTests(unittest.TestCase):
     def test_land_from_the_model_tool_reaches_the_ground(self):
         self.airborne()
         self.script(use(call("land")), say("Coming back."))
-        self.assertTrue(self.agent.handle("bring them back")["tool_calls"][0]["ok"])
+        self.assertTrue(self.agent.handle("bring them back to their pads")["tool_calls"][0]["ok"])
         self.assertTrue(self.fly(90.0, lambda: self.phases() == {Phase.GROUND}), self.phases())
 
     def test_hold_ends_the_mission_and_keeps_them_up(self):

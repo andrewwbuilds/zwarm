@@ -543,6 +543,28 @@ class InsideOutTracker:
         with self.lock:
             self.estimators[drone_id].note_command(velocity, yaw_rate, flying, landing)
 
+    def note_frame(self, drone_id: str, t: float, change: float | None = None) -> None:
+        """A frame arrived that won't be read. For a simulator that skips drawing frames with no tag in them."""
+        with self.lock:
+            self.frame_at[drone_id] = t
+            if change is not None:
+                self.changes[drone_id].append((t, change))
+
+    def video_age(self, drone_id: str, now: float) -> float:
+        """Seconds since the newest frame was taken. Infinite if none has arrived."""
+        with self.lock:
+            return now - self.frame_at[drone_id]
+
+    def video_change(self, drone_id: str, now: float) -> float | None:
+        """How much the picture has been changing, in grey levels per frame. None without enough recent frames."""
+        with self.lock:
+            return self._change_now(drone_id, now)
+
+    def camera_still(self, drone_id: str, now: float) -> bool:
+        """Frames are arriving and the picture isn't changing. A hovering drone always wanders, so it's probably on the floor."""
+        change = self.video_change(drone_id, now)
+        return change is not None and change < STILL_CHANGE
+
     def reset(self, drone_id: str) -> None:
         """The drone has been put back on its pad by hand."""
         d = self.drones[drone_id]

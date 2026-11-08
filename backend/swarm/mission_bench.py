@@ -92,7 +92,9 @@ class Scored:
 
     def inside(self, region: str, drones=None) -> bool:
         flying = [d for d in self.co.drones.values() if d.phase == Phase.AIR and (drones is None or d.id in drones)]
-        return bool(flying) and all(self.missions.regions.mask(region, d.tracked.p[None, :])[0] for d in flying)
+        coverage = self.missions.coverage
+        return bool(flying) and all(self.missions.regions.mask(region, d.tracked.p)[0]
+                                    or np.linalg.norm(coverage.candidates[:, :2] - d.tracked.p[:2], axis=1).min() < AT_EDGE_M for d in flying)
 
     def run_mission(self, kind, region="all", target=None, what=None):
         started = self.fleet.t

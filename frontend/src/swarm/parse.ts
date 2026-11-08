@@ -230,6 +230,13 @@ function parseEvent(v: unknown): LogEvent | null {
   const n = num(e.n);
   if (n === null) return null;
   const data = record(e.data);
+  const kind = isEventKind(e.kind) ? e.kind : "report";
+  const words = text(e.text) ?? "";
+  if (kind !== "tool") return { n, t: num(e.t) ?? 0, kind, text: words, detail: null, refused: false };
+  // The agent writes "name: what came back" and puts the name and arguments in data.
+  const name = text(data.name);
+  const call = callText(data);
+  const said = name !== null && words.startsWith(`${name}: `) ? words.slice(name.length + 2) : words;
   return {
     n,
     t: num(e.t) ?? 0,

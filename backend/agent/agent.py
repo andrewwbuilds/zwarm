@@ -452,6 +452,13 @@ class Agent:
         actions = [r for r in turn.records if r["name"] not in READ_ONLY]
         if actions and turn.plan is None and not any(r["ok"] for r in actions) and _CLAIMS.search(final or ""):
             return _result_words(actions[-1]["result"])
+        if turn.plan is not None or any(r["ok"] for r in actions):
+            return final
+        if _PLAN_CLAIMS.search(final or "") and self.pending() is None:
+            return "There's no plan waiting for approval, and nothing was started. Ask again and I'll make one."
+        asked = spoken_mission(text)
+        if asked and asked[0] in ("start_mission", "focus_region") and _WORK_CLAIMS.search(final or "") and not self.box.mission_active():
+            return "Nothing was started, so no drone is working on that. Say it again if you still want it."
         return final
 
     def _dropped(self, turn: _Turn) -> dict:

@@ -500,8 +500,9 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
     except Exception as error:
         logger.warning("[map] couldn't write the cloud viewer: %s", error)
 
-    placed = photos_by_drone(cameras)
-    warnings = coverage_warnings(best, total)
+    placed = photos_by_drone([name for part in served for name in part["cameras"]])
+    registered = sum(part["model"].registered for part in served)
+    warnings = coverage_warnings(Model(main["model"].path, registered, len(level), main["model"].error_px), total)
     for drone, count in pooled.items():
         if placed.get(drone, 0) < 0.3 * count:
             warnings.append(f"Drone {drone} barely joined the map: {placed.get(drone, 0)} of {count} photos placed. "

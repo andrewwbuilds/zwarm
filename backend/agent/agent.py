@@ -349,9 +349,11 @@ class Agent:
 
     def _think(self, text: str) -> dict:
         with self._state:
-            history = list(self._history)
+            history = [message for past in self._history for message in past]
+            last = self._history[-1] if self._history else []
             # The sentence before counts: "which side?", "the north", or "try the east?", "yes".
-            turn = _Turn(self._epoch, said=" ".join([*(m["content"] for m in history[-2:]), text]))
+            turn = _Turn(self._epoch, said=" ".join([*(str(m.get("content") or "") for m in last[:1] + last[-1:]), text]))
+        started = len(history) + 1
         messages = [{"role": "system", "content": self._system()}, *history, {"role": "user", "content": text}]
         tools = self.box.schemas()
         final = ""

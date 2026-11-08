@@ -70,6 +70,31 @@ class BackendLink:
             self.condition.notify_all()
             return True
 
+    def assume_flying(self) -> None:
+        """Tell the backend the drone is up, ahead of a land toggle it would otherwise drop.
+
+        A backend marks the drone grounded as it sends the land packet, whether or not the packet arrives.
+        Goes in the queue, so it reaches the backend before any land queued after it.
+        """
+        with self.condition:
+            self.commands.append("assume_flying")
+            self.condition.notify_all()
+
+    def assume_grounded(self) -> None:
+        """Tell the backend the drone looks to be on the floor, so its own Land all can't restart the motors."""
+        with self.condition:
+            self.commands.append("assume_grounded")
+            self.condition.notify_all()
+
+    def _tell_backend(self, airborne: bool) -> None:
+        body = json.dumps({"airborne": airborne}).encode()
+        request = urllib.request.Request(f"{self.url}/flight/assume", body, {"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(request, timeout=1.0):
+                pass
+        except (OSError, ValueError) as error:
+            logger.warning("[link] %s: couldn't tell the backend whether the drone is up: %s", self.name, error)
+
     def inspect(self) -> None:
         """Ask the backend whether anything about it should stop a takeoff."""
         try:

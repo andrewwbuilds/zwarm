@@ -493,6 +493,9 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
         if placed.get(drone, 0) < 0.3 * count:
             warnings.append(f"Drone {drone} barely joined the map: {placed.get(drone, 0)} of {count} photos placed. "
                             "Its view may not overlap the other drones'.")
+    if fit is not None and not agrees:
+        warnings.append(f"The map disagrees with where the drones were tracked, by {fit['median_error_m']:.1f} m. It is probably "
+                        "warped or folded, so don't trust its shape. Repeating floor patterns or a drone that never turned can do this.")
     result = {"photos": total, "by_drone": pooled, "registered": best.registered, "registered_by_drone": placed,
               "models": summaries, "points": len(xyz), "error_px": round(best.error_px, 3), "warnings": warnings,
               "masked": mask is not None, "runner": used.name, "level": {"rotation": rotation.tolist(), "scale": scale,

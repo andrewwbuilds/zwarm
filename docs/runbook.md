@@ -192,6 +192,8 @@ Type "take off", press Approve. It climbs, then makes two small test moves on it
 
 **Pass:** phase reaches `air` with no fault, `sigma` under 0.1 for the whole minute, `fix_age` mostly under 1 s, real drone within 0.3 m of the console's position, and it lands within 0.3 m of the pad.
 
+Read `video_change` for this drone from `curl -s localhost:8010/state | jq '.anchors.drones'` in the hover and again on the floor. The first has to be well above `STILL_CHANGE` (0.5, an estimate) and the second below it. That's what tells a hover with no tags from a drone that has fallen. If they don't straddle it, change `STILL_CHANGE` before going on: see the tuning table.
+
 | Fault | Cause and fix |
 |---|---|
 | "takeoff was sent but it was not seen to climb" | It may be hovering unseen. **LOOK AT IT. The console's LAND ignores a drone it thinks is on the ground.** In the air: Land all on /fleet. On the floor with motors stopped: "mark landed" on /fleet. Then reset-pads. See the tuning table |

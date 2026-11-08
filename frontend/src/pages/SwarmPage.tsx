@@ -39,7 +39,7 @@ function Banner({ api, link }: { api: Api; link: Link }) {
       <span>
         {api.label}: {link.error ?? "no answer"}.{" "}
         {age === null ? "No state has ever arrived." : `Everything below is ${Math.round(age)} s old.`}{" "}
-        Start it with: cd backend, then uv run python -m zwarm sim. HOLD, LAND and E-STOP keep trying.
+        Start it with: cd backend, then uv run python -m zwarm sim. E-STOP keeps trying. HOLD and LAND try once, so press them again.
       </span>
     </div>
   );

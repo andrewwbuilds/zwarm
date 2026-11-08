@@ -109,12 +109,13 @@ class Coverage:
         total = int(reachable.sum())
         return 1.0 if total == 0 else float((reachable & (self.counts >= LOOKS_NEEDED)).sum()) / total
 
-    def best(self, p, yaw: float, claimed: np.ndarray, avoid=(), keep_away: float = 0.7, banned=()) -> Viewpoint | None:
+    def best(self, p, yaw: float, claimed: np.ndarray, avoid=(), keep_away: float = 0.7, banned=(), tilt: float = DEFAULT_TILT) -> Viewpoint | None:
         """The viewpoint giving this drone the most new floor per second."""
         wanted = self.remaining() & ~claimed
-        if not wanted.any() or not len(self.candidates):
+        if not wanted.any() or not len(self.candidates) or tilt not in self.sees:
             return None
-        gain = (self.sees & wanted).sum(axis=1).astype(float)
+        sees = self.sees[tilt]
+        gain = (sees & wanted).sum(axis=1).astype(float)
         gain[gain < MIN_GAIN] = 0.0
         distance = np.linalg.norm(self.candidates[:, :2] - np.asarray(p, float)[:2], axis=1)
         turn = np.abs((self.candidate_yaws - yaw + math.pi) % (2 * math.pi) - math.pi)

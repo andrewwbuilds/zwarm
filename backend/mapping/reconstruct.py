@@ -40,6 +40,28 @@ def tool(name: str) -> str:
     return found
 
 
+_running: set[subprocess.Popen] = set()
+_running_lock = threading.Lock()
+
+
+def _kill(process: subprocess.Popen) -> None:
+    try:
+        os.killpg(process.pid, signal.SIGKILL)  # the whole group: COLMAP has been seen surviving SIGTERM with its parent gone
+    except (ProcessLookupError, PermissionError):
+        pass
+
+
+def stop_running() -> None:
+    """Kill every step still going. One left behind would starve the next flight's control loop."""
+    with _running_lock:
+        running = list(_running)
+    for process in running:
+        _kill(process)
+
+
+atexit.register(stop_running)
+
+
 def run(command: list, log: Path, env: dict | None = None, timeout_s: float | None = STEP_TIMEOUT_S) -> None:
     """Run a command, sending its output to a log file. Raises with the log's tail on failure or on running out of time."""
     log.parent.mkdir(parents=True, exist_ok=True)

@@ -620,8 +620,7 @@ class FleetCapture:
         self.build_thread: threading.Thread | None = None
         self._load_newest()
 
-    def _load_newest(self) -> None:
-        """A restarted backend still serves the last finished map."""
+    def _newest(self) -> tuple[str, dict] | None:
         try:
             results = sorted(self.root.glob("*/result.json"), key=lambda p: p.stat().st_mtime)
             if results:

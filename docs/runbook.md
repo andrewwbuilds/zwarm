@@ -249,7 +249,7 @@ Run the [demo script](#demo-script) start to finish, on fresh batteries and at t
 
 ## Demo script
 
-Stage the damage before anyone arrives: dark marks or cracks in tape on low surfaces and on the floor, in well-lit spots. The camera can't see anything above its own height, so nothing on a wall. Put a box or couch inside the fence and list it in `obstacles`.
+Stage the damage before anyone arrives: dark marks or cracks in tape on low surfaces and on the floor, in well-lit spots. The camera can't see anything above its own height, so nothing on a wall. Put a box or couch inside the fence and list it in `obstacles`. Drones inspect it from the side and fly around it.
 
 1. Say: **"Map this entire area in 3D."** Press Approve. Point at the three tiles and the shared map.
 2. Say: **"Stop mapping and focus on the north side."** No approval is needed in flight.

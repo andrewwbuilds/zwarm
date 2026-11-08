@@ -546,11 +546,22 @@ class Coordinator:
                 self._forget_requests(d)
                 d.sticks_wrong = False
                 d.clear("land")
+                if blind and d.tracked.fix_age >= SEEN_UP_FIX_S:
+                    # The estimate assumes a descent, so with no sighting this says nothing about the drone.
+                    d.unknown_air = d.came_down = True
+                    d.fault("land", "landed blind and touchdown was never seen; check it by eye")
             elif now - d.toggled_at > LAND_TIMEOUT_S:
-                d.fault("land", "landing was sent but touchdown was not seen; check it by eye")
-                d.phase = Phase.GROUND if d.blind_landing else Phase.AIR
-                if d.phase == Phase.AIR:
-                    d.landing_requested = False
+                if d.blind_landing and not seen_up:
+                    d.fault("land", "landing was sent blind and touchdown was not seen; check it by eye")
+                    d.phase = Phase.GROUND
+                    d.unknown_air = d.came_down = True
+                    self._forget_requests(d)
+                else:
+                    d.fault("land", "landing was sent but it's still in the air, so the packet was probably lost. "
+                                    "It's holding. Press LAND to send it once more")
+                    d.phase = Phase.AIR
+                    d.landing_requested = d.blind_landing = False
+                    d.backend_grounded = True  # told to land, so its backend won't pass on another landing
                     self._set_goal(d, d.tracked.p.copy())
         elif d.phase in (Phase.AIR, Phase.CHECK):
             if age > LOST_LAND_S and d.link.connected:

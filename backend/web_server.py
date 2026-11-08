@@ -251,7 +251,7 @@ FRAME_HUB = FrameHub(per_client_queue_size=2)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    global flight_controller, receiver, plugin_manager, active_drone_type, control_capabilities
+    global flight_controller, receiver, plugin_manager, active_drone_type, control_capabilities, stabilizer_service
 
     drone_type = os.getenv("DRONE_TYPE", "s2x").lower()
     active_drone_type = drone_type

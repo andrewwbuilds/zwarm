@@ -294,14 +294,17 @@ class Hub:
                 continue
             # A real camera's picture is already old by now, and it's the drone's pose back then that counts.
             p, yaw = self._pose_at(d.id, now - max((x.age for x in detections), default=0.0))
+            tilt = self.tilt_of(d.id)
             seen_now = set()
             for detection in detections:
-                where = locate(p, yaw, detection)
+                where = locate(p, yaw, detection, tilt)
+                if np.any(where[:2] < self.co.room.lo[:2] - FENCE_SLACK) or np.any(where[:2] > self.co.room.hi[:2] + FENCE_SLACK):
+                    continue  # a bad ray: nothing outside the room can be in it
                 seen_now.add(self.memory.record(detection.label, where, detection.size, detection.confidence,
-                                                detection.range, d.id, now).id)
-            self._note_misses(p, yaw, seen_now)
+                                                float(np.linalg.norm(where - p)), d.id, now).id)
+            self._note_misses(p, yaw, tilt, seen_now)
             if self.search is not None:
-                self.search.coverage.look(p, yaw)
+                self.search.coverage.look(p, yaw, tilt)
 
     def _pose_at(self, drone_id: str, t: float) -> tuple[np.ndarray, float]:
         history = self.poses[drone_id]

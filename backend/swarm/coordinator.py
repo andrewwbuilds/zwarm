@@ -325,8 +325,12 @@ class Coordinator:
         now = self.now if now is None else now
         self.takeoff_queue.clear()
         for d in self.drones.values():
-            if d.phase in (Phase.AIR, Phase.CHECK):
+            if d.phase == Phase.CHECK:
                 d.check = None
+                d.phase = Phase.AIR
+            if d.phase in (Phase.TAKEOFF, Phase.AIR):
+                d.land_here_wanted = True
+            if d.phase == Phase.AIR:
                 self._toggle_land(d, now)
 
     def estop(self) -> None:

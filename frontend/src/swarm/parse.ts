@@ -76,6 +76,7 @@ function parseMission(v: unknown): Mission | null {
     region: text(v.region) ?? "all",
     shareSeen: num(v.share_seen) ?? 0,
     target: text(v.target),
+    reason: text(v.reason),
     elapsedS: num(v.elapsed_s) ?? 0,
     tasks,
     flightS,

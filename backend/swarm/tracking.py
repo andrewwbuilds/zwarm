@@ -411,7 +411,7 @@ class Estimator:
         if self.p[2] < 0.0:
             self.p[2] = 0.0
             self.v[2] = 0.0
-        self.yaw += self.yaw_rate * dt
+        self.yaw += self.yaw_rate * moved
         self.history.append((now, self.p.copy(), self.yaw))
         speed = float(np.linalg.norm(self.v[:2]))
         self.sigma_xy += (HOLD_DRIFT + SPEED_ERROR * speed + self.sigma_yaw * speed) * dt

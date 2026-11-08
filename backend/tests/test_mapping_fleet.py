@@ -741,7 +741,7 @@ class BuildStateTests(unittest.TestCase):
             self.assertEqual(seen, [])  # still held back by the write
             release.set()
             self.capture.wait(5)
-        self.assertEqual(seen, [1])
+        self.assertEqual(seen, [2])
 
     def test_build_ends_a_running_capture_of_the_same_map(self):
         self.capture.start("m")

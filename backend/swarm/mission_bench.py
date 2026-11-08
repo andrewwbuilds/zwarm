@@ -521,6 +521,37 @@ def floor_focus(seed):
     return f, script()
 
 
+def floor_demo_inspect(seed):
+    """Inspect the whole demo room on floor tags. Nothing may lose its position by flying over or up against the furniture."""
+    f = DemoFloorFlight(seed)
+    def script():
+        yield from f.takeoff()
+        yield from f.run_mission("inspect", "all")
+        f.numbers.update({f"views_{key}": value for key, value in f.missions.status()["views"].items()})
+        f.numbers["lost"] = len(f.happened("drone_lost"))
+        f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
+        f.check(not f.happened("drone_lost"), f"lost a drone: {f.happened('drone_lost')}")
+        yield from f.land()
+    return f, script()
+
+
+def floor_demo_blind(seed):
+    """One drone's video stops for good, so it lands blind. The other two must still finish the inspection."""
+    f = DemoFloorFlight(seed)
+    def script():
+        yield from f.takeoff()
+        f.missions.start("inspect", "all")
+        yield from f.wait(8.0)
+        f.fleet.hidden["b"] = math.inf
+        yield from f.until(f.over, MISSION_LIMIT, "the inspection to finish without b")
+        f.numbers.update({f"views_{key}": value for key, value in f.missions.status()["views"].items()})
+        f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
+        f.check(f.co.closest >= -0.05, f"the survivors were left with closest {f.co.closest:.2f}")
+        f.hub.land()
+        yield from f.until(lambda: f.co.drones["a"].phase == Phase.GROUND and f.co.drones["c"].phase == Phase.GROUND, 90.0, "landing")
+    return f, script()
+
+
 MISSIONS = {m.__name__: m for m in (
     explore_region, explore_all_furniture, lost_drone, focus_moves_all, map_with_focus, stop_midway, operator_hold,
     inspect_thing, inspect_region, inspect_lost_drone, flight_limit, search_region, demo_room_inspect, demo_room_map,

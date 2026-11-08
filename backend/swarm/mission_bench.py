@@ -395,6 +395,52 @@ def search_region(seed):
     return f, script()
 
 
+# ----------------------------------------------------------------------------- the demo room
+def demo_room_inspect(seed):
+    """Inspect the whole demo room. Every piece of staged damage must be in the picture of a settled drone."""
+    f = DemoFlight(seed)
+    framed: set[str] = set()
+    show = f.inspector.tick
+    def noted(now, poses=None):
+        for drone_id in poses or ():
+            camera, yaw = f.fleet.truth(drone_id), f.fleet.drones[drone_id].sim.drone.yaw()
+            framed.update(d.name for d in f.world.damage if in_view(camera, yaw, np.array(d.where), reach=RELIABLE_REACH)[0])
+        show(now, poses)
+    f.inspector.tick = noted
+    def script():
+        yield from f.takeoff()
+        started = f.fleet.t
+        f.missions.start("inspect", "all")
+        yield from f.until(f.over, MISSION_LIMIT, "the inspection to finish")
+        f.numbers["mission_s"] = round(f.fleet.t - started, 1)
+        f.numbers["views"] = f.missions.status()["views"]["done"]
+        f.numbers["damage_framed"] = len(framed)
+        f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
+        f.check(len(framed) == len(f.world.damage), f"never framed: {sorted({d.name for d in f.world.damage} - framed)}")
+        yield from f.land()
+    return f, script()
+
+
+def demo_room_map(seed):
+    """Map the whole demo room, with four things nobody put on the map, and hear which areas are left."""
+    capture = FakeCapture()
+    f = DemoFlight(seed, capture)
+    def script():
+        yield from f.takeoff()
+        started = f.fleet.t
+        f.missions.start("map", "all")
+        yield from f.until(f.over, MISSION_LIMIT, "the map to finish")
+        f.numbers["mission_s"] = round(f.fleet.t - started, 1)
+        f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
+        f.check_covered()
+        f.missions.settle()
+        f.check(capture.names() == ["start", "stop", "build"], f"capture got {capture.calls}")
+        gaps = {gap["name"]: gap for gap in f.missions.gaps()}
+        f.check(gaps["all"]["share_seen"] >= COVERED, f"gaps says only {gaps['all']['share_seen']}")
+        yield from f.land()
+    return f, script()
+
+
 # ----------------------------------------------------------------------------- on floor tags, as on a real flight
 def floor_explore(seed):
     """Every drone's position comes from the tags in its own picture, so a view with no tag in it costs the drone."""

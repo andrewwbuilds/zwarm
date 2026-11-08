@@ -490,6 +490,7 @@ def demo_world(seed: int = 11) -> DemoWorld:
 
     # A tag can't lie under furniture, and staged damage shouldn't deface one.
     boxes = (*furniture.values(), *(box for _, box in hidden))
+    keep_off = (*boxes, *(mark for mark in marks if mark.center[2] == 0.0))
 
     def clear(anchor: Anchor) -> bool:
         reach = paper_width(anchor) / 2

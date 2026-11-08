@@ -399,6 +399,31 @@ def check_ready(path, need_model: bool = True, frame_wait_s: float = FRAME_WAIT_
         out.problems.append(problem)
         return out
     out.config = config
+    check_setup(config, need_model, out)
+    for d in config.drones:
+        link = BackendLink(d.backend, d.id)
+        link.inspect()
+        if link.problem:
+            out.problems.append(f"Drone {d.id} at {d.backend}: {link.problem}. Is its Pi up? `tools/pi/fleet.sh status`.")
+    frames = StreamFrames(config.backends())
+    frames.start()
+    deadline = time.monotonic() + frame_wait_s
+    try:
+        while time.monotonic() < deadline and not all(frames.latest(d.id) for d in config.drones):
+            time.sleep(0.1)
+        for d in config.drones:
+            frame = frames.latest(d.id)
+            if frame is None:
+                out.problems.append(f"Drone {d.id} at {d.backend}: no video in {frame_wait_s:.0f} s from /mjpeg.")
+            else:
+                out.notes.append(f"Drone {d.id}: video arriving, {len(frame.jpeg)} byte frames.")
+    finally:
+        threading.Thread(target=frames.stop, daemon=True).start()  # a stuck read has a 5 s timeout, and no one needs to wait for it
+    return out
+
+
+def check_setup(config: SwarmFile, need_model: bool, out: Readiness) -> None:
+    """What fly needs on this Mac and in the file. Touches no drone, so preflight and fly share it."""
     if not config.anchors:
         out.problems.append("The swarm file lists no floor anchors, and they are the only source of position.")
     else:

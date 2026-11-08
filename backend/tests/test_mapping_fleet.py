@@ -610,6 +610,18 @@ class JoiningTests(unittest.TestCase):
         self.assertTrue(any("split into 2 separate maps" in w for w in result["warnings"]))
 
 
+class FailedRebuildTests(unittest.TestCase):
+    def test_a_failed_rebuild_leaves_no_old_result_to_serve_after_a_restart(self):
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "m"
+            folder.mkdir()
+            (folder / "result.json").write_text("{}")
+            with self.assertRaises(StepFailed):
+                build_map(folder, 240, LocalRunner())
+            self.assertFalse((folder / "result.json").exists())
+            self.assertEqual(FleetCapture(FakeFrames(), tmp).status()["state"], "idle")
+
+
 class BuildStateTests(unittest.TestCase):
     RESULT = {"photos": 3, "by_drone": {"1": 3}, "registered": 3, "registered_by_drone": {"1": 3}, "points": 2,
               "models": [{"folder": "0", "registered": 3, "points": 2, "by_drone": {"1": 3}}], "warnings": [], "seconds": {}, "runner": "local"}

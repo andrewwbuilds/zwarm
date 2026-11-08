@@ -297,7 +297,7 @@ def fitted_lens(seed):
 MISSIONS = {m.__name__: m for m in (
     hover, swap, cross, ring, formations, pillar, wall_gap, under_table, missing_tags, brief_dropouts, covered_view,
     blind_for_good, frozen_coordinator, reversed_sticks, refused_takeoff, wrong_gains, sluggish, drafty, soft_video,
-    dim_room, late_video, wrong_lens, fitted_lens,
+    dim_room, late_video, slow_video, wrong_lens, fitted_lens,
 )}
 
 

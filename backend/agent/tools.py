@@ -379,8 +379,8 @@ class Toolbox:
         if name and name != status.get("name") and not getattr(self.capture, "has_frames", lambda _: True)(name):
             raise Refused(f'There are no photos saved under "{name}". Leave the name out to build the newest map.')
         if state == "capturing":
-            raise Refused("Photos are still being captured, and the map builds by itself when the mission ends. "
-                          "Stop the mission first to build it now.")
+            raise Refused("Photos are still being saved, and the map builds by itself once the drones have landed. "
+                          "Land them to build it now.")
         if state == "building":
             raise Refused("The map is already being built. Use map_status to follow it.")
         if state == "done" and name == status.get("name"):

@@ -240,7 +240,8 @@ Voice uses the browser's speech recognition. Chrome and Edge need internet for i
 
 cd backend
 uv run python -m zwarm sim [--inside-out] [--rate 8] [--port 8010] [--seed 1]
-uv run python -m zwarm preflight swarm.json   # capabilities, video, detector, key. Sends no flight command
+uv run python -m zwarm preflight swarm.json   # pass or fail per drone. Reads capabilities and video only
+uv run python -m zwarm markers                # printable floor tags and their swarm file section
 uv run python -m zwarm fly swarm.json
 uv run python -m unittest tests.test_zwarm_e2e   # the same sentences with a scripted model, no network
 ```

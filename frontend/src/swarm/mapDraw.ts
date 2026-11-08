@@ -190,7 +190,7 @@ function drawAnchors(ctx: CanvasRenderingContext2D, room: Room, f: Frame): void 
     ctx.fillStyle = GROUND;
     ctx.fillRect(x - size / 4, y - size / 4, size / 4, size / 4);
     ctx.fillRect(x + size / 16, y + size / 16, size / 4, size / 4);
-    label(ctx, a.id.replace(/^(aruco|qr):/, ""), x + size / 2 + 3, y, SOFT);
+    label(ctx, a.id.replace(/^(aruco|qr|tag):/, ""), x + size / 2 + 3, y, SOFT);
   }
 }
 

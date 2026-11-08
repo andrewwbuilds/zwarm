@@ -60,11 +60,8 @@ def local_corners(size: float) -> np.ndarray:
     return np.array([[-half, half, 0], [half, half, 0], [half, -half, 0], [-half, -half, 0]], np.float64)
 
 
-def flat_marker_corners(center, size: float, yaw: float = 0.0) -> np.ndarray:
-    """World corners of a marker lying face up, with its printed top edge toward heading yaw."""
-    up_page = np.array([math.cos(yaw), math.sin(yaw), 0.0])
-    right = np.array([math.sin(yaw), -math.cos(yaw), 0.0])
-    return np.array([np.asarray(center, float) + x * right + y * up_page for x, y, _ in local_corners(size)])
+class SwarmFileError(ValueError):
+    pass
 
 
 @dataclass(frozen=True)

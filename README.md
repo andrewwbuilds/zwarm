@@ -244,6 +244,7 @@ uv run python -m zwarm preflight swarm.json   # pass or fail per drone. Reads ca
 uv run python -m zwarm markers                # printable floor tags and their swarm file section
 uv run python -m zwarm fly swarm.json
 uv run python -m unittest tests.test_zwarm_e2e   # the same sentences with a scripted model, no network
+uv run python -m unittest tests.test_flight_safety tests.test_zwarm_fixes tests.test_zwarm_shutdown   # what happens when things go wrong
 ```
 
 Needs `NVIDIA_API_KEY` in `backend/.env` for the planner and vision; `fly --no-model` runs on fixed phrases only. Optional: `MAP_BUILD_SSH` builds maps on another machine. `NEMOTRON_MODEL` and `NEMOTRON_VISION_MODEL` change the models. `fly` refuses to start, and says why, if any backend, its video, the detector or the key is missing. A swarm file may also set `north_yaw_deg` and `flight_limit_s`. `--inside-out` in the simulator takes positions from reading floor tags in rendered frames, as a real flight does. Add `?api=8013` to the console for another port.

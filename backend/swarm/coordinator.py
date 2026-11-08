@@ -342,6 +342,13 @@ class Coordinator:
             d.phase = Phase.STOPPED
             d.goal = None
             d.path = []
+            self._forget_requests(d)
+
+    @staticmethod
+    def _forget_requests(d: Drone) -> None:
+        """Nothing asked of it before this still applies, including a landing from the last flight."""
+        d.landing_requested = d.land_here_wanted = d.blind_landing = d.check_held = False
+        d.check = None
 
     def reset_to_pads(self) -> list[str]:
         """The operator has put the landed drones back on their pads."""

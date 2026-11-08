@@ -480,6 +480,7 @@ class Coordinator:
             d.phase = Phase.LANDING
             d.toggled_at = now
             d.blind_landing = blind
+            d.land_here_wanted = False
             d.goal = None
             d.path = []
         else:

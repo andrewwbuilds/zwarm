@@ -306,6 +306,9 @@ export function parseMapStatus(raw: unknown): MapStatus {
     photos: num(m.photos) ?? 0,
     byDrone,
     registered: num(m.registered) ?? 0,
+    points: num(m.points) ?? 0,
+    step: text(m.step),
+    warnings: list(m.warnings).map(text).filter((w) => w !== null),
     error: text(m.error),
   };
 }

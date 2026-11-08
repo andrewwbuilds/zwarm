@@ -529,7 +529,7 @@ class ToolCheckTests(unittest.TestCase):
             self.assertEqual(fleet.missions.calls, [], name)
 
     def test_build_map_checks_the_capture(self):
-        self.assertIn("still being captured", self.refused("mapping", "build_map")[1])
+        self.assertIn("still being saved", self.refused("mapping", "build_map")[1])
         fleet, client, agent = fleet_agent("flying", use(call("build_map")), say("Sorry."))
         self.assertIn("no photos", agent.handle("build")["tool_calls"][0]["result"]["refused"])
         fleet, client, agent = fleet_agent("map_ready", use(call("build_map")), say("Building."))

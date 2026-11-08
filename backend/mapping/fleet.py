@@ -498,8 +498,9 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
                       "fit": check_against_room(cameras, tracked)})
     summaries = [{"folder": part["model"].path.name, "registered": part["model"].registered, "points": part["model"].points,
                   "error_px": round(part["model"].error_px, 3), "by_drone": photos_by_drone(part["cameras"]),
-                  "room_fit_m": part["fit"]["median_error_m"] if part["fit"] else None} for part in parts]
-    joined = [part for part in parts if part["fit"] and part["fit"]["median_error_m"] <= ROOM_FIT_LIMIT_M
+                  "room_fit_m": part["fit"]["median_error_m"] if part["fit"] else None,
+                  "room_agreement": part["fit"]["agrees"] if part["fit"] else None} for part in parts]
+    joined = [part for part in parts if part["fit"] and part["fit"]["agrees"] >= MIN_ROOM_AGREEMENT
               and part["model"].registered >= MIN_JOIN_PHOTOS]
     main = parts[0]
     if joined:  # room coordinates, so sub-maps that share no view still line up

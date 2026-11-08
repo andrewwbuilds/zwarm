@@ -401,6 +401,17 @@ def inside_flight(cloud: np.ndarray, centres: np.ndarray, reach_m: float = CLOUD
         & (cloud[:, 2] >= -1.0) & (cloud[:, 2] <= high[2] + reach_m)
 
 
+def distinct_maps(parts: list[dict]) -> list[dict]:
+    """The models that each add real photos, largest first. COLMAP can place some photos twice, in a small side model."""
+    distinct, seen = [], set()
+    for part in parts:
+        fresh = set(part["cameras"]) - seen
+        if len(fresh) >= MIN_JOIN_PHOTOS:
+            distinct.append(part)
+            seen |= fresh
+    return distinct
+
+
 def read_tracked(folder: Path) -> dict[str, list[float]]:
     """Photo name -> where the tracker said its drone was, for the photos that have a tracked position."""
     sources_path = folder / "photos.json"

@@ -441,6 +441,9 @@ class Toolbox:
             before = self.missions.status() or {}
             status = self.missions.start(args["kind"], args["region"], args.get("target"))
         note = f" {args['note']}" if args.get("note") else ""
+        if args["kind"] == "map" and before.get("kind") == "map" and before.get("state") in ACTIVE_STATES:
+            return {"ok": True, "text": f"Already mapping, so the same map carries on with {_region_words(args['region'])}.",
+                    "mission": _mission_summary(status)}
         return {"ok": True, "text": f"Started: {describe('start_mission', args)}.{note}", "mission": _mission_summary(status)}
 
     def _run_focus_region(self, args: dict) -> dict:

@@ -152,6 +152,33 @@ class DemoFlight(Scored, bench.Flight):
             self.failed.append(problem)
 
 
+class DemoFloorFlight(Scored, bench.Flight):
+    """The demo room on floor tags, as on a real flight: its furniture hides tags and gets flown near. Slow, since frames are rendered."""
+
+    def __init__(self, seed, capture=None, limit=270.0):
+        self.world = demo_world()
+        bench.Flight.__init__(self, self.world.scene, self.world.pads, seed, fence=self.world.fence)
+        self.room = self.world.room()
+        configs = [DroneConfig(k, (v[0], v[1], 0.0)) for k, v in self.world.pads.items()]
+        optics = {c.id: DroneOptics(c.pad[0], c.pad[1], c.yaw) for c in configs}
+        self.tracker = InsideOutTracker(optics, self.world.anchors, self.world.fence)
+        self.video = SimVideo(self.fleet, self.tracker, self.world.scene, seed=seed, rate=DEMO_VIDEO_HZ)
+        self.co = Coordinator(self.room, configs, self.fleet.links, tracker=self.tracker)
+        self.memory = Memory()
+        self.hub = Hub(self.co, self.memory, SimEyes(self.fleet, self.world.items, (), seed))
+        self.add_missions(limit, capture)
+
+    def tick(self) -> None:
+        self.fleet.advance(bench.TICK)
+        self.video.step()
+        self.hub.tick(self.fleet.t, self.tracker.poses(self.fleet.t))
+        self.missions.tick(self.fleet.t)
+
+    def check(self, passed: bool, problem: str) -> None:
+        if not passed:
+            self.failed.append(problem)
+
+
 class FloorMissionFlight(Scored, floor_bench.FloorFlight):
     """Positions come only from the real tag detector on rendered frames, as on a real flight. Much slower."""
 

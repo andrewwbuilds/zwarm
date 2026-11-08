@@ -27,6 +27,11 @@ if [[ $1 == --sim ]]; then
   sim=1
   shift
 fi
+swarm=0
+if [[ $1 == --swarm ]]; then
+  swarm=1
+  shift
+fi
 
 wifi_router() { ipconfig getoption "$WIFI_DEVICE" router 2>/dev/null; }
 # The drone's address is whatever gateway its Wi-Fi hands out, so read it

@@ -456,9 +456,10 @@ class Hub:
         self.co.hold()
         return "Holding position."
 
-    def _do_form(self, c) -> str:
-        flying = [d for d in self.co.drones.values() if d.phase == Phase.AIR]
-        if not flying:
+    @_action
+    def form(self, shape: str) -> str:
+        """Line up the flying drones. shape is 'line', 'ring' or 'grid'."""
+        if not [d for d in self.co.drones.values() if d.phase == Phase.AIR]:
             return "Nothing is flying yet."
         self._stop_search()
         self.orders.clear()

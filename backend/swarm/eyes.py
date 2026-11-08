@@ -183,8 +183,15 @@ class SimEyes:
             self.biases[pair] = (self.rng.gauss(0.0, 0.08), self.rng.gauss(0.0, math.radians(1.5)))
         return self.biases[pair]
 
-    def _visible(self, cam, yaw, points, skip=None) -> bool:
-        seen = in_view(cam, yaw, points)
+    def _true_tilt(self, drone_id: str) -> float:
+        # The picture also tips with the airframe, and no camera is mounted exactly as written down.
+        if drone_id not in self.mount_errors:
+            self.mount_errors[drone_id] = self.rng.gauss(0.0, math.radians(2.0))
+        q = self.fleet.drones[drone_id].sim.drone
+        return self.tilts.get(drone_id, DEFAULT_TILT) + self.mount_errors[drone_id] + q.pitch()
+
+    def _visible(self, cam, yaw, tilt, points, skip=None) -> bool:
+        seen = in_view(cam, yaw, points, tilt=tilt)
         if not seen.any():
             return False
         lines = np.atleast_2d(points)[seen]

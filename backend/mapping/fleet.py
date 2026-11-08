@@ -208,7 +208,8 @@ def static_mask(folder: Path, sample: int = 24) -> Path | None:
 
 
 # ---------------------------------------------------------------- COLMAP
-def colmap_steps(root: str, width: int, height: int, threads: int, gpu: bool, masked: bool, shared_camera: bool = False) -> list:
+def colmap_steps(root: str, width: int, height: int, threads: int, gpu: bool, masked: bool, shared_camera: bool = False,
+                 fix_lens: bool = False) -> list:
     """(log name, COLMAP arguments) for each step. Paths start at `root`, so they run here or on another machine."""
     gpu_flag = "1" if gpu else "0"  # brew's COLMAP has no GPU support and needs this off
     focal = width / 2 / math.tan(math.radians(HFOV_DEG) / 2)

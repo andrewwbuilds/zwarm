@@ -65,6 +65,65 @@ function Plugins() {
   );
 }
 
+interface StabilizerAxis { speed: number; error: number; trim: number; stick: number }
+interface StabilizerStatus {
+  enabled: boolean;
+  state: string;
+  fault: string | null;
+  gain: number;
+  frame_ms: number;
+  inliers: number;
+  forward: StabilizerAxis;
+  lateral: StabilizerAxis;
+}
+
+/* Corrects drift from the video. Off until asked for: see docs/decisions/0001-visual-stabilizer.md. */
+function Stabilizer() {
+  const [status, setStatus] = useState<StabilizerStatus | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/stabilizer`);
+        if (response.ok && !cancelled) setStatus(await response.json());
+      } catch {
+        // The backend may be restarting. Keep the last status until it answers.
+      }
+    };
+    load();
+    const interval = setInterval(load, 500);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  if (!status) return null;
+
+  const toggle = async (e: { currentTarget: HTMLElement }) => {
+    drop(e);
+    const response = await fetch(`${API_BASE_URL}/stabilizer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: !status.enabled }),
+    });
+    if (response.ok) setStatus(await response.json());
+  };
+
+  const { forward: f, lateral: l } = status;
+  return (
+    <>
+      <p><button onClick={toggle}>stabilizer {status.enabled ? "on" : "off"}</button></p>
+      {status.enabled && (
+        <pre>{[
+          `stab    ${status.state}  gain ${status.gain.toFixed(2)}  ${status.inliers} pts  ${status.frame_ms.toFixed(1)} ms`,
+          `  fwd   speed ${num(f.speed, 2, 5)} stick ${num(f.stick, 2, 5)} trim ${num(f.trim, 2, 5)}`,
+          `  side  speed ${num(l.speed, 2, 5)} stick ${num(l.stick, 2, 5)} trim ${num(l.trim, 2, 5)}`,
+          ...(status.fault ? [`  ${status.fault}`] : []),
+        ].join("\n")}</pre>
+      )}
+    </>
+  );
+}
+
 function SimControls({ sim }: { sim: Sim }) {
   const s = sim.state;
   if (!s) return <pre>simulator offline</pre>;

@@ -7,6 +7,7 @@ back as a sentence the model can read and repeat. Nothing in here may raise into
 
 from __future__ import annotations
 
+import difflib
 import logging
 import re
 import threading

@@ -459,7 +459,6 @@ class FindingsCantSteer(unittest.TestCase):
     def test_their_words_arent_kept_for_the_next_turn(self):
         fleet = FakeFleet("mapping")
         self.findings(fleet)
-        from tests.test_agent import Scripted
         client = Scripted(use(call("list_findings")), say("One issue."), say("Fine."))
         agent = fleet.agent(client)
         agent.handle("what did it find")

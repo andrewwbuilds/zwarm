@@ -295,6 +295,10 @@ class Hub:
             if self.search is not None:
                 self.search.coverage.look(p, yaw)
 
+    def _pose_at(self, drone_id: str, t: float) -> tuple[np.ndarray, float]:
+        history = self.poses[drone_id]
+        return min(history, key=lambda entry: abs(entry[0] - t))[1:] if history else (self.co.drones[drone_id].tracked.p.copy(), self.co.drones[drone_id].tracked.yaw)
+
     def _note_misses(self, p, yaw: float, seen_now: set[int]) -> None:
         """Looked straight at something the memory holds and saw nothing there: count it against it."""
         for thing in list(self.memory.things.values()):

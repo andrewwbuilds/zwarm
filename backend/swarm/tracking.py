@@ -65,9 +65,85 @@ class SwarmFileError(ValueError):
 
 
 @dataclass(frozen=True)
-class CameraModel:
-    """What a camera is (intrinsics) and where it is (world to camera)."""
+class Anchor:
+    """A tag lying flat on the floor. `size` is the edge of its inner white square, not of the whole tag."""
 
+    id: str  # "tag:12"
+    x: float
+    y: float
+    size: float
+    yaw_deg: float = 0.0  # the direction the top of the printed page points, 0 being +x
+
+    @property
+    def tag(self) -> int:
+        return int(self.id.partition(":")[2])
+
+    def corners(self) -> np.ndarray:
+        yaw = math.radians(self.yaw_deg)
+        up_page = np.array([math.cos(yaw), math.sin(yaw), 0.0])
+        right = np.array([math.sin(yaw), -math.cos(yaw), 0.0])
+        center = np.array([self.x, self.y, 0.0])
+        return np.array([center + x * right + y * up_page for x, y, _ in local_corners(self.size)])
+
+
+def load_anchors(section: dict) -> dict[str, Anchor]:
+    """The swarm file's "anchors" section. Refuses a missing size, because every position scales with it."""
+    if not isinstance(section, dict):
+        raise SwarmFileError('"anchors" must be an object with tag_family, white_square_edge_m and tags')
+    family = section.get("tag_family")
+    if family != TAG_FAMILY:
+        raise SwarmFileError(f"tag_family must be {TAG_FAMILY!r}, got {family!r}")
+    edge = section.get("white_square_edge_m")
+    if edge is None:
+        raise SwarmFileError("white_square_edge_m is missing. Measure the white square inside a printed tag's black "
+                             "ring, in metres. It is 5/9 of the tag's width, and every position and height scales with it.")
+    edge = float(edge)
+    if not 0.02 <= edge <= 0.5:
+        raise SwarmFileError(f"white_square_edge_m is {edge}, which isn't a plausible size in metres")
+    anchors = {}
+    for entry in section.get("tags", ()):
+        tag = int(entry["tag"])
+        anchor = Anchor(f"tag:{tag}", float(entry["x"]), float(entry["y"]), edge, float(entry.get("rotation_deg", 0.0)))
+        if anchor.id in anchors:
+            raise SwarmFileError(f"tag {tag} is listed twice")
+        anchors[anchor.id] = anchor
+    if not anchors:
+        raise SwarmFileError('"anchors" lists no tags')
+    return anchors
+
+
+def tag_grid(origin=(-2.0, 2.0), spacing: float = 1.0, columns: int = 5, rows: int = 5, start_id: int = 0,
+             across_deg: float = -90.0, rotation_deg: float = 0.0) -> list[dict]:
+    """Tags in reading order for someone standing at the near edge, facing +x.
+
+    The first tag is near-left. Ids rise to the right along each row (-y), and the next row is further
+    away (+x), so with the defaults id 0 is at (-2, 2) and id 24 at (2, -2), every tag's top toward +x.
+    """
+    across = (math.cos(math.radians(across_deg)), math.sin(math.radians(across_deg)))
+    down = (-across[1], across[0])
+    return [{"tag": start_id + r * columns + c,
+             "x": round(origin[0] + c * spacing * across[0] + r * spacing * down[0], 3),
+             "y": round(origin[1] + c * spacing * across[1] + r * spacing * down[1], 3),
+             "rotation_deg": rotation_deg}
+            for r in range(rows) for c in range(columns)]
+
+
+def anchors_section(edge: float | None, tags: list[dict]) -> dict:
+    return {"tag_family": TAG_FAMILY, "white_square_edge_m": edge, "tags": tags}
+
+
+def grid_layout(lo, hi, spacing: float, size: float, first_id: int = 0) -> list[Anchor]:
+    """Tags in a centred grid over a fence, as many as fit. For simulated rooms."""
+    columns = int((hi[0] - lo[0]) // spacing) + 1
+    rows = int((hi[1] - lo[1]) // spacing) + 1
+    if first_id + columns * rows > len(TAGS):
+        raise ValueError(f"{columns} x {rows} needs {columns * rows} tags; only {len(TAGS)} exist. Use wider spacing.")
+    origin = ((lo[0] + hi[0] - (columns - 1) * spacing) / 2, (lo[1] + hi[1] - (rows - 1) * spacing) / 2)
+    return [Anchor(f"tag:{t['tag']}", t["x"], t["y"], size) for t in tag_grid(origin, spacing, columns, rows, first_id, 0.0)]
+
+
+@dataclass(frozen=True)
+class Lens:
     matrix: np.ndarray
     distortion: np.ndarray
     rvec: np.ndarray | None = None

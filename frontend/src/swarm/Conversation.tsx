@@ -198,7 +198,8 @@ export default function Conversation({ api, events, agent, plan }: Props) {
       const reason = error instanceof Error ? error.message : String(error);
       setLocal((old) => [...old, { key: key(), after, kind: "error", text: `"${text}" didn't get through: ${reason}.` }]);
     } finally {
-      setRunning((n) => n - 1);
+      runningNow.current -= 1;
+      setRunning(runningNow.current);
     }
   };
 

@@ -542,6 +542,7 @@ app.add_middleware(
 RAW_Q: queue.Queue = DroppingQueue(maxsize=2)          # thread-safe → pump
 
 flight_controller: Optional[FlightController] = None
+stabilizer_service: Optional[stabilizing.StabilizerService] = None
 receiver: Optional[VideoReceiverService] = None
 runner: Optional[trajectory.Runner] = None
 planned: dict = {}

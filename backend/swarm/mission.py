@@ -1074,6 +1074,7 @@ class MissionManager:
                     self.took_off[d.id] = now
                     self.warned.discard(d.id)
                     self.limited.discard(d.id)
+                    self.total_warned.discard(d.id)  # every unswapped flight gets told: it's the only guard across flights
             elif d.id in self.took_off:
                 self.total_air[d.id] = self.total_air.get(d.id, 0.0) + now - self.took_off.pop(d.id)
                 continue

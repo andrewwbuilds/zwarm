@@ -127,10 +127,10 @@ class Coverage:
         index = int(np.argmax(score))
         if score[index] <= 0.0:
             return None
-        return Viewpoint(self.candidates[index].copy(), float(self.candidate_yaws[index]), np.flatnonzero(self.sees[index] & wanted))
+        return Viewpoint(self.candidates[index].copy(), float(self.candidate_yaws[index]), np.flatnonzero(sees[index] & wanted))
 
-    def standoff(self, p, target, avoid=(), keep_away: float = 0.7) -> Viewpoint | None:
-        """The nearest place to get a clear close look at a thing on the floor."""
+    def standoff(self, p, target, avoid=(), keep_away: float = 0.7, tilt: float = DEFAULT_TILT) -> Viewpoint | None:
+        """The nearest place to get a clear close look at a thing, near the middle of the picture."""
         self._refresh()
         if not len(self.candidates):
             return None

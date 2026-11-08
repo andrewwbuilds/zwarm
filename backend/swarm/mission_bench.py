@@ -126,6 +126,29 @@ class MissionFlight(Scored, HubFlight):
         self.missions.tick(self.fleet.t)
 
 
+class DemoFlight(Scored, bench.Flight):
+    """The demo room: furniture on the map, more that isn't, and staged damage. Nothing is rendered here."""
+
+    def __init__(self, seed, capture=None):
+        self.world = demo_world()
+        bench.Flight.__init__(self, self.world.scene, self.world.pads, seed, fence=self.world.fence)
+        self.room = self.world.room()
+        configs = [DroneConfig(k, (v[0], v[1], 0.0)) for k, v in self.world.pads.items()]
+        self.co = Coordinator(self.room, configs, self.fleet.links)
+        self.memory = Memory()
+        self.hub = Hub(self.co, self.memory, SimEyes(self.fleet, self.world.items, (), seed))
+        self.add_missions(capture=capture)
+
+    def tick(self) -> None:
+        self.fleet.advance(bench.TICK)
+        self.hub.tick(self.fleet.t, self.fleet.poses())
+        self.missions.tick(self.fleet.t)
+
+    def check(self, passed: bool, problem: str) -> None:
+        if not passed:
+            self.failed.append(problem)
+
+
 class FloorMissionFlight(Scored, floor_bench.FloorFlight):
     """Positions come only from the real tag detector on rendered frames, as on a real flight. Much slower."""
 

@@ -141,7 +141,6 @@ export default function Conversation({ api, events, agent, plan }: Props) {
   const logRef = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   const nextKey = useRef(0);
-  const inputRef = useRef<HTMLInputElement>(null);
   const hasSpeech = useMemo(speechSupported, []);
 
   const lines = useMemo(() => mergeLines(events, local), [events, local]);

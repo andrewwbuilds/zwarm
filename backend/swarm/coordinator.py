@@ -446,6 +446,17 @@ class Coordinator:
                 d.fault("tracking", f"no pose for {age:.1f} s; landing it where it is")
                 self._toggle_land(d, now, blind=True)
                 return
+            sigma = d.tracked.sigma
+            if sigma > SIGMA_LAND and d.link.connected:
+                d.check = None
+                d.fault("tracking", f"position uncertain by {sigma:.2f} m after {d.tracked.fix_age:.0f} s without a "
+                                    "floor marker; landing it where it is")
+                self._toggle_land(d, now, blind=True)
+                return
+            if sigma > SIGMA_HOLD:
+                d.fault("tracking", f"position uncertain by {sigma:.2f} m; holding until it sees a floor marker")
+            elif age <= STALE_S:
+                d.clear("tracking")
             if age <= STALE_S:
                 self._watch_for_runaway(d, now)
 

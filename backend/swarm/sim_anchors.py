@@ -185,7 +185,12 @@ class SimVideo:
         wide = anchors_in_view(self.tracker.anchors, self.lens, math.radians(optics.tilt_deg), (q.x, q.y, q.z), q.yaw(),
                                max_range=4.0, margin_px=-80.0)
         if not wide:
+            # The drone is still sending video, only this frame isn't worth drawing. Stand in for how much the picture changed.
             self.culled += 1
+            where = np.array([q.x, q.y, q.z, q.yaw()])
+            before = self.last_culled.get(key)
+            self.last_culled[key] = where
+            self.tracker.note_frame(key, t, None if before is None else (0.0 if np.abs(where - before).max() < 1e-3 else 5.0))
             return
         self.rendered += 1
         focal = self.lens.matrix[0, 0]

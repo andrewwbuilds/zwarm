@@ -356,6 +356,7 @@ class MockSwarm {
     this.estopped = false;
     this.say("mission", `Plan approved. Taking off to ${kind} ${region}.`);
     this.startMission(kind, region, null);
+    return { ok: true, reply: "" };
   }
 
   reject(id: string): void {

@@ -373,8 +373,18 @@ class Agent:
         self._remember([{"role": "user", "content": "(the operator gave a stop command)"}, {"role": "assistant", "content": reply}])
         return {"reply": reply, "plan": None, "tool_calls": []}
 
+    def _note(self, text: str) -> None:
+        """Something that happened outside any turn, so the model's history doesn't go stale."""
+        self._remember([{"role": "user", "content": f"{FLEET_NOTE}{text[:300]})"}, {"role": "assistant", "content": "Noted."}])
+
     def _remember(self, messages: list[dict]) -> None:
-        kept = [{**m, "content": str(m.get("content") or "")[:MAX_REMEMBERED_RESULT]} if m["role"] == "tool" else m for m in messages]
+        kept = []
+        for m in messages:
+            if m["role"] == "tool":
+                # A finding's words came from a vision model. Kept, they'd be in front of the model on the next turn too.
+                content = FINDINGS_LEFT_OUT if m.get("name") == "list_findings" else str(m.get("content") or "")[:MAX_REMEMBERED_RESULT]
+                m = {**m, "content": content}
+            kept.append(m)
         with self._state:
             self._history.append(kept)
             del self._history[:-HISTORY_TURNS]

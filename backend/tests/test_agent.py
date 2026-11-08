@@ -656,6 +656,13 @@ class ModelDownTests(unittest.TestCase):
             self.assertIn("can't reach", result["reply"])
         self.assertEqual(spoken_mission("explore the kitchen"), None)
 
+    def test_results_read_as_sentences_without_a_model(self):
+        for setup, text, word in (("mapping", "which areas havent been explored", "Least seen"), ("flying", "status", "a air")):
+            fleet, client, agent = fleet_agent(setup, down)
+            reply = agent.handle(text)["reply"]
+            self.assertIn(word, reply)
+            self.assertNotIn("{", reply)
+
     def test_an_unknown_sentence_does_nothing(self):
         fleet, client, agent = fleet_agent("flying", down)
         result = agent.handle("sing me a song")

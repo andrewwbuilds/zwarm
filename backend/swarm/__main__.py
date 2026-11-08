@@ -175,6 +175,9 @@ def cmd_check(args) -> int:
         if last[d.id]:
             p = np.mean(np.array(last[d.id]), axis=0)
             print(f"  position from tags: ({p[0]:.2f}, {p[1]:.2f}), {p[2]:.2f} m up. Pad: ({d.pad[0]}, {d.pad[1]}). Check this against a tape measure.")
+        if d.focal_px is None:
+            print("  focal length not fitted: run fit-focal. Until then every position rests on a guessed field of view.")
+            good = False
         unknown = tracker.readers[d.id].unknown
         if unknown:
             print(f"  also saw tags not in the file: {sorted(unknown)}")

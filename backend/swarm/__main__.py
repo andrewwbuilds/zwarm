@@ -190,19 +190,17 @@ def cmd_check(args) -> int:
     return 0 if good else 1
 
 
-def cmd_bench(args) -> int:
-    from swarm.bench import main
-
-    return main(args.rest)
-
-
-def cmd_floor_bench(args) -> int:
-    from swarm.floor_bench import main
-
-    return main(args.rest)
-
-
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else list(argv)
+    # These two parse their own options, which argparse can't pass through untouched.
+    if argv[:1] == ["bench"]:
+        from swarm.bench import main as bench
+
+        return bench(argv[1:])
+    if argv[:1] == ["floor-bench"]:
+        from swarm.floor_bench import main as floor_bench
+
+        return floor_bench(argv[1:])
     parser = argparse.ArgumentParser(prog="python -m swarm", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
 

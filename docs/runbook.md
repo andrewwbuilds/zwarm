@@ -196,6 +196,8 @@ Read `video_change` for this drone from `curl -s localhost:8010/state | jq '.anc
 
 | Fault | Cause and fix |
 |---|---|
+| "probably on the floor. No landing was sent" | It went low or fell, or its camera stopped moving, with no tag in view. A land toggle would start its motors, so none is sent, and its Pi is told it's down. **LOOK AT IT BEFORE TOUCHING IT.** On the floor: reset-pads. If it's in the air after all, a sighting puts it back to holding by itself. If it stays unseen: "mark flying" then Land all on /fleet, or E-STOP |
+| "landing was sent but it's still in the air" | The one land packet was probably lost. It's holding and won't try again by itself. Press LAND: its Pi is told it's still flying first, or it would drop the land. On /fleet, the same thing by hand is "mark flying", then Land all |
 | "takeoff was sent but it was not seen to climb" | It may be hovering unseen. **LOOK AT IT. The console's LAND ignores a drone it thinks is on the ground.** In the air: Land all on /fleet. On the floor with motors stopped: "mark landed" on /fleet. Then reset-pads. See the tuning table |
 | "moved the wrong way" | Nose wasn't north, or `rotation_deg` is wrong on a tag. Reset the drone and rerun step 6 |
 | "barely responded to the sticks" | See `speed_per_stick` in the tuning table. This is the most likely real-world mismatch: the value is an estimate |

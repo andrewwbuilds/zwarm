@@ -40,7 +40,6 @@ export interface ConsoleData {
   state: ZwarmState | null;
   link: Link;
   events: LogEvent[];
-  lastEvent: number;
   findings: Finding[];
   mapStatus: MapStatus | null;
   setFindingStatus: (id: string, status: FindingStatus) => Promise<void>;

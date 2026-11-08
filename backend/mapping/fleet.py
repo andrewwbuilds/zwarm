@@ -564,8 +564,6 @@ class FleetCapture:
             if self.state == "capturing":
                 self.stopping.set()
                 self.state = "captured"
-        if capturing and thread is not None:
-            thread.join(timeout=2.0)
         return self.status()
 
     def status(self) -> dict:

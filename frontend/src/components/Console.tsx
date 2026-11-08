@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { CameraTiltDirection, SpeedTier, useControls } from "../hooks/useControls";
 import type { SimState, useSim } from "../hooks/useSim";
 import { usePlugins } from "../hooks/usePlugins";

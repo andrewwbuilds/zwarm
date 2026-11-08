@@ -134,7 +134,7 @@ Repeat for 2 and 3, then rerun step 6. The height should now match the tape. If 
 Each stage fits on one battery. Keep this running in a spare terminal. It prints each drone's phase, position, uncertainty and faults every second:
 
 ```sh
-while sleep 1; do curl -s localhost:8010/zwarm/state | jq -c '{closest, tick_max_ms: .loop.max_ms, drones: [.drones[] | {id, phase, p, sigma, fix_age, flight_s, faults}]}'; done
+while sleep 1; do curl -s localhost:8010/zwarm/state | jq -c '{pair_m, pair_lowest_m, tick_max_ms: .loop.max_ms, drones: [.drones[] | {id, phase, p, sigma, fix_age, flight_s, faults}]}'; done
 ```
 
 Between flights: land, power off, swap the battery, power on, set it on its pad with the nose north, wait about 35 s until `tools/pi/fleet.sh status` shows it answering, and then:

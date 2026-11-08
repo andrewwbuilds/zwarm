@@ -627,6 +627,13 @@ class FleetCapture:
                 return results[-1].parent.name, json.loads(results[-1].read_text())
         except (OSError, ValueError) as error:
             logger.warning("[map] couldn't read the last map: %s", error)
+        return None
+
+    def _load_newest(self) -> None:
+        """A restarted backend still serves the last finished map."""
+        newest = self._newest()
+        if newest is not None:
+            self.name, self.result, self.state = newest[0], newest[1], "done"
 
     def _drone_ids(self) -> list[str]:
         if self.drones is not None:

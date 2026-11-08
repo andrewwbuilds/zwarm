@@ -784,6 +784,26 @@ class MapTests(unittest.TestCase):
         capture.stop.assert_called_once()
         capture.build.assert_called_once_with(name)
 
+    def test_a_finished_map_can_be_refocused_while_flying_with_the_same_photos(self):
+        capture = mock.Mock()
+        f = Fleet(capture=capture)
+        f.run()
+        f.missions.start("map")
+        f.missions.settle()
+        f.missions.stop()
+        self.assertTrue(f.missions.refocusable())
+        status = f.missions.focus("north")
+        f.missions.settle()
+        self.assertEqual((status["kind"], status["region"]), ("map", "north"))
+        self.assertTrue(f.missions.active)
+        capture.start.assert_called_once()  # same map, more photos
+        capture.build.assert_not_called()
+
+    def test_nothing_flying_cant_be_refocused(self):
+        f = Fleet()
+        with self.assertRaises(MissionError):
+            f.missions.focus("north")
+
     def test_an_explore_touches_no_capture(self):
         capture = mock.Mock()
         f = Fleet(capture=capture)

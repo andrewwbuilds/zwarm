@@ -39,7 +39,7 @@ _default_limits = None  # set by fly() for the length of one flight
 
 
 class FloorFlight(bench.Flight):
-    def __init__(self, seed, pads=THREE, boxes=(), conditions=None, limits=None, video=None, tags=None, assumed_fov=90.0):
+    def __init__(self, seed, pads=THREE, boxes=(), conditions=None, limits=None, video=None, tags=None, assumed_fov=90.0, frame_rate=None):
         limits = limits or _default_limits
         scene = Scene(name="hall", bounds=HALL, boxes=tuple(boxes))
         super().__init__(scene, pads, seed, conditions, limits, FENCE)

@@ -363,6 +363,7 @@ class MockSwarm {
     if (this.plan?.id !== id) return { ok: false, reply: "That plan is already gone." };
     this.plan = null;
     this.say("mission", "Plan rejected. Nothing took off.");
+    return { ok: true, reply: "" };
   }
 
   findings(): Finding[] {

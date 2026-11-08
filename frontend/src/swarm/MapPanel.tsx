@@ -72,6 +72,7 @@ export default function MapPanel({ api, status }: { api: Api; status: MapStatus 
       </div>
       <p className="zw-3d-status">{statusLine(status, cloud?.count ?? 0)}{cloud ? ". Drag to orbit." : ""}</p>
       {(status?.error || problem) && <p className="zw-fault">{problem ?? status?.error}</p>}
+      {status?.warnings[0] && <p className="zw-3d-status">{status.warnings[0]}</p>}
     </section>
   );
 }

@@ -173,6 +173,14 @@ class RegionCoverageTests(unittest.TestCase):
         self.see_everything()
         self.assertIsNone(self.coverage.suggest("east"))
 
+    def test_the_last_patch_still_gets_a_viewpoint(self):
+        self.see_everything()
+        self.coverage.counts[10] = 0
+        claimed = np.zeros(len(self.coverage.cells), bool)
+        self.assertIsNone(self.coverage.best(np.zeros(3), 0.0, claimed), "best() alone leaves one patch")
+        view = self.coverage.leftovers(np.zeros(3), claimed, (), 0.7, (), DEFAULT_TILT)
+        self.assertEqual(view.cells.tolist(), [10])
+
     def test_a_few_views_cover_a_region(self):
         views = self.coverage.cover("north", 12)
         self.assertLessEqual(len(views), 12)

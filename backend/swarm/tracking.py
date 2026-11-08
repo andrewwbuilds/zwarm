@@ -166,12 +166,17 @@ class Lens:
                    int(data["width"]), int(data["height"]), data.get("reprojection_px"))
 
     def save(self, path: str | Path) -> None:
-        Path(path).write_text(json.dumps({
-            "matrix": self.matrix.tolist(), "distortion": self.distortion.tolist(),
-            "rvec": None if self.rvec is None else self.rvec.tolist(),
-            "tvec": None if self.tvec is None else self.tvec.tolist(),
-            "reprojection_px": self.reprojection_px,
-        }, indent=1))
+        Path(path).write_text(json.dumps({"matrix": self.matrix.tolist(), "distortion": self.distortion.tolist(),
+                                          "width": self.width, "height": self.height,
+                                          "reprojection_px": self.reprojection_px}, indent=1))
+
+    def for_size(self, width: int, height: int) -> "Lens":
+        if width == self.width and height == self.height:
+            return self
+        matrix = self.matrix.copy()
+        matrix[0] *= width / self.width
+        matrix[1] *= height / self.height
+        return Lens(matrix, self.distortion, width, height, self.reprojection_px)
 
 
 def lens_from_checkerboards(images: list[np.ndarray], inner_corners: tuple[int, int], square_m: float) -> CameraModel:

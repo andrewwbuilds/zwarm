@@ -174,7 +174,7 @@ export default function Conversation({ api, events, agent, plan }: Props) {
   const send = async (raw: string) => {
     const text = raw.trim();
     if (!text) return;
-    if (running >= MAX_RUNNING) {
+    if (runningNow.current >= MAX_RUNNING && !isStopPhrase(text)) {
       setDraft(text);
       addError("Two commands are still running. HOLD, LAND and E-STOP work now, or send this again in a moment.");
       return;

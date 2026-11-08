@@ -567,6 +567,16 @@ def build_splat(folder: Path, steps: int = SPLAT_STEPS) -> Path:
     return train(folder / "images", model, folder, steps)
 
 
+def tracked_pose_of(hub, max_age_s: float = 0.5) -> Callable:
+    """A pose_of for FleetCapture that reads the hub's tracker, and gives None once a drone has lost its floor tags."""
+    def pose_of(drone: str):
+        tracked = hub.co.drones[drone].tracked
+        if getattr(tracked, "fix_age", 0.0) > max_age_s:
+            return None
+        return tracked.p
+    return pose_of
+
+
 # ---------------------------------------------------------------- the part everyone else calls
 class FleetCapture:
     def __init__(self, frames, root, drones=None, max_photos: int | None = None, on_event=None, pose_of=None):

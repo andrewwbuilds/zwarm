@@ -153,11 +153,14 @@ if (( ! sim )) && ! on_drone_wifi; then
   fi
   echo "Joining $DRONE_WIFI. This Mac has no internet until you quit."
   before=$(ipconfig getifaddr "$WIFI_DEVICE")
-  networksetup -setairportnetwork "$WIFI_DEVICE" "$DRONE_WIFI"
-  for i in {1..30}; do
-    now=$(ipconfig getifaddr "$WIFI_DEVICE")
-    [[ -n $now && $now != $before && -n $(wifi_router) ]] && break
-    sleep 1
+  # networksetup can miss a network a scan has just seen, so it gets more than one go.
+  for attempt in 1 2 3; do
+    networksetup -setairportnetwork "$WIFI_DEVICE" "$DRONE_WIFI"
+    for i in {1..12}; do
+      now=$(ipconfig getifaddr "$WIFI_DEVICE")
+      [[ -n $now && $now != $before && -n $(wifi_router) ]] && break 2
+      sleep 1
+    done
   done
   if [[ -z $(wifi_router) || $(ipconfig getifaddr "$WIFI_DEVICE") == $before ]]; then
     echo "Could not join $DRONE_WIFI. Is the drone powered on?" >&2

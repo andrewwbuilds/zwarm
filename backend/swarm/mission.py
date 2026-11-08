@@ -788,7 +788,7 @@ class MissionManager:
                 raise MissionError(f"The camera looks {math.degrees(tilt):.0f} degrees down and can't look up, and I can't "
                                    f"find a clear place below the ceiling limit to get the {label} in the picture.")
             return tasks, region, label
-        things = [t for t in memory.known() if not t.moves and self.regions.mask(region, t.p[None, :])[0]]
+        things = [t for t in [*memory.known(), *self._furniture()] if not t.moves and self.regions.mask(region, t.p[None, :])[0]]
         for thing in things[:MAX_THINGS]:
             tasks += self._thing_tasks(thing, tilt, VIEWS_PER_THING_IN_REGION)
         for view in coverage.cover(region, MAX_FLOOR_VIEWS):

@@ -179,8 +179,8 @@ class Lens:
         return Lens(matrix, self.distortion, width, height, self.reprojection_px)
 
 
-def lens_from_checkerboards(images: list[np.ndarray], inner_corners: tuple[int, int], square_m: float) -> CameraModel:
-    """Intrinsics from photos of a checkerboard at varied angles."""
+def lens_from_checkerboards(images: list[np.ndarray], inner_corners: tuple[int, int], square_m: float) -> Lens:
+    """A lens model from photos of a checkerboard at varied angles."""
     columns, rows = inner_corners
     pattern = np.zeros((columns * rows, 3), np.float32)
     pattern[:, :2] = np.mgrid[0:columns, 0:rows].T.reshape(-1, 2) * square_m

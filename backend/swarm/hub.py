@@ -397,7 +397,8 @@ class Hub:
                 order.stage = "done"
                 return
             self.aim(d, order.face)
-            if abs(_angle(order.face, d.tracked.yaw)) < FACED or now - order.since > TURN_TIMEOUT_S:
+            # d.config.yaw, not order.face: the tracker may have overruled the heading asked for.
+            if abs(_angle(d.config.yaw, d.tracked.yaw)) < FACED or now - order.since > TURN_TIMEOUT_S:
                 order.stage = "done"
 
     def _look_along_path(self, d) -> None:

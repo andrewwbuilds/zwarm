@@ -1,13 +1,14 @@
-"""Where every drone is, from ArUco markers seen by fixed cameras.
+"""Where every drone is, from its own camera tilted down at AprilTags laid flat on the floor.
 
-Each drone carries a flat marker on top, printed with its top edge toward the nose. Markers fixed
-in the room at known positions (anchors) tell each camera where it is. From then on, one sighting
-of a drone's marker gives its position and heading in room coordinates.
+Each tag's position in the room is known, so seeing one gives the camera's position, height and
+heading. Between sightings the pose is carried forward from what the drone was told to do, and its
+uncertainty grows until the next sighting shrinks it. The coordinator widens its margins to match.
 
-Marker ids, in the 4x4_50 dictionary:
-    1 to 29    drones
-    30 to 39   things to keep clear of, such as a person wearing one
-    40 to 49   anchors
+A drone on the floor can't see the floor: with the camera 45 degrees down, the top of the view
+reaches only about 0.2 m ahead from 5 cm up. So every flight starts from its pad's position in the
+swarm file, and the first real sighting comes during the climb.
+
+Nothing here has been tested on a real drone. Accuracy figures come from the simulator's camera.
 """
 
 from __future__ import annotations

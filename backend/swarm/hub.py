@@ -476,7 +476,15 @@ class Hub:
         self._stop_search()
         self.orders.clear()
         self.co.land_here(self.now)
-        return "Landing where they are."
+        return "Landing where they are." + self._unsure_note()
+
+    def _unsure_note(self) -> str:
+        """A landing doesn't reach a drone that may be on the floor, and the operator shouldn't think it did."""
+        unsure = [d.id for d in self.co.drones.values() if d.unknown_air]
+        if not unsure:
+            return ""
+        return (f" Nothing was sent to {_names(unsure)}: it may be on the floor or hovering unseen, and a landing would start its "
+                "motors if it's down. Check it by eye. If it's flying, use E-STOP or /fleet.")
 
     @_action
     def hold(self) -> str:

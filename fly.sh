@@ -140,7 +140,13 @@ if (( ! sim )) && ! on_drone_wifi; then
     exit 1
   fi
   # Use whichever S20 network is actually in range: the drone's name can change.
-  visible=("${(@f)$(swift tools/scan_drone_wifi.swift 2>/dev/null)}")
+  # A drone that was just powered on takes a while to start broadcasting.
+  for i in {1..20}; do
+    visible=("${(@f)$(swift tools/scan_drone_wifi.swift 2>/dev/null)}")
+    [[ -n $visible[1] ]] && break
+    (( i == 1 )) && echo "Waiting for a drone's Wi-Fi. If its lights are off or steady, turn it off and on."
+    sleep 2
+  done
   if [[ -n $visible[1] && ${visible[(Ie)$DRONE_WIFI]} -eq 0 ]]; then
     echo "$DRONE_WIFI is not in range; using $visible[1] instead."
     DRONE_WIFI=$visible[1]

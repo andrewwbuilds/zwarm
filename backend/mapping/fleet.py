@@ -606,6 +606,7 @@ class FleetCapture:
         self.max_photos = max_photos or int(os.environ.get("MAP_BUILD_PHOTOS") or MAX_PHOTOS)
         self.on_event = on_event
         self.pose_of = pose_of
+        self.flying = flying
         self.lock = threading.Lock()
         self.name: str | None = None
         self.state = "idle"

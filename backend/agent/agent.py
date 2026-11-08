@@ -398,7 +398,7 @@ class Agent:
             if turn.allowed is not None and call.name not in turn.allowed:
                 raise Refused(f"{call.name} isn't available when reporting an event.")
             if turn.epoch != self._epoch:
-                raise Refused("The operator just gave a stop command, so this was dropped.")
+                raise Refused(STOPPED)
             args = self.box.check(call.name, call.arguments)
             record["arguments"] = args
             if self.box.needs_approval(call.name, args):

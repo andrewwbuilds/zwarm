@@ -196,7 +196,8 @@ class Zwarm:
         fleet = self.fleet
         stats = self.frames.stats() if hasattr(self.frames, "stats") else {}
         return {"collisions": sorted(f"{a}-{b}" for a, b in fleet.collisions), "contacts": sorted(fleet.contacts), "crashed": fleet.crashed(),
-                "min_separation": None if not math.isfinite(fleet.min_separation) else round(fleet.min_separation, 3), "camera": plain(stats)}
+                "min_separation": None if not math.isfinite(fleet.min_separation) else round(fleet.min_separation, 3),
+                "truth": {k: fleet.truth(k).round(3).tolist() for k in fleet.drones}, "camera": plain(stats)}
 
     def close(self) -> None:
         inspector = self.missions.inspector

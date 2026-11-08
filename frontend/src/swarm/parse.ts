@@ -279,9 +279,9 @@ function parseFinding(v: unknown): Finding | null {
     id,
     t: num(f.t) ?? 0,
     drone: text(f.drone) ?? "",
-    x: num(f.x),
-    y: num(f.y),
-    z: num(f.z),
+    // Where the camera was aimed on the floor when known, otherwise where the drone was.
+    x: num(f.look_x) ?? num(f.x),
+    y: num(f.look_y) ?? num(f.y),
     summary: text(f.summary) ?? "No description.",
     severity: text(f.severity) ?? "unrated",
     confidence: num(f.confidence),

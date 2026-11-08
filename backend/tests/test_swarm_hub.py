@@ -338,7 +338,7 @@ class HubRuleTests(unittest.TestCase):
         self.co = Coordinator(self.room, configs, self.links)
         self.eyes = FakeEyes()
         self.memory = Memory()
-        self.hub = Hub(self.co, self.memory, self.eyes)
+        self.hub = Hub(self.co, self.memory, self.eyes, tilts={"a": 0.0, "b": 0.0})  # level cameras keep the sums simple
         self.t = 0.0
         self.poses = {"a": (-2.0, -1.0, 1.0), "b": (-2.0, 1.0, 1.0)}
         for d in self.co.drones.values():

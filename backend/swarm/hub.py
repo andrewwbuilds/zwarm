@@ -139,7 +139,7 @@ class Search:
                 hub.co._set_goal(d, d.tracked.p.copy())
         hub.report(f"{closest.id} may have spotted a {self.label} near {_where(thing.p)}. Going closer to check.")
         others = [d.tracked.p for d in flying if d is not closest]
-        view = self.coverage.standoff(closest.tracked.p, thing.p, avoid=others)
+        view = self.coverage.standoff(closest.tracked.p, thing.p, avoid=others, tilt=hub.tilt_of(closest.id))
         if view is None:
             hub.aim(closest, math.atan2(thing.p[1] - closest.tracked.p[1], thing.p[0] - closest.tracked.p[0]))
         else:

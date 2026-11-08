@@ -507,13 +507,22 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
         if placed.get(drone, 0) < 0.3 * count:
             warnings.append(f"Drone {drone} barely joined the map: {placed.get(drone, 0)} of {count} photos placed. "
                             "Its view may not overlap the other drones'.")
-    if fit is not None and not agrees:
-        warnings.append(f"The map disagrees with where the drones were tracked, by {fit['median_error_m']:.1f} m. It is probably "
-                        "warped or folded, so don't trust its shape. Repeating floor patterns or a drone that never turned can do this.")
-    result = {"photos": total, "by_drone": pooled, "registered": best.registered, "registered_by_drone": placed,
-              "models": summaries, "points": len(xyz), "error_px": round(best.error_px, 3), "warnings": warnings,
-              "masked": mask is not None, "runner": used.name, "in_room": agrees,
-              "room_fit_m": None if fit is None else fit["median_error_m"],
+    if len(joined) > 1:
+        warnings.append(f"The drones' photos didn't link by sight, so {len(joined)} separate maps were joined using tracked "
+                        "positions. Their edges only line up as well as the tracking does.")
+    elif not joined and len([m for m in models if m.registered >= MIN_FIT_PHOTOS]) > 1:
+        warnings.append(f"The photos split into {len(models)} separate maps that don't overlap, and this shows only the largest. "
+                        "Fly so the drones see some of the same floor, or give the build tracked positions.")
+    wrong = [part for part in parts if part["fit"] and part not in joined and part["model"].registered >= MIN_FIT_PHOTOS]
+    if wrong:
+        worst = max(part["fit"]["median_error_m"] for part in wrong)
+        warnings.append(f"A map with {wrong[0]['model'].registered} photos disagrees with where the drones were tracked, by {worst:.1f} m, "
+                        "so it is probably warped or folded" + (" and was left out." if joined else ". Don't trust its shape.") +
+                        " Repeating floor patterns or a drone that never turned can do this.")
+    result = {"photos": total, "by_drone": pooled, "registered": registered, "registered_by_drone": placed,
+              "models": summaries, "points": len(level), "error_px": round(main["model"].error_px, 3), "warnings": warnings,
+              "masked": mask is not None, "runner": used.name, "in_room": bool(joined), "joined_maps": len(served),
+              "room_fit_m": main["fit"]["median_error_m"] if main["fit"] else None,
               "level": {"rotation": rotation.tolist(), "scale": scale, "offset": offset.tolist()}}
     marks = sorted(times.items(), key=lambda item: item[1]) + [("end", time.perf_counter())]
     result["seconds"] = {name: round(next_t - t, 1) for (name, t), (_, next_t) in zip(marks, marks[1:])}

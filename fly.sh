@@ -61,6 +61,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 130' INT TERM
 
+[[ -s $LOG ]] && mv "$LOG" "$LOG.1"  # a crash's reason must survive the next try
 : > "$LOG"
 if (( swarm )); then
   mode=${1:-sim}
@@ -153,9 +154,9 @@ if (( ! sim )) && ! on_drone_wifi; then
   fi
   echo "Joining $DRONE_WIFI. This Mac has no internet until you quit."
   before=$(ipconfig getifaddr "$WIFI_DEVICE")
-  # networksetup can miss a network a scan has just seen, so it gets more than one go.
+  # Joining can miss a network a scan has just seen, so it gets more than one go.
   for attempt in 1 2 3; do
-    networksetup -setairportnetwork "$WIFI_DEVICE" "$DRONE_WIFI"
+    swift tools/join_drone_wifi.swift "$DRONE_WIFI" || networksetup -setairportnetwork "$WIFI_DEVICE" "$DRONE_WIFI"
     for i in {1..12}; do
       now=$(ipconfig getifaddr "$WIFI_DEVICE")
       [[ -n $now && $now != $before && -n $(wifi_router) ]] && break 2
@@ -180,13 +181,19 @@ echo "Checking the link. The motors stay off."
 
 # Without the shutdown limit, an open browser tab's video stream keeps the
 # backend alive, still sending stick packets, after you quit.
-(cd backend && exec uv run --frozen --offline uvicorn web_server:app --timeout-graceful-shutdown 2) >> "$LOG" 2>&1 &
+# Another program on 8000 would stop the backend from starting, and that program isn't ours to stop.
+BACKEND_PORT=8000
+if lsof -nP -iTCP:8000 -sTCP:LISTEN >/dev/null 2>&1; then
+  BACKEND_PORT=8020
+  echo "Another program is using port 8000, so the backend uses $BACKEND_PORT."
+fi
+(cd backend && exec uv run --frozen --offline uvicorn web_server:app --port $BACKEND_PORT --timeout-graceful-shutdown 2) >> "$LOG" 2>&1 &
 pids+=($!)
-(cd frontend && exec node_modules/.bin/vite --strictPort) >> "$LOG" 2>&1 &
+(cd frontend && export VITE_BACKEND_URL=http://localhost:$BACKEND_PORT && exec node_modules/.bin/vite --strictPort) >> "$LOG" 2>&1 &
 pids+=($!)
 
 for i in {1..40}; do
-  curl -sf -m 1 -o /dev/null http://localhost:8000/capabilities \
+  curl -sf -m 1 -o /dev/null http://localhost:$BACKEND_PORT/capabilities \
     && curl -sf -m 1 -o /dev/null http://localhost:5173 && break
   sleep 0.5
 done
@@ -215,10 +222,12 @@ Ready: http://localhost:5173
 
 Land first, then press Ctrl-C here to quit.
 HELP
+(( BACKEND_PORT != 8000 )) && echo "\nTo record a map: cd backend && uv run python -m mapping capture NAME --url http://localhost:$BACKEND_PORT/mjpeg"
 (( sim )) && echo "\nSimulator: state, scene, wind and power cycle are in the panel at the top right."
 
 while kill -0 $pids 2>/dev/null; do
   sleep 1
 done
-echo "A server stopped unexpectedly. See $LOG." >&2
+echo "A server stopped unexpectedly. The end of $LOG:" >&2
+tail -15 "$LOG" >&2
 exit 1

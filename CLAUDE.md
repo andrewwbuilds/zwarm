@@ -62,4 +62,5 @@ npm run dev                                         # /swarm on port 5173, for a
 - `nvidia/nemotron-3-super-120b-a12b` returns 404 on this account.
 - On a loaded machine the frame-rate bars in `test_sim_camera` and `test_slam_sim` fail, so rerun them alone before believing it. `test_mapping_nerf` errors without nerfstudio.
 - The console says REAL DRONES on any `fly` run, even one pointed at simulated backends.
+- `./fly.sh` moves the backend to port 8020 when another program holds 8000, and prints the `mapping capture --url` to use. `mapping capture` still defaults to 8000.
 - Several agents may share this checkout. Stage by path or hunk, never `git add -A`.

@@ -176,6 +176,7 @@ dumps_*/
 
 # fly.sh output
 /fly.log
+/fly.log.1
 
 # Trajectory runs recorded by the backend
 backend/runs/

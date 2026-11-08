@@ -42,6 +42,9 @@ logger = logging.getLogger(__name__)
 
 TICK_S = 0.05
 SHUTDOWN_LAND_S = 25.0
+# A page from one of these can use the API. The console runs on this Mac or a machine on its network.
+# Anything else in the same browser, such as a public website in another tab, mustn't be able to fly the fleet.
+LOCAL_ORIGIN = r"^https?://(localhost|\[::1\]|127(\.\d+){3}|10(\.\d+){3}|192\.168(\.\d+){2}|172\.(1[6-9]|2\d|3[01])(\.\d+){2}|[\w-]+\.local|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])(\.\d+){2})(:\d+)?$"
 
 
 class Runtime:

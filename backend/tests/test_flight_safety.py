@@ -8,7 +8,7 @@ import unittest
 import numpy as np
 
 from swarm.control import Pose
-from swarm.coordinator import Coordinator, DroneConfig, Phase, ResponseCheck
+from swarm.coordinator import DOWN_SETTLED_S, Coordinator, DroneConfig, Phase, ResponseCheck
 from swarm.room import Room
 from swarm.safety import Limits
 

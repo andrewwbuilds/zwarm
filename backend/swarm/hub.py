@@ -102,7 +102,9 @@ class Search:
         self.nobody_since: float | None = None
 
     def flying(self) -> list:
-        return [d for d in self.hub.co.drones.values() if d.phase == Phase.AIR and not d.landing_requested]
+        """Drones that can take work now. One with no link or tracking may be up there, but it won't do as it's told."""
+        co = self.hub.co
+        return [d for d in co.drones.values() if d.phase == Phase.AIR and not d.landing_requested and co._steerable(d, self.hub.now)]
 
     def step(self, now: float) -> None:
         if self.state in ("found", "exhausted", "failed", "stopped"):

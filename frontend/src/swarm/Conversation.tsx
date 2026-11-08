@@ -246,7 +246,6 @@ export default function Conversation({ api, events, agent, plan }: Props) {
 
       <form className="zw-command" onSubmit={submit}>
         <input
-          ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={listening ? "Listening" : "Say or type a command"}

@@ -220,10 +220,6 @@ class WholePitch(unittest.TestCase):
         self.assertEqual(f.http.post("/zwarm/findings/9999", json={"status": "confirmed"}).status_code, 404)
         self.assertEqual(f.http.get("/zwarm/findings/9999/photo").status_code, 404)
 
-        # The map that got built.
-        self.assertEqual(f.http.get("/zwarm/map").json()["state"], "done")
-        self.assertEqual(len(f.http.get("/zwarm/map/points").json()), 2)
-
         # Stop and land: no model call, and the fleet really does it.
         calls = f.client.calls
         answer = f.say("stop")

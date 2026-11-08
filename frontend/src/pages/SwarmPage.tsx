@@ -52,12 +52,9 @@ function MissionHeader({ mission, down }: { mission: Mission | null; down: boole
       <div>
         <h2>{missionTitle(mission)}</h2>
         <p className="zw-mission-sub">
-          {active ? (
-            <>
-              {active.state === "running" ? "Running" : <b>{active.state}</b>} for {clock(active.elapsedS)}
-              {down ? ". Not live" : ""}
-            </>
-          ) : "Say what you want done. Anything that takes off asks you first."}
+          {active
+            ? `${missionLine(active)}${down ? ". Not live" : ""}`
+            : "Say what you want done. Anything that takes off asks you first."}
         </p>
       </div>
       {active && (

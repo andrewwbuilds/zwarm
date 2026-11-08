@@ -405,7 +405,7 @@ class Agent:
             if self.box.needs_approval(call.name, args):
                 result = self._plan_step(turn, call.name, args)
             else:
-                result = self.box.run(call.name, args)
+                result = self._act(turn.epoch, call.name, args)
         except Refused as refused:
             result = {"ok": False, "refused": str(refused)}
         except Exception:

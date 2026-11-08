@@ -49,7 +49,7 @@ class Coverage:
         self.candidate_yaws = np.zeros(0)
         self.tilts = tuple(sorted(set(tilts) or {DEFAULT_TILT}))
         self.sees: dict[float, np.ndarray] = {}  # camera tilt -> which viewpoint sees which floor patch
-        self.clearance_needed = 0.38
+        self.clearance_needed = 0.6  # against walls two drones and their filter run out of room to dodge
 
     def _view(self, p, yaw, tilt: float = DEFAULT_TILT) -> np.ndarray:
         mask = in_view(p, yaw, self.cells, reach=RELIABLE_REACH, margin=EDGE_MARGIN, tilt=tilt)

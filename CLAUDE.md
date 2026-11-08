@@ -34,4 +34,5 @@ cd ../frontend && npx tsc -b --noEmit && npm run lint
 - Anything that raises in `FlightController.tick` drops a control packet. Keep helper failures from reaching it.
 - `backend/services/flight_controller.py` uses CRLF line endings. Preserve them, or the whole file shows as changed.
 - `backend/runs/` isn't ignored and fills with flight recordings. Stage explicit paths.
+- Camera geometry assumes a camera tilted 45 degrees down (`eyes.DEFAULT_TILT`). Pass `tilt=0.0` for a level one.
 - Several agents may share this checkout. Stage by path or hunk, never `git add -A`.

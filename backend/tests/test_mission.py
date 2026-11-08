@@ -997,6 +997,27 @@ class SimulatedMissionTests(unittest.TestCase):
             self.assertTrue(outcome.passed, outcome.notes)
             self.assertGreaterEqual(numbers["share"], mission_bench.COVERED)
 
+    def test_a_drone_with_nothing_to_do_still_moves_into_the_region(self):
+        f = Fleet()
+        f.run()
+        f.missions.start("explore", "north")
+        sweep = f.hub.search
+        f.missions.coverage.counts[f.missions.coverage.cells[:, 0] > 0.0] = LOOKS_NEEDED
+        view = sweep._stand_by(f.co.drones["a"])
+        self.assertGreaterEqual(view.p[0], 0.0)
+        self.assertEqual(len(view.cells), 0)
+        f.co.drones["a"].tracked.p = np.array([-0.1, -1.0, 1.0])
+        self.assertIsNone(sweep._stand_by(f.co.drones["a"]), "just outside is close enough, or it would keep trying")
+
+    def test_a_stand_by_place_that_failed_isnt_tried_again(self):
+        f = Fleet()
+        f.run()
+        f.missions.start("explore", "north")
+        sweep = f.hub.search
+        first = sweep._stand_by(f.co.drones["a"])
+        sweep.banned.append(first.p.copy())
+        self.assertGreater(float(np.linalg.norm(sweep._stand_by(f.co.drones["a"]).p - first.p)), 0.3)
+
     def test_sweep_and_survey_fit_what_the_hub_expects(self):
         f = Fleet()
         f.run()

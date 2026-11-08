@@ -30,18 +30,16 @@ from swarm.tag41h12 import TAGS, TOTAL_CELLS
 
 logger = logging.getLogger(__name__)
 
-DICTIONARY = cv2.aruco.DICT_4X4_50
-MOVING_IDS = range(30, 40)
-ANCHOR_IDS = range(40, 50)
-MAX_TILT = math.radians(40)  # a marker tipped further than this is a misread: no drone flies like that
-MAX_REPROJECTION_PX = 3.0
-MOVING_STALE_S = 1.0
+TAG_FAMILY = "tagStandard41h12"
+VIDEO_WIDTH, VIDEO_HEIGHT = 1184, 656  # measured: the S20's JPEG size
+DEFAULT_FOV_DEG = 90.0  # estimate: horizontal
+DEFAULT_TILT_DEG = 45.0
+CAMERA_HEIGHT_M = 0.03  # estimate: lens above the floor when landed, taken off every height reading
 
-
-def detector() -> cv2.aruco.ArucoDetector:
-    parameters = cv2.aruco.DetectorParameters()
-    parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
-    return cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(DICTIONARY), parameters)
+MAX_BODY_TILT = math.radians(35)  # more than this is a misread: nothing flies at this angle
+MAX_REPROJECTION_PX = 4.0
+MAX_READ_RANGE_M = 4.0  # no real sighting is further than this; see read_range.py for what's usable
+READABLE_M = 1.8  # straight-line distance a tag is counted on being read from, from 1 m up
 
 
 def marker_image(marker_id: int, pixels: int = 800) -> np.ndarray:

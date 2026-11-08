@@ -200,7 +200,7 @@ class WholePitch(unittest.TestCase):
         f.zw.missions.settle()
         self.assertEqual(f.capture.calls, ["start"])
 
-        # Inspect: replaces the map, so the map gets built, and the couch gets looked at.
+        # Inspect: replaces the map, which builds after the landing, and the couch gets looked at.
         answer = f.say("Inspect the couch for damage")
         self.assertTrue(answer["tool_calls"][0]["ok"], answer)
         state = f.state()

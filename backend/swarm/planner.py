@@ -36,9 +36,10 @@ class Grid:
         free &= (y - room.lo[1] >= clearance) & (room.hi[1] - y >= clearance)
         free &= (z >= room.lo[2] + floor) & (room.hi[2] - z >= clearance)
         for o in room.obstacles.values():
-            dx = np.maximum(np.maximum(o.lo[0] - x, x - o.hi[0]), 0.0)
-            dy = np.maximum(np.maximum(o.lo[1] - y, y - o.hi[1]), 0.0)
-            dz = np.maximum(np.maximum(o.lo[2] - z, z - o.hi[2]), 0.0)
+            lo, hi = room.flight_box(o)
+            dx = np.maximum(np.maximum(lo[0] - x, x - hi[0]), 0.0)
+            dy = np.maximum(np.maximum(lo[1] - y, y - hi[1]), 0.0)
+            dz = np.maximum(np.maximum(lo[2] - z, z - hi[2]), 0.0)
             free &= dx * dx + dy * dy + dz * dz >= clearance * clearance
         for (cx, cy), radius in cylinders:
             free &= (x - cx) ** 2 + (y - cy) ** 2 >= radius * radius

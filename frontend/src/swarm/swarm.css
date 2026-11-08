@@ -347,8 +347,8 @@
 .zw-finding { display: grid; grid-template-columns: clamp(84px, 26%, 112px) minmax(0, 1fr); gap: 10px; }
 .zw-finding-dismissed { opacity: 0.55; }
 .zw-photo {
-  width: 112px;
-  height: 84px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
   padding: 0;
   border: 1px solid var(--zw-line);
   background: var(--zw-deep);

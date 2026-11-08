@@ -328,9 +328,7 @@ class Agent:
             self._epoch += 1
             self._plan = None
         reply = self.box.halt(command.verb)
-        with self._state:
-            self._history.append({"role": "user", "content": "(the operator gave a stop command)"})
-            self._history.append({"role": "assistant", "content": reply})
+        self._remember([{"role": "user", "content": "(the operator gave a stop command)"}, {"role": "assistant", "content": reply}])
         return {"reply": reply, "plan": None, "tool_calls": []}
 
     # ---------------------------------------------------------------- talking to the model

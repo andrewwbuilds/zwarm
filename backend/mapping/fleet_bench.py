@@ -300,7 +300,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(prog="mapping.fleet_bench", description=__doc__)
     parser.add_argument("--seconds", type=float, default=180.0)
     parser.add_argument("--layout", default="mission", choices=["mission", "apart"])
-    parser.add_argument("--world", default="demo", choices=["demo", *sorted(SCENES)], help="demo's floor never repeats; the others' textures do")
+    parser.add_argument("--world", default="demo", choices=[*DEMO_WORLDS, *sorted(SCENES)],
+                        help="demo's floor never repeats, plain's floor is dull, and the others' textures repeat exactly")
     parser.add_argument("--walls", default="brick")
     parser.add_argument("--scale", type=float, default=0.54, help="render scale; 0.54 is 640 x 360, what SimFrames uses")
     parser.add_argument("--root", default="/tmp/zwarm-fleet-bench")

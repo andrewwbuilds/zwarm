@@ -442,6 +442,13 @@ class RoomFitTests(unittest.TestCase):
         where = np.array([1.0, 1.0, 1.0]) + rng.normal(0, 0.01, (30, 3))
         self.assertIsNone(check_against_room(self.cameras(where, self.spin()), {f"1/{i:05d}.jpg": p.tolist() for i, p in enumerate(where)}))
 
+    def test_the_hub_helper_gives_no_position_once_the_fix_is_stale(self):
+        drone = SimpleNamespace(tracked=SimpleNamespace(p=(1.0, 2.0, 3.0), fix_age=0.1))
+        pose_of = fleet.tracked_pose_of(SimpleNamespace(co=SimpleNamespace(drones={"1": drone})))
+        self.assertEqual(pose_of("1"), (1.0, 2.0, 3.0))
+        drone.tracked.fix_age = 2.0
+        self.assertIsNone(pose_of("1"))
+
     def test_positions_recorded_at_capture_are_read_back_by_photo_name(self):
         with TemporaryDirectory() as tmp:
             folder = Path(tmp)

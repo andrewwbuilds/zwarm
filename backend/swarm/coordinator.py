@@ -775,6 +775,10 @@ class Coordinator:
             "estopped": self.estopped,
             "preflight": self.preflight(now) if self.all_phase(Phase.GROUND) else [],
             "moving": [{"id": m.id, "p": m.p.round(3).tolist(), "radius": m.radius} for m in self.moving],
+            "anchors": None if self.tracker is None else {
+                "known": [{"id": a.id, "x": a.x, "y": a.y, "size": a.size} for a in self.tracker.anchors.values()],
+                "drones": {k: {**v, "expected": self.tracker.expected(k)} for k, v in self.tracker.report(now).items()},
+            },
             "drones": [{
                 "id": d.id,
                 "phase": d.phase.value,

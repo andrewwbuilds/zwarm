@@ -375,6 +375,8 @@ def main(argv=None) -> int:
         wanted = set(args.group.split(","))
         items = [i for i in items if i["group"] in wanted]
 
+    items = items * max(args.repeat, 1)
+
     # The rate limit, not the budget, sets the pace here, so one call may wait out a full minute.
     client = NemotronClient(models=[args.model] if args.model else None, budget_s=120.0)
     if args.thinking == "on":

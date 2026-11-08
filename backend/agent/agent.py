@@ -96,6 +96,10 @@ OBSERVE_PROMPT = """Something just happened in the fleet. This is data from the 
 
 Tell the operator in one short plain sentence what it means for the mission. Don't name a side of the room unless the event names it. Read state with a tool only if you need it. Call focus_region only if the mission really has to move. You can't start anything, take off or land from here."""
 
+# A reply claiming work is under way, or a plan is waiting, needs something real behind it.
+_WORK_CLAIMS = re.compile(r"\b(exploring|mapping|inspecting|searching|scanning|started|starting|underway|on it|taking off|has begun|"
+                          r"is now|are now|moving)\b", re.IGNORECASE)
+_PLAN_CLAIMS = re.compile(r"\b(prepared|waiting for (?:your |the operator'?s? )?approval|press approve|approve it)\b", re.IGNORECASE)
 _CLAIMS = re.compile(r"\b(approv\w*|prepared|started|starting|ready|is now|are now|moving|moved|on it|underway|running|"
                      r"taking off|landing|has begun|done)\b", re.IGNORECASE)
 _PRESS = re.compile(r"^(?:hit|press|use|activate|trigger|do|call|engage)\s+(?:the\s+|an\s+|a\s+)?")

@@ -205,6 +205,7 @@ export function Console({ controls, sim, children }: { controls: Controls; sim: 
             tilt (pgup/pgdn) <button {...tilt(1)}>up</button> <button {...tilt(-1)}>down</button>
           </p>
         )}
+        <Stabilizer />
         <Plugins />
         {children}
         {sim.active && <SimControls sim={sim} />}

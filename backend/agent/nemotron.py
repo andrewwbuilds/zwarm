@@ -223,7 +223,12 @@ class NemotronClient:
         now = self._clock()
         if models is None and now < self._offline_until:
             raise NemotronError(f"The model is offline: {self.last_error or 'no answer'}")
-        key = self._api_key()
+        try:
+            key = self._api_key()
+        except NemotronError as error:
+            with self._lock:
+                self.online, self.last_error = False, str(error)
+            raise
         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json", "Accept": "application/json"}
         deadline = now + (self.budget_s if budget_s is None else budget_s)
         problems = []

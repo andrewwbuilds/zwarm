@@ -622,7 +622,7 @@ class InsideOutTracker:
         for step in range(0, 181, 15):
             for sign in (1, -1):
                 turned = yaw + sign * math.radians(step)
-                if anchors_in_view(self.anchors, lens, tilt, p, turned):
+                if anchors_in_view(self.anchors, lens, tilt, p, turned, blockers=blockers):
                     return turned
         with self.lock:
             return self.estimators[drone_id].yaw  # nothing is readable from here, so turning gains nothing

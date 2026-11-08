@@ -584,7 +584,7 @@ class Coordinator:
     # --------------------------------------------------------------- velocities
     def _steerable(self, d: Drone, now: float) -> bool:
         return (d.phase in (Phase.AIR, Phase.CHECK, Phase.LANDING) and d.link.connected
-                and d.tracked.age(now) <= STALE_S and not d.sticks_wrong)
+                and d.tracked.age(now) <= STALE_S and not d.sticks_wrong and d.tracked.sigma <= SIGMA_HOLD)
 
     def _want(self, d: Drone, now: float) -> np.ndarray:
         limits = self.limits

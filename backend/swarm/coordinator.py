@@ -526,7 +526,7 @@ class Coordinator:
         check.stage_at = now
         if moving:
             check.moved = measured
-            check.stop_at = d.tracked.p.copy()
+            check.stop_at = d.tracked.seen_p.copy()
             return np.zeros(3)
         check.results.append({"moved": round(check.moved, 3), "after_stop": round(measured, 3)})
         problem = self._judge_check(check.moved, measured)

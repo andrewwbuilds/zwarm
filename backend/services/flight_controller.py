@@ -112,6 +112,77 @@ class FlightController:
             self.axes_deadline = None
             self.last_control_source = "expired"
 
+    def _stick(self, value: float) -> float:
+        """A raw stick value as -1 … +1."""
+        model = self.model
+        if value >= model.center_value:
+            return (value - model.center_value) / (model.max_control_value - model.center_value)
+        return (value - model.center_value) / (model.center_value - model.min_control_value)
+
+    def _add_stick(self, value: float, addition: float) -> float:
+        return self.model._scale_normalised(max(-1.0, min(1.0, self._stick(value) + addition)))
+
+    def _track_flight(self, stabilizer, clock: float) -> None:
+        """Tell the stabilizer when a flight starts or ends, before the packet builder clears the flags."""
+        model = self.model
+        airborne = getattr(model, "airborne", None)
+        if airborne is None:
+            if getattr(model, "stop_flag", False) or getattr(model, "land_flag", False):
+                stabilizer.on_land()
+            elif getattr(model, "takeoff_flag", False):
+                stabilizer.on_takeoff(clock)
+        elif airborne and not stabilizer.airborne:
+            stabilizer.on_takeoff(clock)
+        elif not airborne and stabilizer.airborne:
+            stabilizer.on_land()
+
+    def _build_packet(self, clock: float):
+        """The next control packet, with the stabilizer's correction on top of the pilot's sticks."""
+        model = self.model
+        stabilizer = self.stabilizer
+        if stabilizer is None:
+            return self.protocol.build_control_packet(model)
+        pitch, roll = model.pitch, model.roll
+        try:
+            self._track_flight(stabilizer, clock)
+            if self.last_control_source not in PILOT_SOURCES:
+                return self.protocol.build_control_packet(model)
+            add_pitch, add_roll = stabilizer.correction(
+                clock, self._stick(model.throttle), self._stick(model.yaw), self._stick(pitch), self._stick(roll))
+        except Exception:
+            # tick() treats an exception as a dropped packet, and the drone must never lose
+            # its control stream to a helper. Fly on without it.
+            logger.exception("[stabilizer] Failed: turning it off for this session")
+            self.stabilizer = None
+            return self.protocol.build_control_packet(model)
+        if not add_pitch and not add_roll:
+            return self.protocol.build_control_packet(model)
+        # Only this packet carries the correction. Left on the model, it would feed back
+        # into the keyboard's stick ramp, which starts each update from the last value.
+        model.pitch = self._add_stick(pitch, add_pitch)
+        model.roll = self._add_stick(roll, add_roll)
+        try:
+            return self.protocol.build_control_packet(model)
+        finally:
+            model.pitch, model.roll = pitch, roll
+
+    def tick(self, dt: float, clock: float) -> None:
+        """One control cycle: update the sticks, then build and send a packet."""
+        self.model.update(dt, {
+            "throttle": self.throttle_dir,   # still -1…+1
+            "yaw":      self.yaw_dir,
+            "pitch":    self.pitch_dir,
+            "roll":     self.roll_dir,
+        })
+        try:
+            packet = self._build_packet(clock)
+            self.protocol.send_control_packet(packet)
+        except Exception:
+            # The RC socket may be momentarily unavailable while the
+            # video layer is recreating its socket. Ignore and keep
+            # looping – a fresh socket will be injected shortly.
+            pass
+
     def _control_loop(self):
         """Background thread for sending control updates"""
         prev_time = time.time()

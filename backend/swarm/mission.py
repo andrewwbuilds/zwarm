@@ -732,6 +732,11 @@ class MissionManager:
             self.say("mission", f"Focus moved to {spoken(region)}." + (f" {who} moving there." if who else ""), event="focus", region=region)
             return self.status()
 
+    def refocusable(self) -> bool:
+        """A sweep that ended with drones still up can carry on somewhere else: "focus on the north side" after it finished."""
+        with self.hub.lock:
+            return not self.active and self.kind in ("explore", "map") and self.state in ("done", "stopped") and bool(self.crew(self.hub.now))
+
     def stop(self, then: str = "Holding position.") -> dict:
         """End the mission. Drones hold where they are, except any already on their way down.
 

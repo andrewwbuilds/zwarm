@@ -1209,8 +1209,7 @@ class MissionManager:
         if work.state == "stopped":
             self._finish("stopped", f"The {self.kind} mission ended on the operator's command.", now)
         elif work.state == "failed":
-            self._finish("failed", f"No drones are left flying, so the {self.kind} mission ended with "
-                                   f"{self._share_seen() * 100:.0f}% of the floor seen.", now)
+            self._finish("failed", self._why_failed(now), now)
         elif self.kind == "search":
             self._watch_search(now)
         elif work.state == "done":

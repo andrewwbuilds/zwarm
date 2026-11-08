@@ -393,7 +393,15 @@ class Toolbox:
     def _run_coverage_gaps(self, args: dict) -> dict:
         with self.lock:
             gaps = self.missions.gaps()
-        return {"ok": True, "gaps": _rounded(gaps), "share_seen": self.mission_status().get("share_seen")}
+        # Names, not coordinates: the operator thinks in regions. Halves always hold more than their quarters.
+        rows = [{key: row.get(key) for key in ("name", "share_seen", "unseen_m2")} for row in gaps]
+        options = [row for row in gaps if row.get("viewpoint") and row.get("share_seen", 1.0) < 1.0 and row["name"] != "all"]
+        small = [row for row in options if "-" in row["name"] or row["name"] == "center"] or options
+        best = max(small, key=lambda row: row.get("unseen_m2") or 0.0, default=None)
+        least = sorted(small, key=lambda row: row.get("share_seen", 1.0))[:3]
+        text = ("Least seen: " + ", ".join(f"{row['name']} {float(row.get('share_seen', 0.0)) * 100:.0f}%" for row in least)
+                + f". Look next at {best['name']}.") if best else "Every part of the room that can be seen has been seen."
+        return {"ok": True, "text": text, "gaps": _rounded(rows), "look_next": best["name"] if best else None}
 
     def _run_start_mission(self, args: dict) -> dict:
         with self.lock:

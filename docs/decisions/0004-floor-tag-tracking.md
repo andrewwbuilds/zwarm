@@ -51,4 +51,4 @@ Flights at 0.3 m/s, 3 drones crossing in the 4 x 4 m grid, scored against simula
 
 Lens error matters most. With the lens 8 degrees narrower than assumed, median error was 16 cm, only 25% of samples were within the tracker's own 2 sigma, and 0 of 5 flights finished, though none touched anything. After fitting the focal length, flights matched a perfect lens, 5 of 5 and then 4 of 4.
 
-Known gaps: the simulator's frames are clean in ways real ones aren't, with no rolling shutter, no lens distortion, and no false tag reads. Floors the flow sensor can't read still caused collisions in earlier testing (2 of 40 flights with a simulated tracker).
+Known gaps: the simulator's frames are clean in ways real ones aren't, with no rolling shutter, no lens distortion, and no false tag reads. Floors the flow sensor can't read still caused collisions in earlier testing (2 in 40 flights with a simulated tracker).

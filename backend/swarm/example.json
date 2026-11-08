@@ -1,27 +1,206 @@
 {
-  "fence": {"lo": [-2.0, -1.5, 0.0], "hi": [2.0, 1.5, 2.2]},
-  "obstacles": [
-    {"name": "table", "lo": [0.4, -0.5, 0.0], "hi": [1.1, 0.3, 0.75]}
+ "fence": {
+  "lo": [
+   -2.8,
+   -2.4,
+   0.0
   ],
-  "drones": [
-    {"id": "1", "marker": 1, "backend": "http://localhost:8001", "pad": [-1.2, -0.8], "yaw_deg": 0},
-    {"id": "2", "marker": 2, "backend": "http://localhost:8002", "pad": [-1.2, 0.0], "yaw_deg": 0},
-    {"id": "3", "marker": 3, "backend": "http://localhost:8003", "pad": [-1.2, 0.8], "yaw_deg": 0}
-  ],
-  "tracking": {
-    "marker_m": 0.07,
-    "mount_height_m": 0.05,
-    "cameras": [
-      {"source": 0, "calibration": "camera-0.json"}
-    ],
-    "anchors": {
-      "marker_m": 0.15,
-      "positions": {
-        "40": [-1.5, -1.0, 0.0],
-        "41": [1.5, -1.0, 0.0],
-        "42": [1.5, 1.0, 0.0],
-        "43": [-1.5, 1.0, 0.0]
-      }
-    }
+  "hi": [
+   1.7,
+   2.4,
+   2.2
+  ]
+ },
+ "obstacles": [],
+ "drones": [
+  {
+   "id": "1",
+   "backend": "http://localhost:8001",
+   "pad": [
+    -2.5,
+    1.2
+   ],
+   "yaw_deg": 0,
+   "camera_tilt_deg": 45
+  },
+  {
+   "id": "2",
+   "backend": "http://localhost:8002",
+   "pad": [
+    -2.5,
+    0.0
+   ],
+   "yaw_deg": 0,
+   "camera_tilt_deg": 45
+  },
+  {
+   "id": "3",
+   "backend": "http://localhost:8003",
+   "pad": [
+    -2.5,
+    -1.2
+   ],
+   "yaw_deg": 0,
+   "camera_tilt_deg": 45
   }
+ ],
+ "limits": {
+  "max_speed": 0.3
+ },
+ "anchors": {
+  "tag_family": "tagStandard41h12",
+  "white_square_edge_m": 0.0767,
+  "tags": [
+   {
+    "tag": 0,
+    "x": -2.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 1,
+    "x": -2.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 2,
+    "x": -2.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 3,
+    "x": -2.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 4,
+    "x": -2.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 5,
+    "x": -1.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 6,
+    "x": -1.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 7,
+    "x": -1.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 8,
+    "x": -1.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 9,
+    "x": -1.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 10,
+    "x": 0.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 11,
+    "x": 0.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 12,
+    "x": 0.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 13,
+    "x": 0.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 14,
+    "x": 0.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 15,
+    "x": 1.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 16,
+    "x": 1.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 17,
+    "x": 1.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 18,
+    "x": 1.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 19,
+    "x": 1.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 20,
+    "x": 2.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 21,
+    "x": 2.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 22,
+    "x": 2.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 23,
+    "x": 2.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 24,
+    "x": 2.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   }
+  ]
+ }
 }

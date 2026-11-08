@@ -3,7 +3,7 @@
 
 import { parsePoints } from "./parse";
 import type {
-  Api, ChatReply, Cloud, CoverageCell, Drone, Finding, FindingStatus, LogEvent, MapStatus, Plan, SafetyAction, Vec3,
+  Api, ChatReply, Cloud, CoverageCell, Decision, Drone, Finding, FindingStatus, LogEvent, MapStatus, Plan, SafetyAction, Vec3,
   ZwarmState,
 } from "./types";
 

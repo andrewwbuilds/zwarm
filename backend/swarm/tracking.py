@@ -156,7 +156,11 @@ class Lens:
         return cls.from_focal((width / 2) / math.tan(math.radians(horizontal_fov_deg) / 2), width, height)
 
     @classmethod
-    def load(cls, path: str | Path) -> "CameraModel":
+    def from_focal(cls, focal: float, width: int = VIDEO_WIDTH, height: int = VIDEO_HEIGHT) -> "Lens":
+        return cls(np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]], np.float64), np.zeros(5), width, height)
+
+    @classmethod
+    def load(cls, path: str | Path) -> "Lens":
         data = json.loads(Path(path).read_text())
         return cls(np.array(data["matrix"], np.float64), np.array(data["distortion"], np.float64),
                    None if data.get("rvec") is None else np.array(data["rvec"], np.float64),

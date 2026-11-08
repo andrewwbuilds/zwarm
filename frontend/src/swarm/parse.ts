@@ -195,10 +195,34 @@ export function parseState(raw: unknown): ZwarmState {
 
 const isEventKind = (v: unknown): v is EventKind => EVENT_KINDS.some((kind) => kind === v);
 
-function toolDetail(data: Json): { detail: string | null; refused: boolean } {
-  const refused = data.ok === false || data.refused === true || typeof data.refused === "string";
-  const detail = brief(data.result ?? data.refused ?? data.error ?? data.detail);
-  return { detail, refused };
+// {kind: "map", region: "all"} reads as: kind=map region=all
+function formatArgs(v: unknown): string {
+  if (!isRecord(v)) return brief(v) ?? "";
+  return Object.entries(v)
+    .filter(([, value]) => value !== null && value !== undefined)
+    .map(([key, value]) => `${key}=${typeof value === "string" ? value : JSON.stringify(value)}`)
+    .join(" ");
+}
+
+// The agent's result dicts carry their words in "refused" or "text". Anything else shows as JSON.
+function resultWords(v: unknown): string | null {
+  if (isRecord(v)) {
+    const words = firstText(v, ["refused", "text"]);
+    if (words) return brief(words);
+  }
+  return brief(v);
+}
+
+function isRefused(source: Json): boolean {
+  const result = record(source.result);
+  return source.ok === false || result.ok === false || typeof source.refused === "string" || typeof result.refused === "string";
+}
+
+function callText(source: Json): string | null {
+  const name = text(source.name) ?? text(source.tool);
+  if (name === null) return null;
+  const args = formatArgs(source.arguments ?? source.args);
+  return args ? `${name} ${args}` : name;
 }
 
 function parseEvent(v: unknown): LogEvent | null {

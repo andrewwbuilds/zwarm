@@ -481,6 +481,12 @@ class Coordinator:
 
     def _check_step(self, d: Drone, now: float) -> np.ndarray:
         check = d.check
+        if d.tracked.fix_age > CHECK_NEEDS_FIX_S:
+            # Nothing real to judge it by, and the estimate would only echo the command. Wait.
+            check.stage_at = now
+            check.samples = []
+            check.recent = []
+            return np.zeros(3)
         if check.stage % 2 == 1:
             coast = float(np.linalg.norm(d.tracked.p[:2] - check.stop_at[:2]))
             if coast > CHECK_MAX_COAST:

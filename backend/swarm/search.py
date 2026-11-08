@@ -34,7 +34,7 @@ class Viewpoint:
 
 
 class Coverage:
-    def __init__(self, room: Room):
+    def __init__(self, room: Room, tilts=(DEFAULT_TILT,)):
         self.room = room
         lo, hi = room.lo, room.hi
         xs = np.arange(lo[0] + CELL / 2, hi[0], CELL)

@@ -242,8 +242,49 @@ def evaluate(folder: Path) -> dict:
     cloud = np.load(folder / "points.npy")
     return {"camera_error_m": {"median": round(float(np.median(errors)), 3), "p95": round(float(np.percentile(errors, 95)), 3),
                                "max": round(float(errors.max()), 3)},
-            "by_drone": per_drone, "level_camera_height": {"median": round(float(np.median(level_z)), 3),
-                                                            "true_median": round(float(np.median(real[:, 2])), 3)}}
+            "by_drone": per_drone,
+            "level_map": {"camera_height": round(float(np.median(in_level[:, 2])), 3), "true_camera_height": round(float(np.median(real[:, 2])), 3),
+                          "heading_off_deg": round(turn, 1), "size_vs_truth": round(float(np.linalg.norm(a[:, :2]) / max(np.linalg.norm(b[:, :2]), 1e-9)), 3),
+                          "points_z_p5_p50_p95": np.percentile(cloud[:, 2], [5, 50, 95]).round(3).tolist()}}
+
+
+def live(root: Path, seconds: float, rate_hz: float, splat: bool) -> dict:
+    """The whole path in real time: SimFrames video, FleetCapture saving it, a build in the background, points()."""
+    world = demo_world()
+    plan = layouts("mission", "demo")
+    tracks = {d: fly(world.pads[d], plan[d], seconds + 5.0, seed=int(d) * 11) for d in plan}
+    fleet_now = StillFleet(world.scene, {d: (*world.pads[d], 0.05, 0.0) for d in plan})
+    frames = SimFrames(fleet_now, rate_hz=rate_hz, clock=time.monotonic)
+    capture = fleet.FleetCapture(frames, root)
+    stop = threading.Event()
+
+    def move() -> None:
+        started = time.monotonic()
+        while not stop.wait(0.02):
+            i = int((time.monotonic() - started) * FPS)
+            for drone, track in tracks.items():
+                _, x, y, z, yaw, _, _ = track[min(i, len(track) - 1)]
+                hover = fleet_now.drones[drone]
+                hover.x, hover.y, hover.z, hover.heading = x, y, z, yaw
+
+    mover = threading.Thread(target=move, daemon=True)
+    mover.start()
+    frames.start()
+    capture.start("live")
+    time.sleep(seconds)
+    print("sim: while capturing:", capture.status()["by_drone"], frames.stats(), flush=True)
+    capture.build("live", splat=splat)
+    time.sleep(1.0)
+    print("sim: a second after asking for a build:", capture.status()["state"], capture.status()["step"], flush=True)
+    stop.set()
+    frames.stop()
+    status = capture.wait()
+    points = capture.points(limit=5000)
+    status["sample"] = len(points)
+    if points:
+        cloud = np.array(points)
+        status["level_z_percentiles"] = np.percentile(cloud[:, 2], [5, 50, 95]).round(3).tolist()
+    return status
 
 
 def main() -> int:

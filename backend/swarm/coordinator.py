@@ -5,7 +5,8 @@ flies the simulator faster than real time and real drones at real time.
 
 S20 takeoff and landing share one toggle bit, so a repeat reverses the action. Each toggle is sent
 once and judged by what the tracker then sees. If it doesn't work, that's a fault for the operator,
-never a retry.
+never a retry. A land toggle sent to a drone already on the floor starts its motors, so none goes
+out to a drone whose last sightings or still camera say it's down.
 """
 
 from __future__ import annotations

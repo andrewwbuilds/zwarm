@@ -192,25 +192,8 @@ class FlightController:
             dt = now - prev_time
             prev_time = now
             self._expire_axes()
+            self.tick(dt, time.monotonic())
 
-            # Update drone controls based on input directions
-            self.model.update(dt, {
-                "throttle": self.throttle_dir,   # still -1…+1
-                "yaw":      self.yaw_dir,
-                "pitch":    self.pitch_dir,
-                "roll":     self.roll_dir,
-            })
-            
-            # Build and send packet
-            try:
-                packet = self.protocol.build_control_packet(self.model)
-                self.protocol.send_control_packet(packet)
-            except Exception:
-                # The RC socket may be momentarily unavailable while the
-                # video layer is recreating its socket. Ignore and keep
-                # looping – a fresh socket will be injected shortly.
-                pass
-            
             # Sleep to maintain update rate
             time.sleep(self.update_interval)
 

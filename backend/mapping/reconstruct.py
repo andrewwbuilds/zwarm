@@ -11,6 +11,7 @@ from pathlib import Path
 
 BRUSH = Path.home() / ".local/share/brush-splat/v0.3.0/brush-app-aarch64-apple-darwin/brush_app"
 EXHAUSTIVE_LIMIT = 250  # matching every pair of more photos than this takes too long
+STEP_TIMEOUT_S = float(os.environ.get("MAP_STEP_TIMEOUT_S") or 1800.0)  # one COLMAP step. Without a limit a stuck one blocks every later map
 
 
 class ToolMissing(RuntimeError):

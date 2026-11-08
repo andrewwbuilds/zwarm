@@ -196,7 +196,7 @@ class Agent:
         self._epoch = 0  # goes up on every stop-type command, so a turn already thinking can't act after it
         self._plan: dict | None = None
         self._plan_count = 0
-        self._history: list[dict] = []
+        self._history: list[list[dict]] = []  # one list of messages per turn
         self._events: queue.Queue = queue.Queue(maxsize=64)
         self._observer: threading.Thread | None = None
         self._last_observed = -1e9

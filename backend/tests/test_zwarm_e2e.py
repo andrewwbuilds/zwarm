@@ -206,7 +206,7 @@ class WholePitch(unittest.TestCase):
         state = f.state()
         self.assertEqual((state["mission"]["kind"], state["mission"]["target"]), ("inspect", "couch"))
         f.zw.missions.settle()
-        self.assertEqual(f.capture.calls, ["start", "stop", "build"])
+        self.assertEqual(f.capture.calls, ["start"])  # COLMAP waits until nothing depends on the flight loop
         self.assertTrue(f.run(80.0, lambda s: s["mission"]["state"] == "done"), f.state()["mission"])
         findings = f.http.get("/zwarm/findings").json()
         self.assertTrue(findings)

@@ -236,6 +236,24 @@ class CommandTests(unittest.TestCase):
                 self.assertEqual(parse(text, ("a", "b")).verb, "refused")
 
 
+class GainLearningTests(unittest.TestCase):
+    def test_being_held_back_for_a_few_seconds_does_not_make_a_drone_fly_much_faster(self):
+        mapper = StickMapper(Airframe())
+        t = 0.0
+        for _ in range(4 * 20):  # asked for 0.5 m/s, getting 0.2
+            t += 0.05
+            mapper.learn(t, 0.5, 0.0, 0.2, 0.0, 0.05)
+        self.assertGreater(mapper.scale, 0.8)
+
+    def test_a_drone_faster_than_assumed_is_learned_quickly(self):
+        mapper = StickMapper(Airframe())
+        t = 0.0
+        for _ in range(4 * 20):
+            t += 0.05
+            mapper.learn(t, 0.5, 0.0, 0.8, 0.0, 0.05)
+        self.assertGreater(mapper.scale, 1.25)
+
+
 class CoverageTests(unittest.TestCase):
     def setUp(self):
         self.room = Room((-4, -3, 0), (4, 3, 2.6))

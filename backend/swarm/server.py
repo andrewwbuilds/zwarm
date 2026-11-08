@@ -201,6 +201,8 @@ class DroneEntry:
     backend: str
     pad: tuple[float, float]
     yaw_deg: float = 0.0
+    camera_tilt_deg: float = DEFAULT_TILT_DEG
+    focal_px: float | None = None  # at 1184 x 656, from `fit-focal`; until then the 90 degree guess is used
 
 
 @dataclass

@@ -131,16 +131,24 @@ def cmd_check(args) -> int:
     from swarm.frames import StreamFrames
     from swarm.links import BackendLink
     from swarm.server import SwarmFile
-    from swarm.tracking import CameraModel, CameraWorker, PoseStore
+    from swarm.tracking import InsideOutTracker, SwarmFileError
 
-    config = SwarmFile.load(args.config)
+    try:
+        config = SwarmFile.load(args.config)
+    except SwarmFileError as error:
+        print(f"Not ready: {error}")
+        return 2
     links = {d.id: BackendLink(d.backend, d.id) for d in config.drones}
-    store = PoseStore({d.marker: d.id for d in config.drones}, config.mount_height_m)
-    workers = [CameraWorker(c["source"], CameraModel.load(c["calibration"]), config.marker_m, store) for c in config.cameras]
-    for item in (*links.values(), *workers):
-        item.start()
-    seen = {d.id: [] for d in config.drones}
-    print(f"Listening for {args.seconds:.0f} s. No commands are sent to any drone.")
+    frames = StreamFrames(config.backends())
+    tracker = InsideOutTracker(config.optics(), config.anchors, (config.room.lo, config.room.hi), config.video_latency_s)
+    for link in links.values():
+        link.start()
+    frames.start()
+    tracker.start(frames)
+    print(f"Watching for {args.seconds:.0f} s. A drone on the floor can't see the floor: its camera looks too low.")
+    print("Lift each drone by hand, motors off, to about 1 m over its pad, nose along its heading, to see its tags.\n")
+    seen: dict[str, dict[str, int]] = {d.id: {} for d in config.drones}
+    last: dict[str, list] = {d.id: [] for d in config.drones}
     end = time.monotonic() + args.seconds
     while time.monotonic() < end:
         time.sleep(0.02)

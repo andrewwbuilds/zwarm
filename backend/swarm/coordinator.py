@@ -787,6 +787,8 @@ class Coordinator:
                 "yaw": round(math.degrees(d.tracked.yaw), 1),
                 "pad": list(d.config.pad),
                 "pose_age": None if not math.isfinite(d.tracked.age(now)) else round(d.tracked.age(now), 3),
+                "sigma": round(d.tracked.sigma, 3),
+                "fix_age": round(d.tracked.fix_age, 2) if math.isfinite(d.tracked.fix_age) else None,
                 "link": d.link.connected,
                 "latency": getattr(d.link, "latency", None),
                 "goal": None if d.goal is None else d.goal.round(3).tolist(),

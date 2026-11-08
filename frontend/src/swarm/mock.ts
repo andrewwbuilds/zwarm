@@ -90,7 +90,7 @@ class MockSwarm {
   private readonly found: Finding[] = [];
   private mission: { kind: string; region: string; target: string | null; t0: number; state: string } | null = null;
   private plan: (Plan & { kind: string; region: string }) | null = null;
-  private map: MapStatus = { name: "room", state: "idle", photos: 0, byDrone: {}, registered: 0, error: null };
+  private map: MapStatus = { name: "room", state: "idle", photos: 0, byDrone: {}, registered: 0, points: 0, step: null, warnings: [], error: null };
   private cloud: Cloud | null = null;
   private estopped = false;
   private busyUntil = 0;

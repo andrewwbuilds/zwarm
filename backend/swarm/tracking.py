@@ -561,7 +561,8 @@ class InsideOutTracker:
                 turned = yaw + sign * math.radians(step)
                 if anchors_in_view(self.anchors, lens, tilt, p, turned):
                     return turned
-        return yaw
+        with self.lock:
+            return self.estimators[drone_id].yaw  # nothing is readable from here, so turning gains nothing
 
     def start(self, frames) -> None:
         """Read each drone's newest frame from `frames.latest(drone_id)`, which swarm.frames provides."""

@@ -194,7 +194,7 @@ def render_flights(folder: Path, seconds: float, layout: str, world: str = "demo
     shutil.rmtree(folder, ignore_errors=True)
     folder.mkdir(parents=True)
     plan, pads = layouts(layout, world), pads_for(world)
-    jobs = [(d, fly(pads[d], plan[d], seconds, seed=int(d) * 11), str(folder), world, walls, scale) for d in plan]
+    jobs = [(d, fly(pads[d], plan[d], seconds, seed=int(d) * 11), str(folder), world, walls, scale, rough) for d in plan]
     started = time.perf_counter()
     with multiprocessing.get_context("spawn").Pool(len(jobs)) as pool:
         results = pool.map(_render_drone, jobs)

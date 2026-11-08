@@ -54,6 +54,29 @@ export function missionTitle(mission: Mission | null): string {
   }
 }
 
+// One line under the mission title. MissionManager states: starting, running, analyzing, done,
+// stopped, failed.
+export function missionLine(mission: Mission): string {
+  const time = clock(mission.elapsedS);
+  const reason = mission.reason ? `. ${mission.reason}` : "";
+  switch (mission.state) {
+    case "starting":
+      return "Taking off";
+    case "running":
+      return `Running for ${time}`;
+    case "analyzing":
+      return `Flying done after ${time}. Checking the photos`;
+    case "done":
+      return `Done after ${time}${reason}`;
+    case "stopped":
+      return `Stopped after ${time}${reason}`;
+    case "failed":
+      return `Failed after ${time}${reason}`;
+    default:
+      return `${mission.state}, ${time}${reason}`;
+  }
+}
+
 export type Quality = "good" | "fair" | "poor" | "lost";
 
 // How far to trust a drone's position, from its uncertainty and the age of its last anchor fix.

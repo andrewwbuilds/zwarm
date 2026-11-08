@@ -127,7 +127,6 @@ export interface Finding {
   drone: string;
   x: number | null;
   y: number | null;
-  z: number | null;
   summary: string;
   severity: string;
   confidence: number | null;

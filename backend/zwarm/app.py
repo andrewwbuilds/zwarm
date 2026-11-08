@@ -233,7 +233,8 @@ def compose(coordinator, clock, poses, frames, eyes, data_dir: Path, *, advance=
         events.add("mission", text, {"map": True, "name": (data or {}).get("name")})
 
     if capture is None:
-        capture = FleetCapture(frames, data_dir / "maps", drones=list(coordinator.drones), on_event=said_by_map, pose_of=tracked_pose_of(hub))
+        capture = FleetCapture(frames, maps_path or data_dir / "maps", drones=list(coordinator.drones), on_event=said_by_map,
+                               pose_of=tracked_pose_of(hub), flying=lambda drone: coordinator.drones[drone].phase in (Phase.TAKEOFF, Phase.CHECK, Phase.AIR, Phase.LANDING))
     agent_holder: dict = {}
 
     def said_by_mission(kind: str, text: str, data=None) -> None:

@@ -11,6 +11,9 @@ Host software for cheap Wi-Fi camera drones with closed firmware (fork of turbod
 - `backend/sim/`: simulated S20. `config.py` tags every value with its source. `stability.py` is the drift benchmark.
 - `backend/mapping/fleet.py`: one map from every drone. `uv run python -m mapping.fleet_bench` checks it against simulator truth. Placing every photo doesn't prove a map is right.
 - `backend/swarm/`: multi-drone coordination. `hub.py` is the shared memory and the actions (plain methods; `commands.py` only parses fixed phrases into them), `memory.py` is SQLite, `eyes.py` and `yolo_eyes.py` are the cameras, `search.py` shares out the floor. `backend/slam/`, `backend/mapping/`: localization and photogrammetry.
+- `backend/swarm/mission.py`: explore, map, inspect and search on top of the hub. `inspect.py` finds damage, `sim_cameras.py` renders the demo room.
+- `backend/agent/`: the Nemotron planner, its checked tools, and vision.
+- `backend/zwarm/`: the whole app on port 8010. `app.py` composes every part. Its `Front` is what `swarm/server.py`'s Runtime and routes hold as `co`, so a tick is hub then missions, and a stop button ends the mission too.
 - `frontend/`: Vite and React console. `?backend=` picks the backend per tab. `/swarm` (`src/pages/SwarmPage.tsx`, `src/swarm/`) is the operator console; `?api=` picks its backend and `?mock=1` fakes one.
 - `tools/pi/`: Pi install, fleet scripts and watchdogs. `docs/research/`: reverse-engineering notes.
 

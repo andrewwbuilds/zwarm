@@ -151,36 +151,35 @@ def cmd_check(args) -> int:
     last: dict[str, list] = {d.id: [] for d in config.drones}
     end = time.monotonic() + args.seconds
     while time.monotonic() < end:
-        time.sleep(0.02)
-        for drone_id, pose in store.poses().items():
-            seen[drone_id].append((pose.t, *pose.p, pose.yaw))
+        time.sleep(0.1)
+        now = time.monotonic()
+        report = tracker.report(now)
+        poses = tracker.poses(now)
+        for drone_id, row in report.items():
+            for tag in row["seeing"]:
+                seen[drone_id][tag] = seen[drone_id].get(tag, 0) + 1
+            if poses[drone_id].fix_age < 0.5:
+                last[drone_id].append(poses[drone_id].p)
     good = True
-    for z in (0.5, 1.0, 1.5):
-        xs = np.linspace(config.room.lo[0], config.room.hi[0], 25)
-        ys = np.linspace(config.room.lo[1], config.room.hi[1], 25)
-        seen_share = np.mean([any(w.sees((x, y, z)) for w in workers) for x in xs for y in ys])
-        print(f"Cameras see {seen_share * 100:.0f}% of the fence at {z:.1f} m up.")
-        if seen_share < 0.99:
-            print("  Goals outside that are refused, and a drone pushed out of view gets landed.")
+    report = tracker.report(time.monotonic())
     for d in config.drones:
-        rows = np.array(seen[d.id]) if seen[d.id] else None
-        link = links[d.id]
-        link_text = f"link {'up' if link.connected else 'DOWN'}, {('%.0f ms' % (link.latency * 1000)) if link.latency else 'latency unknown'}"
-        if link.problem:
-            link_text += f", {link.problem}"
-        if rows is None:
-            print(f"{d.id}: {link_text}; marker {d.marker} NOT SEEN")
-            good = False
-            continue
-        rate = len(rows) / args.seconds
-        p, spread = rows[:, 1:4].mean(0), rows[:, 1:4].std(0)
-        miss = float(np.linalg.norm(p[:2] - np.array(d.pad[:2])))
-        print(f"{d.id}: {link_text}; {rate:.0f} poses/s, at {p.round(2).tolist()} m, jitter "
-              f"{(spread * 100).round(1).tolist()} cm, heading {np.degrees(rows[:, 4].mean()):.0f} deg, {miss:.2f} m from pad")
-        good = good and link.connected and not link.problem and rate >= 15 and miss < 0.3
-    for item in (*links.values(), *workers):
-        item.stop()
-    print("Ready." if good else "Not ready: fix what's listed above before flying.")
+        link, row = links[d.id], report[d.id]
+        print(f"Drone {d.id}: link {'up' if link.connected else 'DOWN'}" + (f" ({link.latency * 1000:.0f} ms)" if link.latency else "")
+              + (f", {link.problem}" if link.problem else "") + f"; {row['frames'] / args.seconds:.1f} frames/s read")
+        print(f"  should see over its pad at 1 m: {', '.join(tracker.expected(d.id)) or 'NOTHING'}")
+        print(f"  actually saw: {', '.join(sorted(seen[d.id], key=lambda t: int(t[4:]))) or 'nothing'}")
+        if last[d.id]:
+            p = np.mean(np.array(last[d.id]), axis=0)
+            print(f"  position from tags: ({p[0]:.2f}, {p[1]:.2f}), {p[2]:.2f} m up. Pad: ({d.pad[0]}, {d.pad[1]}). Check this against a tape measure.")
+        unknown = tracker.readers[d.id].unknown
+        if unknown:
+            print(f"  also saw tags not in the file: {sorted(unknown)}")
+        good = good and link.connected and not link.problem and bool(tracker.expected(d.id)) and bool(seen[d.id])
+    tracker.stop()
+    frames.stop()
+    for link in links.values():
+        link.stop()
+    print("\nReady." if good else "\nNot ready: fix what's listed above before flying.")
     return 0 if good else 1
 
 

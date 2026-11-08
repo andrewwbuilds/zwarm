@@ -419,8 +419,15 @@ class Coordinator:
                     self._begin_check(d, now)
                 else:
                     d.phase = Phase.GROUND
-                    d.fault("takeoff", "takeoff was sent but it did not climb; not sending again, the toggle would reverse it")
+                    d.fault("takeoff", "takeoff was sent but it was not seen to climb; not sending again, the toggle "
+                                       "would reverse it. It may be hovering unseen: check it by eye")
+                    d.unknown_air = self.tracker is not None
                     self.takeoff_queue.clear()
+        elif d.phase == Phase.GROUND and d.unknown_air:
+            if d.tracked.fix_age < 1.0 and height > AIRBORNE_HEIGHT:
+                d.unknown_air = False
+                d.clear("takeoff")
+                self._begin_check(d, now)
         elif d.phase == Phase.LANDING:
             if age <= STALE_S and height < GROUNDED_HEIGHT and abs(d.tracked.v[2]) < 0.15:
                 d.phase = Phase.GROUND

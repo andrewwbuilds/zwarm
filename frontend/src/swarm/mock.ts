@@ -349,8 +349,8 @@ class MockSwarm {
     return { reply, toolCalls: [] };
   }
 
-  approve(id: string): void {
-    if (this.plan?.id !== id) throw new Error("that plan is no longer waiting");
+  approve(id: string): Decision {
+    if (this.plan?.id !== id) return { ok: false, reply: "That plan is gone, so nothing flew." };
     const { kind, region } = this.plan;
     this.plan = null;
     this.estopped = false;

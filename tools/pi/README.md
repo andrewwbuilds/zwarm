@@ -147,7 +147,7 @@ A Pi whose drone is off reports NOT READY and the other drones still come up.
 - Without `?backend=`, the console uses `VITE_BACKEND_URL`, then `localhost:8000`, so the
   single-tunnel setup (`ssh -N -L 8000:127.0.0.1:8000 zwarm-pi-01`) still works.
 
-Fleet coordination and shared position feedback are separate work.
+To fly the drones together, see [the first-flight guide](../../docs/swarm-first-flight.md).
 
 Inspect and stop the backend with:
 

@@ -529,6 +529,7 @@ class FleetCapture:
         self.drones = list(drones) if drones is not None else None
         self.max_photos = max_photos or int(os.environ.get("MAP_BUILD_PHOTOS") or MAX_PHOTOS)
         self.on_event = on_event
+        self.pose_of = pose_of
         self.lock = threading.Lock()
         self.name: str | None = None
         self.state = "idle"

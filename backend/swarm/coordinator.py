@@ -739,7 +739,11 @@ class Coordinator:
             seen = (d.tracked.v[0] * cos_yaw + d.tracked.v[1] * sin_yaw, -d.tracked.v[0] * sin_yaw + d.tracked.v[1] * cos_yaw)
             d.mapper.learn(now, asked[0], asked[1], seen[0], seen[1], dt)
             self._watch_following(d, now, velocity)
-            d.link.send_sticks(*d.mapper.sticks(velocity, yaw, d.config.yaw, dt), TTL)
+            sticks = d.mapper.sticks(velocity, yaw, d.config.yaw, dt)
+            d.link.send_sticks(*sticks, TTL)
+            if self.tracker is not None:
+                self.tracker.note_command(d.id, velocity, -sticks[1] * self.airframe.yaw_rate_per_stick, flying,
+                                          d.phase == Phase.LANDING)
 
     def _watch_following(self, d: Drone, now: float, velocity: np.ndarray) -> None:
         """How far the drone's speed has been from what was asked, over the last few seconds."""

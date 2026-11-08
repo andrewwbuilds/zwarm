@@ -652,7 +652,12 @@ class MissionManager:
         """Is anyone flying, or about to, that this mission hasn't written off?"""
         if self.taking_off():
             return True
-        return any(d.phase == Phase.AIR and not d.landing_requested and d.id not in self.out for d in self.hub.co.drones.values())
+        if not any(d.phase == Phase.AIR and not d.landing_requested for d in self.hub.co.drones.values()):
+            return False
+        # In the air, and tracking or a link can come back. A gap on every drone at once isn't the end of a mission.
+        if self.nobody_since is None:
+            self.nobody_since = now
+        return now - self.nobody_since < ALL_LOST_S
 
     def give_up_if_slow(self, d, order, now: float) -> None:
         """The hub allows a move 75 s, which is a lot of a battery to spend blocked by other drones."""

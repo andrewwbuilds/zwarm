@@ -91,7 +91,17 @@ def cmd_fly(args) -> int:
     return 0
 
 
+def load_settings(path: Path = Path(__file__).resolve().parents[1] / ".env") -> None:
+    """Model names and map settings from backend/.env. The shell wins. The key stays out of the environment, since child processes inherit that."""
+    from dotenv import dotenv_values
+
+    for name, value in dotenv_values(path).items():
+        if name != "NVIDIA_API_KEY" and value is not None:
+            os.environ.setdefault(name, value)
+
+
 def main(argv=None) -> int:
+    load_settings()
     logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(levelname)s %(message)s")
     parser = argparse.ArgumentParser(prog="python -m zwarm", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)

@@ -28,8 +28,10 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b"  # about 14 s per image, measured 02:30
-FALLBACK_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"  # about 3 s, puts its text in reasoning
+# Nano goes first on evidence: over 60 simulated photos it got 85% with 3 misses at about 3 s each, while
+# Super got 75% with 12 misses at about 7 s. Real video hasn't been scored. See docs/decisions.
+MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+FALLBACK_MODEL = "nvidia/nemotron-3.5-super-vl-120b-a12b"
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 TIMEOUT_S = 60.0

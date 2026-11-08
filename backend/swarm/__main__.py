@@ -202,6 +202,7 @@ def main(argv=None) -> int:
     sub = commands.add_parser("sim", help="fly a simulated swarm from the /swarm page")
     sub.add_argument("--port", type=int, default=PORT)
     sub.add_argument("--seed", type=int, default=1)
+    sub.add_argument("--inside-out", action="store_true", help="track from rendered camera frames, as real flights do")
     sub.set_defaults(run=cmd_sim)
 
     sub = commands.add_parser("fly", help="run the real swarm from a swarm file")

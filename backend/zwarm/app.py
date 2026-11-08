@@ -448,26 +448,6 @@ def check_setup(config: SwarmFile, need_model: bool, out: Readiness) -> None:
         out.problems.append(f"The YOLO detector won't load ({error}). Run `uv sync --inexact --extra follow` and check yolov10n.pt or YOLO_WEIGHTS.")
     if shutil.which("colmap") is None and not os.environ.get("MAP_BUILD_SSH"):
         out.warnings.append("COLMAP isn't on the PATH and MAP_BUILD_SSH isn't set, so a map can be captured but not built. `brew install colmap`.")
-    for d in config.drones:
-        link = BackendLink(d.backend, d.id)
-        link.inspect()
-        if link.problem:
-            out.problems.append(f"Drone {d.id} at {d.backend}: {link.problem}. Is its Pi up? `tools/pi/fleet.sh status`.")
-    frames = StreamFrames(config.backends())
-    frames.start()
-    deadline = time.monotonic() + frame_wait_s
-    try:
-        while time.monotonic() < deadline and not all(frames.latest(d.id) for d in config.drones):
-            time.sleep(0.1)
-        for d in config.drones:
-            frame = frames.latest(d.id)
-            if frame is None:
-                out.problems.append(f"Drone {d.id} at {d.backend}: no video in {frame_wait_s:.0f} s from /mjpeg.")
-            else:
-                out.notes.append(f"Drone {d.id}: video arriving, {len(frame.jpeg)} byte frames.")
-    finally:
-        threading.Thread(target=frames.stop, daemon=True).start()  # a stuck read has a 5 s timeout, and no one needs to wait for it
-    return out
 
 
 def fly(path, data_dir: Path | None = None, need_model: bool = True, north_yaw_deg: float | None = None, **parts) -> tuple[Zwarm | None, Readiness]:

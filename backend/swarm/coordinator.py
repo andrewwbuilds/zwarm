@@ -195,6 +195,10 @@ class Coordinator:
                 problems.append(f"{d.id} is {miss:.2f} m from its pad")
             if self.room.clearance(np.array([p[0], p[1], 1.0])) < self.limits.surface_clearance:
                 problems.append(f"{d.id} is too close to a wall or obstacle to climb")
+            if d.unknown_air:
+                problems.append(f"{d.id} was sent a takeoff and never seen again: check it by eye, then reset it")
+            if self.tracker is not None and not self.tracker.expected(d.id):
+                problems.append(f"{d.id} would see no floor markers hovering over its pad")
         for i, a in enumerate(drones):
             for b in drones[i + 1:]:
                 gap = float(np.linalg.norm(np.array(a.config.pad[:2]) - np.array(b.config.pad[:2])))

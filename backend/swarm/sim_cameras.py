@@ -487,7 +487,8 @@ def demo_world(seed: int = 11) -> DemoWorld:
              flat_decal(scorch_image(rng), 1.85, -1.62, 0.5, 0.5, z=0.6),
              side_decal(crack_image(rng, 0.6, 0.4, thick_m=0.016), crate, "-x", 0.0, 0.3, 0.6, 0.4),
              flat_decal(rust_image(rng), -0.65, -2.05, 0.55, 0.55, z=0.5),
-             flat_decal(crack_image(rng, 0.6, 0.35, thick_m=0.012), 2.0, -0.9, 0.6, 0.35, yaw_deg=30.0))
+             flat_decal(crack_image(rng, 0.6, 0.35, thick_m=0.012), 2.0, -0.9, 0.6, 0.35, yaw_deg=30.0),
+             flat_decal(scorch_image(rng), -0.62, 1.25, 0.5, 0.5, z=0.7))
 
     # A tag can't lie under furniture, and staged damage shouldn't deface one.
     boxes = (*furniture.values(), *(box for _, box in hidden))

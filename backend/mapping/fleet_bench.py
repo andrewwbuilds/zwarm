@@ -125,9 +125,11 @@ def pads_for(world: str) -> dict:
 
 def make_camera(world: str, walls: str, scale: float, seed: int, fov_deg: float = 90.0) -> Camera:
     fov = math.radians(fov_deg)
-    if world == "demo":
+    if world in DEMO_WORLDS:
         scene = demo_world().scene
-        return DecalCamera(scene, scene.decals, render_scale=scale, fov=fov, seed=seed)
+        # "plain" leaves off the speckled floor, the first decal: a dull floor with only tags and furniture to go on.
+        decals = scene.decals[1:] if world == "plain" else scene.decals
+        return DecalCamera(scene, decals, render_scale=scale, fov=fov, seed=seed)
     return Camera(replace(SCENES[world](), wall_material=walls, ceiling_material=walls), render_scale=scale, fov=fov, seed=seed)
 
 

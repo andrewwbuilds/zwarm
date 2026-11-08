@@ -220,7 +220,7 @@ def _stop_all(*stoppers):
 
 def compose(coordinator, clock, poses, frames, eyes, data_dir: Path, *, advance=None, close=lambda: None, client=None, analyze=None, capture=None,
             tilts=None, anchors=None, north_yaw_deg: float = 0.0, flight_limit_s: float = 270.0, auto_approve: bool = False, fleet=None,
-            world=None, runtime: Runtime | None = None, findings_path: Path | None = None) -> Zwarm:
+            world=None, runtime: Runtime | None = None, findings_path: Path | None = None, maps_path: Path | None = None) -> Zwarm:
     """Everything on top of a coordinator. Passing client, analyze or capture replaces a live part, which is how tests run with no network."""
     data_dir = Path(data_dir)
     data_dir.mkdir(parents=True, exist_ok=True)

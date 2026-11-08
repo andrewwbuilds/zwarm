@@ -45,7 +45,7 @@ export class VideoFeeds {
     window.clearTimeout(this.timer);
   }
 
-  private async step(): Promise<void> {
+  private async step(loop: number): Promise<void> {
     const id = this.nextDrone();
     if (id !== null) {
       try {

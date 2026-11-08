@@ -365,11 +365,8 @@ def level_map(cameras: dict, xyz: np.ndarray, tilt_deg: float = TILT_DEG, height
     return rotation, scale, offset
 
 
-def fit_to_room(placed: np.ndarray, tracked: np.ndarray) -> tuple:
-    """The scale, rotation and shift that best carry map positions onto tracked ones (Umeyama).
-
-    Returns (rotation, scale, offset, median error in metres), where a room point is scale * rotation @ p + offset.
-    """
+def _similarity(placed: np.ndarray, tracked: np.ndarray) -> tuple:
+    """The least-squares scale, rotation and shift from one set of points to another (Umeyama)."""
     mean_p, mean_t = placed.mean(axis=0), tracked.mean(axis=0)
     a, b = placed - mean_p, tracked - mean_t
     u, d, vt = np.linalg.svd(b.T @ a / len(a))

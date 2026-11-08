@@ -240,9 +240,10 @@ function parseEvent(v: unknown): LogEvent | null {
   return {
     n,
     t: num(e.t) ?? 0,
-    kind: isEventKind(e.kind) ? e.kind : "report",
-    text: text(e.text) ?? "",
-    ...toolDetail(data),
+    kind,
+    text: call ?? words,
+    detail: call ? brief(said) : resultWords(data.result),
+    refused: isRefused(data),
   };
 }
 

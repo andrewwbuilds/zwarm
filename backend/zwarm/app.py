@@ -113,6 +113,11 @@ class Front:
         self.tick_s.append(time.perf_counter() - started)
 
     def _halt(self, verb: str, button: str) -> None:
+        # The console sends a stop button to two hostnames at once, and it only needs doing once.
+        now = time.monotonic()
+        if self.last_button == verb and now - self.last_button_at < SAME_BUTTON_S:
+            return
+        self.last_button, self.last_button_at = verb, now
         if self.events is not None:
             self.events.add("said", f"{button} button")
         if self.agent is not None:

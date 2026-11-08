@@ -78,6 +78,12 @@ class SimLink:
             self.fleet.deliver(self.id, ("command", name, None), reliable=True)
         return True
 
+    def assume_flying(self) -> None:
+        self.fleet.drones[self.id].model.airborne = True
+
+    def assume_grounded(self) -> None:
+        self.fleet.drones[self.id].model.airborne = False
+
 
 class SimDrone:
     def __init__(self, drone_id, sim, model, rc):

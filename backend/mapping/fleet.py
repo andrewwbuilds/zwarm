@@ -498,8 +498,9 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
                         "warped or folded, so don't trust its shape. Repeating floor patterns or a drone that never turned can do this.")
     result = {"photos": total, "by_drone": pooled, "registered": best.registered, "registered_by_drone": placed,
               "models": summaries, "points": len(xyz), "error_px": round(best.error_px, 3), "warnings": warnings,
-              "masked": mask is not None, "runner": used.name, "level": {"rotation": rotation.tolist(), "scale": scale,
-                                                                         "offset": offset.tolist()}}
+              "masked": mask is not None, "runner": used.name, "in_room": agrees,
+              "room_fit_m": None if fit is None else fit["median_error_m"],
+              "level": {"rotation": rotation.tolist(), "scale": scale, "offset": offset.tolist()}}
     marks = sorted(times.items(), key=lambda item: item[1]) + [("end", time.perf_counter())]
     result["seconds"] = {name: round(next_t - t, 1) for (name, t), (_, next_t) in zip(marks, marks[1:])}
     result["seconds"]["total"] = round(time.perf_counter() - started, 1)

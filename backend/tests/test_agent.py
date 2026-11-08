@@ -516,7 +516,7 @@ class ToolCheckTests(unittest.TestCase):
 
         fleet, client, agent = fleet_agent("flying", use(call("start_mission", kind="inspect", region="south", target="furniture")), say("OK."))
         fleet.hub.memory = Memory()
-        record = agent.handle("check the furniture")["tool_calls"][0]
+        record = agent.handle("check the furniture on the south side")["tool_calls"][0]
         self.assertEqual(fleet.missions.calls, [("start", "inspect", "south", None)])
         self.assertIn("hasn't seen", record["result"]["text"])
 

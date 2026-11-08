@@ -130,7 +130,7 @@ class Coverage:
             return None
         return Viewpoint(self.candidates[index].copy(), float(self.candidate_yaws[index]), np.flatnonzero(sees[index] & wanted))
 
-    def standoff(self, p, target, avoid=(), keep_away: float = 0.7, tilt: float = DEFAULT_TILT) -> Viewpoint | None:
+    def standoff(self, p, target, avoid=(), keep_away: float = KEEP_AWAY, tilt: float = DEFAULT_TILT) -> Viewpoint | None:
         """The nearest place to get a clear close look at a thing, near the middle of the picture."""
         self._refresh()
         if not len(self.candidates):

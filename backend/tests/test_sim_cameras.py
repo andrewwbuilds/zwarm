@@ -303,11 +303,15 @@ class DemoWorldTests(unittest.TestCase):
         marks = w.scene.decals[1 + len(w.anchors):]
         for a in w.anchors.values():
             reach = paper_width(a) / 2
-            for box in w.scene.boxes:
-                self.assertFalse(box.lo[0] - reach < a.x < box.hi[0] + reach and box.lo[1] - reach < a.y < box.hi[1] + reach, a.id)
-            for d in w.damage:
-                if d.where[2] == 0.0:
-                    self.assertGreater(math.hypot(a.x - d.where[0], a.y - d.where[1]), d.size / 2 + reach, a.id)
+            for thing in (*w.scene.boxes, *(m for m in marks if m.center[2] == 0.0)):
+                self.assertFalse(thing.lo[0] - reach < a.x < thing.hi[0] + reach and thing.lo[1] - reach < a.y < thing.hi[1] + reach, a.id)
+
+    def test_tags_cover_the_room_from_a_hover(self):
+        w = world()
+        lens = Lens.from_fov()
+        spots = [(x, y) for x in np.arange(-2.5, 1.6, 0.25) for y in np.arange(-2.0, 2.01, 0.25)]
+        seen = sum(bool(anchors_in_view(w.anchors, lens, TILT, (x, y, 1.0), 0.0)) for x, y in spots)
+        self.assertGreater(seen / len(spots), 0.75)  # all heading north; a turn finds a tag for the rest
 
     def test_every_pad_should_see_an_anchor_from_a_hover(self):
         w = world()

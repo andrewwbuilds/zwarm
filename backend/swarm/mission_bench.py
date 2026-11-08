@@ -273,7 +273,7 @@ def focus_moves_all(seed):
 
 
 def map_with_focus(seed):
-    """Map, then 'stop mapping and focus on the north side'. Capture runs throughout and the build starts at the end."""
+    """Map, then 'stop mapping and focus on the north side'. Capture runs throughout and the build waits for the landing."""
     capture = FakeCapture()
     f = MissionFlight(THREE, seed, capture=capture)
     def script():

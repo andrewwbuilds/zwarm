@@ -589,6 +589,7 @@ async def get_capabilities():
         "busy": _flying_plan() or bool(plugin_manager and plugin_manager.running()),
         # Presumed flight state for toggle-bit drones (S2x); None where it isn't tracked.
         "airborne": getattr(flight_controller.model, "airborne", None) if flight_controller else None,
+        "link_quality": _link_quality(),
     }
 
 

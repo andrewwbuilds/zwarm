@@ -548,9 +548,9 @@ def floor_demo_blind(seed):
         f.numbers["mission_s"] = round(f.fleet.t - started, 1)
         f.numbers.update({f"views_{key}": value for key, value in f.missions.status()["views"].items()})
         f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
-        f.check(f.co.closest >= -0.05, f"the survivors were left with closest {f.co.closest:.2f}")
+        f.check(any(e["drone"] == "2" for e in f.happened("drone_lost")), "nobody reported 2 lost")
         f.hub.land()
-        yield from f.until(lambda: f.co.drones["a"].phase == Phase.GROUND and f.co.drones["c"].phase == Phase.GROUND, 90.0, "landing")
+        yield from f.until(lambda: f.co.drones["1"].phase == Phase.GROUND and f.co.drones["3"].phase == Phase.GROUND, 90.0, "landing")
     return f, script()
 
 

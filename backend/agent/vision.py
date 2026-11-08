@@ -11,6 +11,7 @@ severities, and a number from 0 to 1. Nothing here or downstream should act on t
 from __future__ import annotations
 
 import base64
+import http.client
 import json
 import logging
 import os

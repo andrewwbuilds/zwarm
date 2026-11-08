@@ -261,7 +261,7 @@ class Routes(unittest.TestCase):
         f = Flight(self)
         f.run(0.5)
         state = f.state()
-        for key in ("simulated", "mission", "drones", "room", "coverage", "things", "agent", "pending_plan", "estopped"):
+        for key in ("simulated", "mission", "drones", "room", "coverage", "things", "agent", "pending_plan", "estopped", "pair_m", "pair_lowest_m"):
             self.assertIn(key, state)
         self.assertTrue(state["simulated"])
         for key in ("id", "phase", "p", "yaw", "sigma", "fix_age", "flight_s", "faults", "connected", "path", "goal"):

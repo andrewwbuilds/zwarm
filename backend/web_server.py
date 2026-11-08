@@ -571,6 +571,15 @@ def stabilizer_set(body: dict = Body(...)):
     return stabilizer_service.status()
 
 
+def _link_quality():
+    """The drone's Wi-Fi link byte where the protocol reports one, else None."""
+    read = getattr(getattr(flight_controller, "protocol", None), "read_link_quality", None)
+    try:
+        return read() if read else None
+    except Exception:
+        return None
+
+
 @app.get("/capabilities")
 async def get_capabilities():
     return {

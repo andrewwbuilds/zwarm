@@ -207,17 +207,21 @@ def render_flights(folder: Path, seconds: float, layout: str, world: str = "demo
 
 
 def align(model: np.ndarray, truth: np.ndarray) -> tuple[float, np.ndarray]:
-    """Scale, rotate and shift model points onto the truth (Umeyama). Returns (scale, aligned points)."""
-    mean_m, mean_t = model.mean(axis=0), truth.mean(axis=0)
-    a, b = model - mean_m, truth - mean_t
-    u, d, vt = np.linalg.svd(b.T @ a / len(a))
-    flip = np.eye(3)
-    if np.linalg.det(u) * np.linalg.det(vt) < 0:
-        flip[2, 2] = -1
-    rotation = u @ flip @ vt
-    variance = (a * a).sum() / len(a)
-    scale = float(np.trace(np.diag(d) @ flip) / max(variance, 1e-12))
-    return scale, scale * a @ rotation.T + mean_t
+    """Scale, rotate and shift model points onto the truth. Returns (scale, aligned points)."""
+    rotation, scale, offset, _ = fleet.fit_to_room(model, truth)
+    return scale, scale * model @ rotation.T + offset
+
+
+def write_tracked(folder: Path, noise_m: float) -> None:
+    """What FleetCapture's pose_of would have recorded: the truth plus tracker noise. noise_m below 0 writes nothing."""
+    if noise_m < 0:
+        return
+    rng = np.random.default_rng(5)
+    truth = json.loads((folder / "truth.json").read_text())
+    for drone, frames in truth.items():
+        lines = [json.dumps({"frame": name, "p": (np.array(where[:3]) + rng.normal(0, noise_m, 3)).round(4).tolist()})
+                 for name, where in frames.items()]
+        (folder / "drones" / drone / "poses.jsonl").write_text("\n".join(lines) + "\n")
 
 
 def evaluate(folder: Path) -> dict:

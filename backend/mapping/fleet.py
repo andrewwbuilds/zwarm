@@ -542,9 +542,9 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
                         "Fly so the drones see some of the same floor, or give the build tracked positions.")
     wrong = [part for part in parts if part["fit"] and part not in joined and part["model"].registered >= MIN_FIT_PHOTOS]
     if wrong:
-        worst = max(part["fit"]["median_error_m"] for part in wrong)
-        warnings.append(f"A map with {wrong[0]['model'].registered} photos disagrees with where the drones were tracked, by {worst:.1f} m, "
-                        "so it is probably warped or folded" + (" and was left out." if joined else ". Don't trust its shape.") +
+        share = wrong[0]["fit"]["agrees"]
+        warnings.append(f"A map with {wrong[0]['model'].registered} photos disagrees with where the drones were tracked: only {share:.0%} of its "
+                        f"photos are within {ROOM_FIT_LIMIT_M} m. It is probably warped or folded" + (" and was left out." if joined else ". Don't trust its shape.") +
                         " Repeating floor patterns or a drone that never turned can do this.")
     result = {"photos": total, "by_drone": pooled, "registered": registered, "registered_by_drone": placed,
               "models": summaries, "points": len(level), "error_px": round(main["model"].error_px, 3), "warnings": warnings,

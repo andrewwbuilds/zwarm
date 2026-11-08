@@ -31,6 +31,8 @@ class Tracked:
         self.p = np.zeros(3)
         self.v = np.zeros(3)
         self.yaw = 0.0
+        self.sigma = 0.0
+        self.fix_age = 0.0
 
     def update(self, pose: Pose) -> None:
         measured = np.array(pose.p, float)

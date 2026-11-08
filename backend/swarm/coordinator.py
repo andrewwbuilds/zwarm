@@ -63,6 +63,8 @@ CHECK_WRONG_WAY = 0.2  # going backwards this fast part way through a move ends 
 CHECK_STILL_SPEED = 0.13  # stopped, whatever it was doing before
 CHECK_STOP_RATIO = 0.5  # or at least slowed this much: no flow sensor means it coasts
 CHECK_MAX_COAST = 0.75  # m covered after being told to stop: past this it fails at once
+DOWN_SETTLED_S = 10.0  # this long after a drone looked to come down, it has finished coming down
+DOWN_GAP = 0.25  # m kept from it after that, on top of the separation. It's only there in case it never came down
 
 
 class Phase(str, Enum):

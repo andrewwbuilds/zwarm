@@ -566,6 +566,11 @@ class JoiningTests(unittest.TestCase):
         self.assertLess(cloud[:, 0].min(), -2.5)  # both halves of the room, in metres
         self.assertGreater(cloud[:, 0].max(), 2.5)
 
+    def test_points_scattered_far_outside_the_flight_are_dropped(self):
+        centres = np.column_stack([np.linspace(-2, 2, 40), np.linspace(-1, 1, 40), np.ones(40)])
+        cloud = np.array([[0.0, 0.0, 0.0], [5.5, 0.0, 0.5], [40.0, 0.0, 0.0], [0.0, -30.0, 0.0], [0.0, 0.0, 25.0], [0.0, 0.0, -8.0]])
+        self.assertEqual(fleet.inside_flight(cloud, centres).tolist(), [True, True, False, False, False, False])
+
     def test_a_tiny_side_model_stays_out_of_the_map(self):
         self.add_model(0, "1", 40, (-3, 3))
         self.add_model(1, "2", 14, (-1, 1))

@@ -476,6 +476,7 @@ class Agent:
     def _execute(self, plan: dict) -> dict:
         results = []
         ok = True
+        epoch = self._epoch
         for step in plan["steps"]:
             try:
                 given = {k: v for k, v in step["args"].items() if k != "note"}

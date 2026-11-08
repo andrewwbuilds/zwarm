@@ -98,7 +98,6 @@
   overflow-wrap: anywhere;
 }
 .zw-mission-sub { color: var(--zw-soft); font-size: 15px; }
-.zw-mission-sub b { color: var(--zw-yellow); font-weight: 600; }
 .zw-percent {
   flex: none;
   text-align: right;

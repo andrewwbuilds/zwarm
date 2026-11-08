@@ -255,8 +255,8 @@ def real_runtime(config: SwarmFile) -> Runtime:
     tracker.start(frames)
 
     def close() -> None:
-        for worker in workers:
-            worker.stop()
+        tracker.stop()
+        frames.stop()
         for link in links.values():
             link.stop()
 

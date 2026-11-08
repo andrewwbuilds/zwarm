@@ -322,6 +322,13 @@ class StepsTests(unittest.TestCase):
         self.assertIn("--ImageReader.single_camera", shared)
         self.assertNotIn("--ImageReader.single_camera_per_folder", shared)
 
+    def test_a_link_needs_more_matches_than_false_ones_reach(self):
+        mapper = self.flags()["mapper"]
+        self.assertEqual(mapper[mapper.index("--Mapper.min_num_matches") + 1], "30")
+        with mock.patch.dict(os.environ, {"MAP_MIN_LINK": "22"}):
+            mapper = self.flags()["mapper"]
+        self.assertEqual(mapper[mapper.index("--Mapper.min_num_matches") + 1], "22")
+
     def test_the_lens_guess_is_90_degrees_across_the_width(self):
         features = self.flags()["features"]
         self.assertEqual(features[features.index("--ImageReader.camera_params") + 1], "592.0,592.0,328.0,0")

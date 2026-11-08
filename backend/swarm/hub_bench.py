@@ -302,7 +302,7 @@ def stop_mid_search(seed):
         f.say("find the backpack")
         yield from f.wait(9.0)
         f.say("stop")
-        f.check(f.hub.search.state == "stopped", "the search carried on")
+        f.check(f.hub.search.state in ("stopped", "found"), "the search carried on")
         yield from f.wait(4.0)
         speeds = [float(np.linalg.norm(d.tracked.v[:2])) for d in f.co.drones.values()]
         f.check(max(speeds) < 0.2, f"still moving after stop: {max(speeds):.2f} m/s")

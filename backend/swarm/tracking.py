@@ -352,6 +352,7 @@ YAW_DRIFT = math.radians(1.5)  # rad/s with no yaw stick
 PAD_SIGMA = 0.1  # how carefully a drone is expected to be set on its pad
 PAD_YAW_SIGMA = math.radians(15)
 FIX_MODEL_AFTER_S = 0.4  # with no sighting for this long, trust the command for speed
+COMMAND_EXPIRES_S = 0.3  # the backend centres the sticks this long after the last command
 RESPONSE_S = 0.5
 GATE_M = 0.45
 LANDING_DESCENT = 0.45  # m/s, an estimate of the stock auto-land

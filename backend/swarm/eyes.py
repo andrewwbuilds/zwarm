@@ -161,7 +161,7 @@ class Walker:
 
 
 class SimEyes:
-    def __init__(self, fleet, items=(), walkers=(), seed: int = 1, false_rate: float = 0.005):
+    def __init__(self, fleet, items=(), walkers=(), seed: int = 1, false_rate: float = 0.005, tilts: dict | None = None):
         self.fleet = fleet
         self.items = list(items)
         self.walkers = list(walkers)

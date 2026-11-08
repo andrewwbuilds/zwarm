@@ -287,8 +287,21 @@ class Coordinator:
         self.hold_checks()
         self.takeoff_queue.clear()
 
+    def hold_checks(self) -> None:
+        """No test moves until the operator asks for work again. A drone still climbing waits too."""
+        for d in self.drones.values():
+            if d.phase in (Phase.TAKEOFF, Phase.CHECK):
+                d.check_held = True
+
+    def resume_checks(self) -> None:
+        for d in self.drones.values():
+            d.check_held = False
+
     def land(self, now: float | None = None) -> None:
-        """Bring each flying drone back over its pad, then land them one after another."""
+        """Bring each flying drone back over its pad, then land them one after another.
+
+        A drone still climbing can't take the toggle yet, so it's asked to land as soon as it's up.
+        """
         now = self.now if now is None else now
         self.takeoff_queue.clear()
         self.next_landing = now

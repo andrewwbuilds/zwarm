@@ -21,9 +21,7 @@ def cmd_sim(args) -> int:
 
 
 def cmd_fly(args) -> int:
-    import uvicorn
-
-    from swarm.server import SwarmFile, build_app, real_runtime
+    from swarm.server import SwarmFile, build_app, real_runtime, serve
     from swarm.tracking import SwarmFileError
 
     try:

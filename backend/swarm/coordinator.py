@@ -564,6 +564,15 @@ class Coordinator:
                     d.backend_grounded = True  # told to land, so its backend won't pass on another landing
                     self._set_goal(d, d.tracked.p.copy())
         elif d.phase in (Phase.AIR, Phase.CHECK):
+            down = self._looks_down(d, now)
+            if down:
+                self._mark_down(d, down)
+                return
+            if d.land_here_wanted and d.link.connected:
+                d.check = None
+                d.phase = Phase.AIR
+                self._toggle_land(d, now)
+                return
             if age > LOST_LAND_S and d.link.connected:
                 d.fault("tracking", f"no pose for {age:.1f} s; landing it where it is")
                 self._toggle_land(d, now, blind=True)

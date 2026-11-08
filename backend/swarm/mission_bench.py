@@ -542,8 +542,10 @@ def floor_demo_blind(seed):
         yield from f.takeoff()
         f.missions.start("inspect", "all")
         yield from f.wait(8.0)
-        f.fleet.hidden["b"] = math.inf
-        yield from f.until(f.over, MISSION_LIMIT, "the inspection to finish without b")
+        f.fleet.hidden["2"] = math.inf
+        started = f.fleet.t
+        yield from f.until(f.over, MISSION_LIMIT, "the inspection to finish without 2")
+        f.numbers["mission_s"] = round(f.fleet.t - started, 1)
         f.numbers.update({f"views_{key}": value for key, value in f.missions.status()["views"].items()})
         f.check(f.missions.state == "done", f"ended {f.missions.state}: {f.missions.reason}")
         f.check(f.co.closest >= -0.05, f"the survivors were left with closest {f.co.closest:.2f}")

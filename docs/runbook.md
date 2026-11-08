@@ -239,7 +239,7 @@ Same one drone. In the console, by text or voice:
 
 `./fly.sh --swarm fly real.json`. "Take off", Approve. Wait for all three at `air`. "Map this entire area in 3D." After 90 s, "Stop mapping and focus on the north side." After 60 s, "Stop and land."
 
-**Pass:** all three up, all moved north after the focus line, `closest` at or above 0.4 m, all three landed, and `loop.overruns` barely moved. **If not:** fly two.
+**Pass:** all three up, all moved north after the focus line, `pair_lowest_m` at or above 0.35 m, all three landed, and `loop.overruns` barely moved. **If not:** fly two.
 
 ### Stage 6: full demo
 

@@ -41,7 +41,7 @@ export class VideoFeeds {
   }
 
   stop(): void {
-    this.running = false;
+    this.loop += 1;
     window.clearTimeout(this.timer);
   }
 

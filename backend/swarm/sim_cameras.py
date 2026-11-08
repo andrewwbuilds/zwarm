@@ -100,7 +100,7 @@ def side_decal(image: np.ndarray, box: Box, face: str, along: float, z: float, w
 
 
 def paper_width(anchor: Anchor) -> float:
-    """The whole printed sheet. An anchor's `size` measures only the black square in its middle."""
+    """The whole printed sheet. An anchor's `size` measures only the white square in its middle."""
     return anchor.size * (TOTAL_CELLS + 2 * MARGIN_CELLS) / INNER_CELLS
 
 

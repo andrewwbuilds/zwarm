@@ -185,6 +185,7 @@ class _Turn:
     def __init__(self, epoch: int, allowed=None, said: str | None = None, spoken_count: int = 0):
         self.epoch, self.allowed = epoch, allowed
         self.said = said  # what the operator's words were, when they asked for this turn
+        self.spoken_count = spoken_count  # how many sentences the operator had said when an event's turn began
         self.plan: dict | None = None
         self.records: list[dict] = []
 

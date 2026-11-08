@@ -276,7 +276,7 @@ class DemoWorldTests(unittest.TestCase):
         w = world()
         room = w.room()
         names = set(room.obstacles)
-        self.assertEqual(names, {"generator", "crate", "cabinet", "workbench"})
+        self.assertEqual(names, {"generator", "crate", "cabinet", "couch"})
         known = [(o.lo, o.hi) for o in room.obstacles.values()]
         boxes = [(b.lo, b.hi) for b in w.scene.boxes]
         for item in w.items:

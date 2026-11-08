@@ -32,6 +32,7 @@ class Room:
             raise ValueError("the fence's hi corner must be above its lo corner on every axis")
         self.obstacles: dict[str, Obstacle] = {}
         self.version = 0  # goes up when the map changes, so paths know to replan
+        self.fly_around = False  # nothing flies over a listed obstacle: on floor tags it would hide them
         for obstacle in obstacles:
             self.add(obstacle)
 

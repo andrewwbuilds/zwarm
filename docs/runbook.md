@@ -363,7 +363,7 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 | Same, and it visibly moved a little | Bar set too high for this drone | `backend/swarm/coordinator.py:61` `CHECK_MIN_SPEED` | Lower, 0.08 to 0.05 |
 | "kept going after being told to stop" on a good floor | Coasts longer than assumed | `backend/swarm/coordinator.py:63` `CHECK_STILL_SPEED` **safety** | Raise, 0.13 to 0.2 |
 | "drifted X m after being told to stop" on a good floor | Same | `backend/swarm/coordinator.py:65` `CHECK_MAX_COAST` **safety** | Raise, 0.75 to 1.0, only with room to spare |
-| "moved the wrong way" with the nose right and tags right | A gust. Or a reversed axis, if it repeats | `backend/swarm/coordinator.py:62` `CHECK_WRONG_WAY` **safety** | Raise, 0.2 to 0.3. If it repeats, check the signs at `backend/swarm/control.py:149` |
+| "moved the wrong way" with the nose right and tags right | A gust. Or a reversed axis, if it repeats | `backend/swarm/coordinator.py:62` `CHECK_WRONG_WAY` **safety** | Raise, 0.2 to 0.3. If it repeats, check the signs at `backend/swarm/control.py:156` |
 
 ### Flying
 

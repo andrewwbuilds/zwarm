@@ -39,6 +39,7 @@ cd ../frontend && npx tsc -b --noEmit && npm run lint
 - Sim results are not drone results. The simulated flight controller is an estimate, so say which one a number came from.
 - The S20 sends back only video and a link-quality byte. No attitude, height, flow or battery (`docs/research/S2x.md`).
 - Takeoff and land share one toggle bit on S2x, so `S2xDroneModel` guards against reversing a flight.
+- On tag-tracked flights a listed obstacle counts as floor to ceiling for flying (`Room.flight_box`), and hides the tags behind it, because a drone over furniture loses its position (`docs/decisions/0008-no-flying-over-listed-furniture.md`). Read `o.lo` and `o.hi` for what it looks like, and `flight_box` for where a drone may go.
 - Anything that raises in `FlightController.tick` drops a control packet. Keep helper failures from reaching it.
 - `backend/services/flight_controller.py` uses CRLF line endings. Preserve them, or the whole file shows as changed.
 - `backend/runs/` isn't ignored and fills with flight recordings. Stage explicit paths.

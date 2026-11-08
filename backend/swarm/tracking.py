@@ -587,6 +587,8 @@ class InsideOutTracker:
                 "seeing": list(self.seen[k]) if now - self.seen_at[k] < 1.0 else [],
                 "last_seen_s": None if not math.isfinite(self.seen_at[k]) else round(now - self.seen_at[k], 2),
                 "frames": self.frames[k],
+                "video_age_s": None if not math.isfinite(self.frame_at[k]) else round(now - self.frame_at[k], 2),
+                "video_change": self._change_now(k, now),
                 "fixes": self.estimators[k].fixes,
                 "rejected": self.estimators[k].rejections,
                 "sigma_m": round(self.estimators[k].sigma_xy, 3),

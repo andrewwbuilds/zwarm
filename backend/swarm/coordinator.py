@@ -302,6 +302,24 @@ class Coordinator:
             d.goal = None
             d.path = []
 
+    def reset_to_pads(self) -> list[str]:
+        """The operator has put the landed drones back on their pads."""
+        problems = [f"{d.id} is {d.phase.value}" for d in self.drones.values()
+                    if d.phase not in (Phase.GROUND, Phase.STOPPED)]
+        if problems:
+            return problems
+        for d in self.drones.values():
+            d.phase = Phase.GROUND
+            d.unknown_air = False
+            d.faults.clear()
+            d.goal = None
+            d.path = []
+            d.tracked = Tracked()
+            if self.tracker is not None:
+                self.tracker.reset(d.id)
+        self.estopped = False
+        return []
+
     def add_obstacle(self, obstacle) -> None:
         self.room.add(obstacle)
 

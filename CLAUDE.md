@@ -49,7 +49,7 @@ npm run dev                                         # /swarm on port 5173, for a
 - On tag-tracked flights a listed obstacle counts as floor to ceiling for flying (`Room.flight_box`), and hides the tags behind it, because a drone over furniture loses its position (`docs/decisions/0008-no-flying-over-listed-furniture.md`). Read `o.lo` and `o.hi` for what it looks like, and `flight_box` for where a drone may go.
 - Anything that raises in `FlightController.tick` drops a control packet. Keep helper failures from reaching it.
 - `backend/services/flight_controller.py` uses CRLF line endings. Preserve them, or the whole file shows as changed.
-- `backend/runs/` isn't ignored and fills with flight recordings. Stage explicit paths.
+- `backend/runs/` isn't ignored and fills with flight recordings, and `real.json` isn't ignored either. Stage explicit paths.
 - Camera geometry assumes a camera tilted 45 degrees down (`eyes.DEFAULT_TILT`). Pass `tilt=0.0` for a level one.
 - Real positions come from 25 printed AprilTags, family `tagStandard41h12`, IDs 0-24, flat on the floor in a grid and seen by each drone's own camera. Don't ask the user to print ArUco or QR codes. OpenCV can't read this family, so use `pupil-apriltags`. Its `tag_size` is the edge of the 5-cell white square inside the black ring: 0.0767 m on these sheets. They printed at 75%, so ignore the "184mm" printed on them.
 - `backend/swarm/inspect.py` shares a name with the standard library. Run swarm code with `python -m swarm...` from `backend/`. `python swarm/x.py` puts that folder first on the path and breaks `import inspect`.

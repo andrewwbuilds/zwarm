@@ -61,6 +61,10 @@ class Runtime:
         self.stopping = threading.Event()
         self.thread = threading.Thread(target=self.run, daemon=True, name="swarm-loop")
         self.overruns = 0
+        self.errors = 0
+        self.land_by: float | None = None  # when the shutdown landing gives up
+        self.closing = threading.Lock()
+        self.closed = False
 
     def start(self) -> None:
         self.thread.start()

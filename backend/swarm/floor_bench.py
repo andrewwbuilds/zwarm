@@ -296,8 +296,13 @@ MISSIONS = {m.__name__: m for m in (
 )}
 
 
-def fly(name: str, seed: int) -> dict:
-    flight, script = MISSIONS[name](seed)
+def fly(name: str, seed: int, max_speed: float | None = None) -> dict:
+    global _default_limits
+    _default_limits = Limits(max_speed=max_speed) if max_speed else None
+    try:
+        flight, script = MISSIONS[name](seed)
+    finally:
+        _default_limits = None
     gain = flight_controller._VELOCITY_GAIN
     flight_controller._VELOCITY_GAIN = gain * flight.velocity_gain_scale
     try:

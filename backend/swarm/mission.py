@@ -378,6 +378,7 @@ class Sweep:
         free = []
         for d in flying:
             order, view = hub.orders.get(d.id), self.views.get(d.id)
+            manager.give_up_if_slow(d, order, now)
             if order is not None and order.stage == "failed":
                 self.banned.append(order.goal.copy())
             elif view is None or order is None:

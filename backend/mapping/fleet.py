@@ -474,6 +474,10 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
     cameras = read_cameras(text / "images.txt")
     xyz, rgb = read_points(text / "points3D.txt")
     rotation, scale, offset = level_map(cameras, xyz)
+    fit = check_against_room(cameras, read_tracked(folder))
+    agrees = fit is not None and fit["median_error_m"] <= ROOM_FIT_LIMIT_M
+    if agrees:
+        rotation, scale, offset = fit["rotation"], fit["scale"], fit["offset"]
     level = scale * xyz @ rotation.T + offset if len(xyz) else xyz
     write_ply(folder / "cloud.ply", level.astype(np.float32), rgb)
     np.save(folder / "points.npy", np.hstack([level, rgb]).astype(np.float32))

@@ -323,7 +323,7 @@ def main() -> int:
             (folder / "drones" / drone.name).mkdir()
             (folder / "drones" / drone.name / "raw").symlink_to(drone / "raw")
     else:
-        timing = render_flights(folder, args.seconds, args.layout, args.world, args.walls, args.scale)
+        timing = render_flights(folder, args.seconds, args.layout, args.world, args.walls, args.scale, args.rough)
         print(f"sim: rendered {sum(d['frames'] for d in timing['drones'])} frames in {timing['wall_s']:.0f} s")
     if args.render_only:
         return 0

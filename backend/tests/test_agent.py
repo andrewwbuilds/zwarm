@@ -274,7 +274,7 @@ class DirectCommandTests(unittest.TestCase):
 
     def test_a_mission_that_fails_to_stop_cannot_stop_a_landing(self):
         fleet, client, agent = fleet_agent("mapping")
-        fleet.missions.stop = lambda: (_ for _ in ()).throw(RuntimeError("boom"))
+        fleet.missions.stop = lambda then=None: (_ for _ in ()).throw(RuntimeError("boom"))
         with self.assertLogs("agent.tools", logging.ERROR):
             result = agent.handle("land")
         self.assertIn("land", fleet.hub.calls)

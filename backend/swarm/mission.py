@@ -325,9 +325,6 @@ class _Later:
 
     def __call__(self, job, *args) -> None:
         self.jobs.put((job, args))
-        if self.thread is None:
-            self.thread = threading.Thread(target=self._run, daemon=True, name="mission-later")
-            self.thread.start()
 
     def _run(self) -> None:
         while True:

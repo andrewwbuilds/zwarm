@@ -868,6 +868,10 @@ class Coordinator:
             extra = max(extra, min(1.0, 2 * d.tracked.sigma - self.limits.pose_error))
             if d.unknown_air:
                 extra = max(extra, 0.5)
+            if d.came_down and now - d.down_at >= DOWN_SETTLED_S:
+                # Its position stopped updating when it came down, so the uncertainty it froze at says nothing
+                # now. Kept at that, one lost drone would fence off a third of the room for the rest of the flight.
+                extra = DOWN_GAP
             velocity = d.tracked.v if age <= STALE_S else np.zeros(3)
             if age <= STALE_S:
                 position = d.tracked.now(now)

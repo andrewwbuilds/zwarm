@@ -626,6 +626,18 @@ class FleetCapture:
                     if not repeated:  # this loop runs 50 times a second
                         logger.warning("[map] %s", message)
 
+    def _save_pose(self, drone: str, path: Path, frame: str) -> None:
+        """A tracker fault costs this frame its position and nothing else."""
+        if self.pose_of is None:
+            return
+        try:
+            where = self.pose_of(drone)
+            if where is not None:
+                with open(path, "a") as f:
+                    f.write(json.dumps({"frame": frame, "p": [round(float(v), 4) for v in where[:3]]}) + "\n")
+        except Exception as error:
+            logger.debug("[map] no position for %s: %s", drone, error)
+
     def stop(self) -> dict:
         """Stop saving frames and return at once, so a mission can call this from the flight loop.
 

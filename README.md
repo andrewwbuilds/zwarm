@@ -152,6 +152,38 @@ SWARM_E2E=1 uv run python -m unittest tests.test_swarm_floor_e2e   # through rea
 
 Limits: it only avoids obstacles listed in the swarm file or reported by the fleet. Lens, sharpness, exposure and stick response on the real drone are all unmeasured, so simulated accuracy may not carry over.
 
+### One map from every drone (simulator tested)
+`backend/mapping/fleet.py` saves every drone's video, chooses up to 240 photos across them, and places them all with COLMAP. A map mission starts the capture and the build by itself. The build runs in the background at low priority and never touches the flight loop.
+
+```
+cd backend
+uv run python -m unittest tests.test_mapping_fleet     # no COLMAP or network needed
+uv run python -m mapping.fleet_bench --seconds 180     # three simulated flights, checked against the simulator's truth
+uv run python -m mapping.fleet_bench --live            # real time: SimFrames, capture, build, points
+```
+
+Pass `pose_of=tracked_pose_of(hub)` to `FleetCapture`. Without it the map is only levelled, with a rough scale from assuming a 1 m flight height, and nothing can tell whether its shape is right. With it, the build checks the map against the floor-tag tracker and puts it in room coordinates.
+
+Results on the simulator, from three drones flying 3 minutes each (9504 frames, 240 photos). Frames match the S20's size and JPEG bytes, but a render has no rolling shutter or real lens, so **sim results are not drone results**:
+
+| Flight | Placed | Cameras off by (median) | Result |
+|---|---|---|---|
+| Normal mission, floor that never repeats | 234 | 1 mm | one map, in the room |
+| Same, different rough lens per drone, with blur and distortion | 231 | 3 mm | one map |
+| Dull floor with tags and furniture only | 223 | 3 mm, about 9% of photos over 0.5 m | one map, in the room |
+| Drones looking away from each other | 228 | each map fits the tracker to 0.08, 0.26 and 0.08 m | 3 maps joined by tracked position, with a warning |
+| Floor and walls that repeat exactly | 228 | 1.4 m | **folded**, flagged as untrustworthy, not fixed |
+
+A 3-minute flight builds in about 2 minutes on an M5 Pro (114 s with other jobs running). A Gaussian splat is optional (`MAP_SPLAT=1`) and takes another 100 s for 5000 steps. It stays in COLMAP's own axes rather than room coordinates.
+
+Environment:
+- `MAP_BUILD_PHOTOS`: the photo cap, default 240. Exhaustive matching grows with the square of this: 360 photos took 466 s under heavy load.
+- `MAP_MIN_LINK`: matches needed to link two photos, default 30. Lower it if real flights split into too many maps.
+- `MAP_SPLAT=1`: also train a splat after the cloud is ready.
+- `MAP_BUILD_SSH=user@host`: run COLMAP on another machine, such as a Brev GPU instance. It needs COLMAP 4 there, because older versions name their flags differently. A failure falls back to building here. Tested through stand-in `ssh` and `rsync` scripts and a real failed connection, but never against a real host.
+
+For real flights, keep texture on the floor and let the drones turn. A drone flying straight at one heading can't pin down its own lens. See [the decision record](docs/decisions/0006-fleet-map.md).
+
 ## Shared memory, search and commands (simulator tested)
 `backend/swarm/hub.py` gives the fleet one shared memory. Drones can't talk to each other, so whatever one camera sees goes into a SQLite database on the Mac, and the coordinator flies every drone around it. Say `find the backpack` and the drones share out the floor, confirm any find with a close look, and report back.
 

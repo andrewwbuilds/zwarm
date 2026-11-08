@@ -36,195 +36,318 @@ from swarm.tracking import (
     tag_grid,
 )
 
-WIDTH, HEIGHT = 1920, 1080
-ANCHORS = {40: (-1.5, -1.0, 0.0), 41: (1.5, -1.0, 0.0), 42: (1.5, 1.0, 0.0), 43: (-1.5, 1.0, 0.0)}
-ANCHOR_SIZE = 0.15
-MARKER_SIZE = 0.07
+WHITE = 0.0767
+TILT = 45.0
+HALL = Scene(name="hall", bounds=Box((-6, -6, 0), (6, 6, 3), "wall"))
+LEVEL = (1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0)
 
 
-def overhead_camera(position=(0.1, -0.1, 2.6), fov=90.0, look_tilt=0.0):
-    """A camera at a position looking straight down, top of the image toward world +x."""
-    model = CameraModel.from_fov(WIDTH, HEIGHT, fov)
-    # Camera axes in world terms: x right = world -y, y down = world -x, z forward = world -z.
-    rotation = np.array([[0, -1, 0], [-1, 0, 0], [0, 0, -1]], float)
-    if look_tilt:
-        tilt, _ = cv2.Rodrigues(np.array([look_tilt, 0.0, 0.0]))
-        rotation = tilt @ rotation
-    rvec, _ = cv2.Rodrigues(rotation)
-    tvec = -rotation @ np.array(position, float)
-    return CameraModel(model.matrix, model.distortion, rvec.ravel(), tvec)
+def yawed(yaw):
+    c, s = math.cos(yaw), math.sin(yaw)
+    return (c, -s, 0.0, s, c, 0.0, 0.0, 0.0, 1.0)
 
 
-def paint_marker(image, camera, marker_id, corners_world):
-    """Draw a marker with its white border where this camera would see it."""
-    source = marker_image(marker_id, 400)
-    side = 400 + 2 * 60
-    tile = cv2.copyMakeBorder(source, 60, 60, 60, 60, cv2.BORDER_CONSTANT, value=255)
-    centre = corners_world.mean(0)
-    outer = centre + (corners_world - centre) * (side / 400)
-    pixels, _ = cv2.projectPoints(outer, camera.rvec, camera.tvec, camera.matrix, camera.distortion)
-    tile_corners = np.array([[0, 0], [side, 0], [side, side], [0, side]], np.float32)
-    warp = cv2.getPerspectiveTransform(tile_corners, pixels.reshape(4, 2).astype(np.float32))
-    painted = cv2.warpPerspective(tile, warp, (image.shape[1], image.shape[0]), flags=cv2.INTER_LINEAR)
-    mask = cv2.warpPerspective(np.full_like(tile, 255), warp, (image.shape[1], image.shape[0]))
-    image[mask > 0] = painted[mask > 0]
+def grid():
+    return load_anchors(anchors_section(WHITE, tag_grid()))
 
 
-def scene_image(camera, drones=(), anchors=True, noise=2.0, seed=1):
-    image = np.full((HEIGHT, WIDTH), 120, np.uint8)
-    if anchors:
-        for marker, centre in ANCHORS.items():
-            paint_marker(image, camera, marker, flat_marker_corners(centre, ANCHOR_SIZE))
-    for marker, centre, yaw in drones:
-        paint_marker(image, camera, marker, flat_marker_corners(centre, MARKER_SIZE, yaw))
-    if noise:
-        rng = np.random.default_rng(seed)
-        image = np.clip(image + rng.normal(0, noise, image.shape), 0, 255).astype(np.uint8)
-    return cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+def read(anchors, x, y, z, yaw, seed=0, tilt=TILT, video=None, lens=None, assumed_tilt=None):
+    image = FloorCamera(HALL, anchors, tilt, video or VideoConditions(), seed).render(x, y, z, yawed(yaw))
+    seen = AnchorReader(anchors).find(image)
+    return seen, solve_fix(seen, lens or Lens.from_fov(), math.radians(assumed_tilt or tilt), 0.0, yaw)
 
 
-class CameraLocationTests(unittest.TestCase):
-    def test_anchors_on_the_floor_give_the_cameras_position(self):
-        truth = overhead_camera(position=(0.2, 0.1, 2.6))
-        lens = CameraModel(truth.matrix, truth.distortion)
-        found = locate_camera(scene_image(truth), lens, ANCHORS, ANCHOR_SIZE)
-        np.testing.assert_allclose(camera_position(found), [0.2, 0.1, 2.6], atol=0.05)
-        self.assertLess(found.reprojection_px, 1.0)
+class LayoutTests(unittest.TestCase):
+    def test_the_default_grid_matches_how_the_tags_are_laid_out(self):
+        tags = {t["tag"]: t for t in tag_grid()}
+        self.assertEqual(len(tags), 25)
+        self.assertEqual((tags[0]["x"], tags[0]["y"]), (-2.0, 2.0))  # near left, seen from the south facing +x
+        self.assertEqual((tags[4]["x"], tags[4]["y"]), (-2.0, -2.0))  # rising to the right along the row
+        self.assertEqual((tags[5]["x"], tags[5]["y"]), (-1.0, 2.0))  # next row further away
+        self.assertEqual((tags[24]["x"], tags[24]["y"]), (2.0, -2.0))  # far right
+        self.assertTrue(all(t["rotation_deg"] == 0.0 for t in tags.values()))
 
-    def test_a_located_camera_puts_drones_where_they_really_are(self):
-        # The number that matters: anchors on the floor, drones well above them.
-        truth = overhead_camera(position=(0.2, 0.1, 2.6))
-        found = locate_camera(scene_image(truth), CameraModel(truth.matrix, truth.distortion), ANCHORS, ANCHOR_SIZE)
-        for x, y, z in ((0.0, 0.0, 1.0), (0.5, 0.5, 1.2), (-0.4, -0.5, 0.8)):
-            image = scene_image(truth, [(1, (x, y, z), 0.3)], anchors=False)
-            sightings = read_markers(image, found, MARKER_SIZE)
-            self.assertEqual(len(sightings), 1)
-            np.testing.assert_allclose(sightings[0].position, (x, y, z), atol=0.07)
+    def test_ids_can_start_elsewhere(self):
+        self.assertEqual(tag_grid(start_id=30)[0]["tag"], 30)
 
-    def test_one_anchor_is_not_enough(self):
-        truth = overhead_camera()
-        image = np.full((HEIGHT, WIDTH), 120, np.uint8)
-        paint_marker(image, truth, 40, flat_marker_corners(ANCHORS[40], ANCHOR_SIZE))
+    def test_a_simulated_room_cannot_ask_for_more_tags_than_exist(self):
         with self.assertRaises(ValueError):
-            locate_camera(image, CameraModel(truth.matrix, truth.distortion), ANCHORS, ANCHOR_SIZE)
+            grid_layout((-5, -5), (5, 5), 1.0, WHITE)
 
 
-class MarkerReadingTests(unittest.TestCase):
-    """A fixed set of poses across the flying volume. All of them must read back accurately."""
+class SwarmFileTests(unittest.TestCase):
+    def section(self, **changes):
+        return {**anchors_section(WHITE, tag_grid()), **changes}
 
-    POSES = [
-        (x, y, z, yaw)
-        for z in (0.0, 0.6, 1.0, 1.4)
-        for x, y in ((0.0, 0.0), (-1.0, 0.5), (1.0, -0.5), (0.6, 0.6), (-0.6, -0.6))
-        for yaw in (0.0, 1.0, -2.2)
-    ]
+    def test_a_missing_size_is_refused_rather_than_guessed(self):
+        for section in (self.section(white_square_edge_m=None), {k: v for k, v in self.section().items() if k != "white_square_edge_m"}):
+            with self.assertRaisesRegex(SwarmFileError, "white_square_edge_m is missing"):
+                load_anchors(section)
 
-    def test_a_camera_knows_what_it_can_see(self):
-        camera = overhead_camera(position=(0, 0, 2.6))
-        self.assertTrue(in_view(camera, (0.0, 0.0, 1.4), WIDTH, HEIGHT))
-        self.assertFalse(in_view(camera, (1.0, 0.0, 1.4), WIDTH, HEIGHT))  # top of the image
-        self.assertTrue(in_view(camera, (0.0, 1.0, 1.4), WIDTH, HEIGHT))  # the wide way
-        self.assertFalse(in_view(camera, (0.0, 0.0, 3.0), WIDTH, HEIGHT))  # above the camera
+    def test_a_size_in_the_wrong_units_is_refused(self):
+        with self.assertRaises(SwarmFileError):
+            load_anchors(self.section(white_square_edge_m=76.7))
 
-    def test_position_and_heading_across_the_flying_volume(self):
-        camera = overhead_camera()
-        errors_xy, errors_z, errors_yaw = [], [], []
-        poses = [pose for pose in self.POSES if in_view(camera, pose[:3], WIDTH, HEIGHT)]
-        self.assertGreater(len(poses), 30)
-        for seed, (x, y, z, yaw) in enumerate(poses):
-            image = scene_image(camera, [(1, (x, y, z), yaw)], anchors=False, seed=seed)
-            sightings = read_markers(image, camera, MARKER_SIZE)
-            self.assertEqual([s.marker for s in sightings], [1], f"pose {(x, y, z, yaw)}")
-            s = sightings[0]
-            errors_xy.append(math.hypot(s.position[0] - x, s.position[1] - y))
-            errors_z.append(abs(s.position[2] - z))
-            errors_yaw.append(abs((s.yaw - yaw + math.pi) % (2 * math.pi) - math.pi))
-        # Rendered images with light noise: this bounds the maths, not what a real camera will do.
-        self.assertLess(max(errors_xy), 0.04, "horizontal error")
-        self.assertLess(max(errors_z), 0.08, "height error")  # worst on the floor, furthest from the camera
-        self.assertLess(max(errors_yaw), math.radians(3), "heading error")
+    def test_the_wrong_family_is_refused(self):
+        with self.assertRaises(SwarmFileError):
+            load_anchors(self.section(tag_family="tag36h11"))
 
-    def test_several_drones_keep_their_identities(self):
-        camera = overhead_camera()
-        drones = [(1, (-0.5, 0.0, 1.0), 0.0), (2, (0.5, 0.3, 1.1), 0.5), (3, (0.0, -0.6, 0.9), -1.0)]
-        sightings = {s.marker: s for s in read_markers(scene_image(camera, drones), camera, MARKER_SIZE)}
-        self.assertEqual(set(sightings), {1, 2, 3})  # anchors are left out
-        for marker, centre, _ in drones:
-            np.testing.assert_allclose(sightings[marker].position, centre, atol=0.06)
+    def test_the_example_file_loads_with_the_real_tags(self):
+        config = SwarmFile.load(Path(__file__).parents[1] / "swarm" / "example.json")
+        self.assertEqual(len(config.anchors), 25)
+        self.assertEqual(config.anchors["tag:0"].size, WHITE)
+        self.assertEqual(config.drones[0].camera_tilt_deg, 45.0)
+        self.assertEqual(config.optics()["1"].tilt_deg, 45.0)
 
-    def test_an_empty_scene_reads_nothing(self):
-        camera = overhead_camera()
-        self.assertEqual(read_markers(scene_image(camera, anchors=False), camera, MARKER_SIZE), [])
-
-    def test_a_tilted_camera_still_reads_true_positions(self):
-        camera = overhead_camera(position=(0.0, -0.8, 2.5), look_tilt=-0.3)
-        image = scene_image(camera, [(2, (0.3, 0.0, 1.0), 0.7)], anchors=False)
-        sightings = read_markers(image, camera, MARKER_SIZE)
-        self.assertEqual(len(sightings), 1)
-        np.testing.assert_allclose(sightings[0].position, (0.3, 0.0, 1.0), atol=0.06)
+    def test_a_swarm_file_without_the_size_will_not_load(self):
+        data = json.loads((Path(__file__).parents[1] / "swarm" / "example.json").read_text())
+        data["anchors"]["white_square_edge_m"] = None
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "swarm.json"
+            path.write_text(json.dumps(data))
+            with self.assertRaises(SwarmFileError):
+                SwarmFile.load(path)
 
 
-class PoseStoreTests(unittest.TestCase):
-    def test_height_is_measured_from_where_the_marker_sits_when_landed(self):
-        store = PoseStore({1: "a"}, mount_height=0.05)
-        store.add(1.0, [Sighting(1, (0.0, 0.0, 1.05), 0.0, 50.0)])
-        self.assertAlmostEqual(store.poses()["a"].p[2], 1.0)
+class TagReadingTests(unittest.TestCase):
+    """Poses across the flying volume, over the real layout, against known truth."""
 
-    def test_each_pose_is_delivered_once(self):
-        store = PoseStore({1: "a"})
-        store.add(1.0, [Sighting(1, (0.0, 0.0, 1.0), 0.0, 50.0)])
-        self.assertIn("a", store.poses())
-        self.assertEqual(store.poses(), {})
+    POSES = [(x, y, z, yaw) for x, y in ((-1.3, 0.2), (0.3, -0.6), (-0.5, 1.1), (0.7, 0.7)) for z in (0.8, 1.0, 1.3)
+             for yaw in (0.0, 0.5, -0.8)]
 
-    def test_a_far_cameras_view_does_not_replace_a_close_ones(self):
-        store = PoseStore({1: "a"})
-        store.add(1.00, [Sighting(1, (1.0, 0.0, 1.0), 0.0, 60.0)])
-        store.add(1.02, [Sighting(1, (1.2, 0.0, 1.0), 0.0, 20.0)])
-        self.assertEqual(store.poses()["a"].p[0], 1.0)
+    def test_position_height_and_heading_across_the_volume(self):
+        anchors = grid()
+        lens = Lens.from_fov()
+        errors_xy, errors_z, errors_yaw, read_count = [], [], [], 0
+        for i, (x, y, z, yaw) in enumerate(self.POSES):
+            if not anchors_in_view(anchors, lens, math.radians(TILT), (x, y, z), yaw):
+                continue
+            seen, fix = read(anchors, x, y, z, yaw, i)
+            self.assertIsNotNone(fix, (x, y, z, yaw))
+            read_count += 1
+            errors_xy.append(math.hypot(fix.p[0] - x, fix.p[1] - y))
+            errors_z.append(abs(fix.p[2] + 0.03 - z))
+            errors_yaw.append(abs((fix.yaw - yaw + math.pi) % (2 * math.pi) - math.pi))
+        self.assertGreater(read_count, 25)
+        self.assertLess(max(errors_xy), 0.1, "horizontal")
+        self.assertLess(max(errors_z), 0.1, "height")
+        self.assertLess(max(errors_yaw), math.radians(4), "heading")
 
-    def test_a_far_camera_takes_over_when_the_close_one_loses_sight(self):
-        store = PoseStore({1: "a"})
-        store.add(1.0, [Sighting(1, (1.0, 0.0, 1.0), 0.0, 60.0)])
-        store.poses()
-        store.add(1.5, [Sighting(1, (1.2, 0.0, 1.0), 0.0, 20.0)])
-        self.assertEqual(store.poses()["a"].p[0], 1.2)
+    def test_tag_rotation_on_the_floor_is_read_correctly(self):
+        for rotation in (0.0, 90.0, 180.0, -135.0):
+            tag = Anchor("tag:7", 0.8, 0.1, WHITE, rotation)
+            seen, fix = read({tag.id: tag}, 0.0, 0.0, 1.0, 0.0)
+            self.assertIsNotNone(fix, rotation)
+            self.assertAlmostEqual(fix.p[0], 0.0, delta=0.08, msg=str(rotation))
+            self.assertAlmostEqual(fix.yaw, 0.0, delta=math.radians(6), msg=str(rotation))
 
-    def test_marked_obstacles_appear_as_moving_things_until_they_go_stale(self):
-        store = PoseStore({1: "a"})
-        store.add(1.0, [Sighting(30, (1.0, 1.0, 1.5), 0.0, 40.0)])
-        self.assertEqual([m.id for m in store.moving_things(1.2)], ["marker-30"])
-        self.assertEqual(store.moving_things(3.0), [])
+    def test_a_wrong_size_scales_position_and_height(self):
+        # Why the size is required: what happens if the whole tag's width were entered instead.
+        tag = Anchor("tag:7", 0.8, 0.0, WHITE)
+        seen, good = read({tag.id: tag}, 0.0, 0.0, 1.0, 0.0)
+        wrong = Anchor("tag:7", 0.8, 0.0, WHITE * 9 / 5)
+        bad = solve_fix([(wrong, seen[0][1])], Lens.from_fov(), math.radians(TILT), 0.0, 0.0)
+        self.assertAlmostEqual((bad.p[2] + 0.03) / (good.p[2] + 0.03), 1.8, delta=0.05)
+
+    def test_a_tag_not_in_the_file_gives_no_position(self):
+        tag = Anchor("tag:7", 0.8, 0.0, WHITE)
+        image = FloorCamera(HALL, {tag.id: tag}, TILT, VideoConditions()).render(0.0, 0.0, 1.0, LEVEL)
+        reader = AnchorReader({"tag:3": Anchor("tag:3", 0.0, 0.0, WHITE)})
+        self.assertEqual(reader.find(image), [])
+        self.assertEqual(reader.unknown, {7})
+
+    def test_tilt_is_undone_when_working_out_heading(self):
+        for tilt in (45.0, 60.0, 80.0):
+            ahead = 1.0 / math.tan(math.radians(tilt))  # where the middle of the view meets the floor
+            tag = Anchor("tag:7", ahead * math.cos(0.3), ahead * math.sin(0.3), WHITE)
+            seen, fix = read({tag.id: tag}, 0.0, 0.0, 1.0, 0.3, tilt=tilt)
+            self.assertIsNotNone(fix, tilt)
+            self.assertAlmostEqual(fix.yaw, 0.3, delta=math.radians(6), msg=str(tilt))
+
+    def test_a_drone_on_the_floor_cannot_see_the_floor(self):
+        self.assertEqual(anchors_in_view(grid(), Lens.from_fov(), math.radians(TILT), (-2.5, 0.0, 0.05), 0.0), [])
+
+    def test_from_a_metre_up_it_can(self):
+        self.assertTrue(anchors_in_view(grid(), Lens.from_fov(), math.radians(TILT), (-2.5, 0.0, 1.0), 0.0))
 
 
-class LensTests(unittest.TestCase):
-    def test_a_checkerboard_recovers_the_focal_length(self):
-        columns, rows, square = 9, 6, 0.03
-        truth = overhead_camera(fov=70.0)
-        images = []
-        rng = np.random.default_rng(2)
-        board = np.full(((rows + 3) * 80, (columns + 3) * 80), 255, np.uint8)
-        for r in range(rows + 1):
-            for c in range(columns + 1):
-                if (r + c) % 2 == 0:
-                    board[80 + r * 80:160 + r * 80, 80 + c * 80:160 + c * 80] = 0
-        height, width = board.shape
-        scale = square / 80
-        for _ in range(12):
-            rvec = rng.uniform(-0.45, 0.45, 3)
-            tvec = np.array([rng.uniform(-0.1, 0.1), rng.uniform(-0.08, 0.08), rng.uniform(0.35, 0.55)])
-            flat = np.array([[0, 0, 0], [width, 0, 0], [width, height, 0], [0, height, 0]], float) * scale
-            flat -= np.array([width, height, 0]) * scale / 2
-            pixels, _ = cv2.projectPoints(flat, rvec, tvec, truth.matrix, truth.distortion)
-            warp = cv2.getPerspectiveTransform(
-                np.array([[0, 0], [width, 0], [width, height], [0, height]], np.float32), pixels.reshape(4, 2).astype(np.float32))
-            images.append(cv2.warpPerspective(board, warp, (WIDTH, HEIGHT), borderValue=128))
-        model = lens_from_checkerboards(images, (columns, rows), square)
-        self.assertAlmostEqual(model.matrix[0, 0] / truth.matrix[0, 0], 1.0, delta=0.02)
-        self.assertLess(model.reprojection_px, 1.0)
+class FocalFitTests(unittest.TestCase):
+    def frames(self, fov, count=6):
+        anchors = grid()
+        out = []
+        for i in range(count):
+            video = VideoConditions(render_scale=1.0, fov_deg=fov)
+            image = FloorCamera(HALL, anchors, TILT, video, i).render(-1.4 + 0.1 * i, 0.3, 1.1, yawed(0.1 * i))
+            out.append(AnchorReader(anchors).find(image))
+        return out
 
-    def test_too_few_views_are_refused(self):
+    def test_it_recovers_a_lens_narrower_than_the_guess(self):
+        frames = self.frames(80.0)
+        self.assertTrue(any(len(seen) >= 2 for seen in frames))
+        result = fit_focal(frames)
+        truth = (1184 / 2) / math.tan(math.radians(40.0))
+        self.assertAlmostEqual(result["focal_px"] / truth, 1.0, delta=0.04)
+        self.assertLess(result["error_px"], result["error_at_guess_px"])
+
+    def test_one_tag_at_a_time_is_not_enough(self):
+        tag = Anchor("tag:7", 0.8, 0.0, WHITE)
+        seen = AnchorReader({tag.id: tag}).find(FloorCamera(HALL, {tag.id: tag}, TILT, VideoConditions()).render(0.0, 0.0, 1.0, LEVEL))
         with self.assertRaises(ValueError):
-            lens_from_checkerboards([np.zeros((100, 100), np.uint8)], (9, 6), 0.03)
+            fit_focal([seen])
+
+
+def fix_at(t, x, y, z=1.0, yaw=0.0, sigma=0.02):
+    return Fix(t, (x, y, z), yaw, ("tag:1",), 1.2, 0.5, sigma, 0.03, math.radians(2))
+
+
+class EstimatorTests(unittest.TestCase):
+    def test_on_the_ground_it_stays_at_its_pad_and_stays_sure(self):
+        e = Estimator(-2.5, 1.0, 0.0)
+        start = e.sigma_xy
+        for i in range(100):
+            e.advance(i * 0.05)
+        self.assertEqual(tuple(e.p[:2]), (-2.5, 1.0))
+        self.assertEqual(e.sigma_xy, start)
+
+    def test_uncertainty_grows_without_sightings_and_faster_when_moving(self):
+        hover, moving = Estimator(0, 0, 0), Estimator(0, 0, 0)
+        hover.note_command(np.zeros(3), 0.0, True, False)
+        moving.note_command(np.array([0.5, 0, 0]), 0.0, True, False)
+        for i in range(100):
+            hover.advance(i * 0.05)
+            moving.advance(i * 0.05)
+        self.assertGreater(hover.sigma_xy, 0.1)
+        self.assertGreater(moving.sigma_xy, hover.sigma_xy + 0.2)
+        self.assertGreater(moving.p[0], 1.5)  # and it carried the commanded motion forward
+
+    def test_a_sighting_shrinks_uncertainty_and_moves_the_estimate(self):
+        e = Estimator(0, 0, 0)
+        e.note_command(np.zeros(3), 0.0, True, False)
+        for i in range(60):
+            e.advance(i * 0.05)
+        before = e.sigma_xy
+        self.assertTrue(e.add_fix(fix_at(2.9, 0.1, 0.0)))
+        self.assertLess(e.sigma_xy, before / 2)
+        self.assertAlmostEqual(e.p[0], 0.1, delta=0.03)
+
+    def test_a_late_sighting_is_compared_with_where_it_was_then(self):
+        e = Estimator(0, 0, 0)
+        e.note_command(np.array([0.5, 0, 0]), 0.0, True, False)
+        for i in range(61):
+            e.advance(i * 0.05)
+        at_three = e.p[0]
+        then = [p for t, p, _ in e.history if t <= 2.81][-1][0]
+        e.add_fix(fix_at(2.81, then, 0.0))  # exactly where we thought it was 0.2 s ago
+        self.assertAlmostEqual(e.p[0], at_three, delta=0.02)
+
+    def test_one_wild_sighting_is_ignored_and_three_agreeing_ones_are_believed(self):
+        e = Estimator(0, 0, 0)
+        e.note_command(np.zeros(3), 0.0, True, False)
+        e.advance(0.0)
+        e.add_fix(fix_at(0.0, 0.0, 0.0))
+        e.advance(0.1)
+        self.assertFalse(e.add_fix(fix_at(0.1, 3.0, 0.0)))
+        self.assertLess(abs(e.p[0]), 0.1)
+        e.advance(0.2)
+        self.assertFalse(e.add_fix(fix_at(0.2, 3.0, 0.0)))
+        e.advance(0.3)
+        self.assertTrue(e.add_fix(fix_at(0.3, 3.0, 0.0)))
+        self.assertGreater(e.p[0], 2.0)
+
+    def test_a_late_toggle_does_not_invent_a_climb(self):
+        e = Estimator(0, 0, 0)
+        e.note_command(np.zeros(3), 0.0, True, False)
+        for i in range(100):
+            e.advance(i * 0.05)
+        self.assertEqual(e.p[2], 0.0)  # height only ever comes from a sighting, so a failed takeoff stays visible
+
+    def test_landing_is_modelled_down_to_the_floor(self):
+        e = Estimator(0, 0, 0)
+        e.note_command(np.zeros(3), 0.0, True, False)
+        e.advance(0.0)
+        e.add_fix(fix_at(0.0, 0.0, 0.0, z=1.0, sigma=0.02))
+        e.note_command(np.zeros(3), 0.0, True, True)
+        for i in range(1, 120):
+            e.advance(i * 0.05)
+        self.assertEqual(e.p[2], 0.0)
+
+
+class FakeLink:
+    def __init__(self):
+        self.connected = True
+        self.commands = []
+        self.sticks = []
+
+    def send_sticks(self, *values):
+        self.sticks.append(values)
+
+    def command(self, name):
+        self.commands.append(name)
+        return True
+
+
+class UncertaintyTests(unittest.TestCase):
+    def setUp(self):
+        self.links = {"a": FakeLink(), "b": FakeLink()}
+        self.co = Coordinator(Room((-4, -3, 0), (4, 3, 2.6)), [DroneConfig("a", (-1, 0, 0)), DroneConfig("b", (1, 0, 0))], self.links)
+        self.co.tick(0.0, self.poses(0.0))
+        self.co.drones["a"].phase = self.co.drones["b"].phase = Phase.AIR
+        self.co.drones["a"].goal = np.array([-1.0, 0.0, 1.0])
+        self.co.drones["b"].goal = np.array([1.0, 0.0, 1.0])
+
+    def poses(self, t, sigma=0.03):
+        return {"a": Pose(t, (-1.0, 0.0, 1.0), 0.0, sigma=sigma, v=np.zeros(3), fix_age=0.0),
+                "b": Pose(t, (1.0, 0.0, 1.0), 0.0, sigma=0.03, v=np.zeros(3), fix_age=0.0)}
+
+    def test_a_steady_pose_is_steered(self):
+        self.co.tick(0.05, self.poses(0.05))
+        self.assertTrue(self.co._steerable(self.co.drones["a"], 0.05))
+
+    def test_past_the_hold_limit_it_stops_being_steered_and_the_sticks_centre(self):
+        self.co.tick(0.05, self.poses(0.05, SIGMA_HOLD + 0.05))
+        self.assertFalse(self.co._steerable(self.co.drones["a"], 0.05))
+        self.assertEqual(self.links["a"].sticks[-1][:4], (0.0, 0.0, 0.0, 0.0))
+        self.assertIn("tracking", self.co.drones["a"].faults)
+        self.assertEqual(self.links["a"].commands, [])
+
+    def test_a_sighting_clears_the_hold(self):
+        self.co.tick(0.05, self.poses(0.05, SIGMA_HOLD + 0.05))
+        self.co.tick(0.10, self.poses(0.10, 0.03))
+        self.assertNotIn("tracking", self.co.drones["a"].faults)
+        self.assertTrue(self.co._steerable(self.co.drones["a"], 0.10))
+
+    def test_past_the_land_limit_it_lands_once(self):
+        for i in range(10):
+            self.co.tick(0.05 * (i + 1), self.poses(0.05 * (i + 1), SIGMA_LAND + 0.05))
+        self.assertEqual(self.links["a"].commands, ["land"])
+        self.assertEqual(self.co.drones["a"].phase, Phase.LANDING)
+
+    def test_a_neighbour_keeps_further_away_from_an_uncertain_drone(self):
+        def run(sigma):
+            co = Coordinator(Room((-4, -3, 0), (4, 3, 2.6)), [DroneConfig("a", (0, 0, 0)), DroneConfig("b", (0.7, 0, 0))],
+                             {"a": FakeLink(), "b": FakeLink()})
+            poses = {"a": Pose(0.0, (0.0, 0.0, 1.0), 0.0, sigma=sigma, v=np.zeros(3)), "b": Pose(0.0, (0.7, 0.0, 1.0), 0.0, sigma=0.03, v=np.zeros(3))}
+            co.tick(0.0, poses)
+            for d in co.drones.values():
+                d.phase = Phase.AIR
+            co.drones["a"].goal = np.array([0.0, 0.0, 1.0])
+            co.drones["b"].goal = np.array([0.7, 0.0, 1.0])
+            co.tick(0.05, {k: Pose(0.05, p.p, 0.0, sigma=p.sigma, v=np.zeros(3)) for k, p in poses.items()})
+            return co.drones["b"].commanded[0]
+        self.assertGreater(run(0.25), run(0.03) + 0.05)
+
+
+class HeadingLimitTests(unittest.TestCase):
+    def test_a_heading_that_sees_nothing_is_turned_to_one_that_does(self):
+        tracker = InsideOutTracker({"a": DroneOptics(0.0, 0.0)}, grid())
+        at_far_edge = (1.9, 0.0, 1.0)
+        allowed = tracker.allowed_yaw("a", at_far_edge, 0.0)  # facing off the end of the grid
+        self.assertNotEqual(allowed, 0.0)
+        self.assertTrue(anchors_in_view(tracker.anchors, Lens.from_fov(), math.radians(45), at_far_edge, allowed))
+
+    def test_a_heading_that_sees_tags_is_left_alone(self):
+        tracker = InsideOutTracker({"a": DroneOptics(0.0, 0.0)}, grid())
+        self.assertEqual(tracker.allowed_yaw("a", (-1.0, 0.0, 1.0), 0.0), 0.0)
 
 
 if __name__ == "__main__":

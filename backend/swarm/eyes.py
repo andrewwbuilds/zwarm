@@ -100,7 +100,9 @@ def locate(p, yaw: float, detection: Detection, tilt: float = DEFAULT_TILT) -> n
         where = _on_floor(p, yaw, tilt, detection)
         if where is not None:
             return where
-    return p + detection.range * ray(yaw, tilt, detection.bearing, detection.elevation)
+    where = p + detection.range * ray(yaw, tilt, detection.bearing, detection.elevation)
+    where[2] = max(where[2], detection.size[2] / 2)  # a bad range can't put it under the floor
+    return where
 
 
 def in_view(p, yaw, targets, reach: float = REACH, margin: float = 0.0, tilt: float = DEFAULT_TILT) -> np.ndarray:

@@ -339,6 +339,7 @@ def main(argv=None) -> int:
     parser.add_argument("--seeds", type=int, default=5)
     parser.add_argument("--first-seed", type=int, default=1)
     parser.add_argument("--workers", type=int)
+    parser.add_argument("--max-speed", type=float, help="m/s per axis; the default is Limits' 0.5")
     parser.add_argument("--json")
     args = parser.parse_args(argv)
     started = time.time()

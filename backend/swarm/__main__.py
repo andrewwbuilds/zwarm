@@ -32,6 +32,10 @@ def cmd_fly(args) -> int:
     except SwarmFileError as error:
         print(f"Refusing to fly: {error}")
         return 2
+    unfitted = [d.id for d in config.drones if d.focal_px is None]
+    if unfitted:
+        print(f"WARNING: no focal_px for drone(s) {', '.join(unfitted)}: their field of view is a guess. In simulation an 8 degree")
+        print("error put positions 17 cm off while claiming far better. Run `python -m swarm fit-focal` first.")
     print(f"Swarm ready at http://localhost:{args.port}. Open http://localhost:5173/swarm to fly it.")
     print("Nothing moves until you press Take off. Ctrl-C lands anything in the air, then quits.")
     uvicorn.run(build_app(real_runtime(config)), host="127.0.0.1", port=args.port, log_level="warning")

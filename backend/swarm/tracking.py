@@ -618,6 +618,7 @@ class InsideOutTracker:
         d = self.drones[drone_id]
         lens = d.lens or Lens.from_fov()
         tilt = math.radians(d.tilt_deg)
+        blockers = self.blockers()
         for step in range(0, 181, 15):
             for sign in (1, -1):
                 turned = yaw + sign * math.radians(step)

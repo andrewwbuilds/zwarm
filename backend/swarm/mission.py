@@ -797,6 +797,15 @@ class MissionManager:
             raise MissionError(f"I can't find anywhere to inspect {spoken(region)} from.")
         return tasks, region, None
 
+    def _furniture(self) -> list[Furniture]:
+        """What's on the map from the start. The hub's own entries are things the memory already has."""
+        items = []
+        for o in self.hub.co.room.obstacles.values():
+            if not o.name.startswith("seen-"):
+                lo, hi = np.array(o.lo, float), np.array(o.hi, float)
+                items.append(Furniture(o.name, (lo + hi) / 2, hi - lo))
+        return items
+
     def _thing_tasks(self, thing, tilt: float, count: int) -> list[ViewTask]:
         return [ViewTask(view, f"inspecting the {thing.label} from ({view.p[0]:.1f}, {view.p[1]:.1f})", thing.label, thing.id)
                 for view in views_of(thing, self.coverage, tilt, count)]

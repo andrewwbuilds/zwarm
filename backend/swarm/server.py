@@ -279,6 +279,20 @@ def sim_runtime(seed: int = 1, conditions: Conditions | None = None, inside_out:
     """
     scene = Scene(name="demo", bounds=DEMO_ROOM, boxes=DEMO_OBSTACLES)
     fleet = SimFleet(scene, DEMO_PADS, seed, conditions)
+    room = Room.from_scene(scene, DEMO_FENCE)
     configs = [DroneConfig(k, (v[0], v[1], 0.0)) for k, v in DEMO_PADS.items()]
-    coordinator = Coordinator(Room.from_scene(scene), configs, fleet.links)
-    return Runtime(coordinator, lambda: fleet.t, fleet.poses, advance=fleet.advance)
+    if not inside_out:
+        return Runtime(Coordinator(room, configs, fleet.links), lambda: fleet.t, fleet.poses, advance=fleet.advance)
+    from swarm.sim_anchors import SimVideo
+
+    optics = {c.id: DroneOptics(c.pad[0], c.pad[1], c.yaw) for c in configs}
+    tracker = InsideOutTracker(optics, load_anchors(anchors_section(0.0767, tag_grid())), DEMO_FENCE)
+    video = SimVideo(fleet, tracker, scene, seed=seed, rate=video_rate)
+
+    def advance(dt: float) -> None:
+        fleet.advance(dt)
+        video.step()
+
+    runtime = Runtime(Coordinator(room, configs, fleet.links, tracker=tracker), lambda: fleet.t, lambda: tracker.poses(fleet.t), advance=advance)
+    runtime.tracker = tracker
+    return runtime

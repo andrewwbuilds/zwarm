@@ -1,9 +1,12 @@
 """What a drone's camera reports, and a simulated camera that reports it.
 
-The hub only ever receives Detections: a label, a direction and a rough distance relative to the
+The hub only ever receives Detections: a label, directions and a rough distance relative to the
 camera, which is all a real detector could give. It works out room positions from the tracker's pose.
-SimEyes reads the simulator's truth to decide what is visible, then adds the errors. Its numbers are
-estimates, and no real detector has been run through this yet.
+The camera points down at a fixed tilt, so the ray through where a thing meets the floor gives a far
+better position than guessing distance from its size. SimEyes reads the simulator's truth to decide
+what is visible, then adds the errors. Its numbers are estimates. See swarm.yolo_eyes for the real one.
+
+Angles are in the camera's frame: bearing positive to the left, elevation positive above its axis.
 """
 
 from __future__ import annotations

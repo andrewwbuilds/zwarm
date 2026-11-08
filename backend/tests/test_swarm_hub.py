@@ -108,9 +108,9 @@ class MemoryTests(unittest.TestCase):
 
 class CameraGeometryTests(unittest.TestCase):
     def test_locate_goes_along_the_heading(self):
-        ahead = locate((1.0, 1.0, 1.0), math.pi / 2, Detection("x", 0.0, 0.0, 2.0, (0, 0, 0), 0.9))
+        ahead = locate((1.0, 1.0, 1.0), math.pi / 2, Detection("x", 0.0, 0.0, 2.0, (0, 0, 0), 0.9), tilt=0.0)
         np.testing.assert_allclose(ahead, (1.0, 3.0, 1.0), atol=1e-9)
-        left = locate((0.0, 0.0, 1.0), 0.0, Detection("x", math.pi / 2, 0.0, 1.0, (0, 0, 0), 0.9))
+        left = locate((0.0, 0.0, 1.0), 0.0, Detection("x", math.pi / 2, 0.0, 1.0, (0, 0, 0), 0.9), tilt=0.0)
         np.testing.assert_allclose(left, (0.0, 1.0, 1.0), atol=1e-9)
 
     def test_what_a_level_camera_sees(self):

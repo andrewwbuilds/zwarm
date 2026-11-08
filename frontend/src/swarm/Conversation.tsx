@@ -89,7 +89,8 @@ function PlanCard({ api, plan, onError }: { api: Api; plan: Plan; onError: (text
   const decide = async (approve: boolean) => {
     setBusy(true);
     try {
-      await (approve ? api.approve(plan.id) : api.reject(plan.id));
+      const decision = await (approve ? api.approve(plan.id) : api.reject(plan.id));
+      if (!decision.ok) onError(decision.reply || `The plan wasn't ${approve ? "approved" : "rejected"}.`);
     } catch (error) {
       onError(`The plan wasn't ${approve ? "approved" : "rejected"}: ${error instanceof Error ? error.message : String(error)}.`);
     } finally {

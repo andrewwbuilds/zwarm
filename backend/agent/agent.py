@@ -17,7 +17,7 @@ import threading
 import time
 
 from agent.nemotron import NemotronError, ToolCall
-from agent.tools import READ_ONLY, REGIONS, Refused, Toolbox, describe, region_name
+from agent.tools import READ_ONLY, REGIONS, Refused, Toolbox, describe, region_mentioned, region_name
 from swarm.commands import EXPLANATION, Command, parse
 
 logger = logging.getLogger(__name__)

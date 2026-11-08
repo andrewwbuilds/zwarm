@@ -370,7 +370,7 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 | Symptom | Likely cause | Change | Direction |
 |---|---|---|---|
 | Overshoots goals, swings around them | Sticks too big | `backend/swarm/control.py:84` `speed_per_stick` | Raise, 5.0 to 7.0 |
-| Same, but only when slowing down at the end | Starts braking too late for this hold | The `1.0 * horizontal` slowdown at `backend/swarm/coordinator.py:778` | Lower, 1.0 to 0.7 |
+| Same, but only when slowing down at the end | Starts braking too late for this hold | The `1.0 * horizontal` slowdown at `backend/swarm/coordinator.py:789` | Lower, 1.0 to 0.7 |
 | Crawls, or never quite arrives | Goal tolerance too tight for this hold | `backend/swarm/coordinator.py:40` `ARRIVED` | Raise, 0.15 to 0.25 |
 | Too slow for the demo | Set for the first flights | `limits.max_speed` in `real.json` | Raise by 0.05 at a time, at most 0.5. Blur grows with it |
 | "position uncertain, holding" in the middle of the grid | Tags lost briefly. Fix the light and hover height first | `backend/swarm/coordinator.py:46` `SIGMA_HOLD` **safety** | Raise, 0.3 to 0.4 |

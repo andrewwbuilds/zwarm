@@ -358,7 +358,8 @@ class Coordinator:
             return problems
         for d in self.drones.values():
             d.phase = Phase.GROUND
-            d.unknown_air = False
+            d.unknown_air = d.came_down = d.was_down = d.backend_grounded = d.sticks_wrong = False
+            self._forget_requests(d)
             d.faults.clear()
             d.goal = None
             d.path = []

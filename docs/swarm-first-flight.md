@@ -1,5 +1,7 @@
 # Flying the swarm from floor tags
 
+For the whole app and a step-by-step flight day, use [the runbook](runbook.md). This guide covers the floor-tag method in more depth.
+
 Nothing here has flown yet. Every number in this repo about floor-tag tracking comes from the simulator, so treat the first flight as a test of the method. Work through these steps in order, and don't skip ahead if one fails.
 
 ## Before you start

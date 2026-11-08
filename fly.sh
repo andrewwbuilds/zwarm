@@ -42,7 +42,8 @@ cleanup() {
   trap - EXIT INT TERM
   (( ${#pids} )) && kill $pids 2>/dev/null
   for pid in $pids; do
-    for i in {1..10}; do
+    # Up to 30 s: Zwarm lands anything in the air before it quits, and must not be killed part way down.
+    for i in {1..60}; do
       kill -0 $pid 2>/dev/null || break
       sleep 0.5
     done

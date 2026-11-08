@@ -250,22 +250,25 @@ class Hub:
 
     # ---------------------------------------------------------------- the loop
     def tick(self, now: float, poses: dict, moving=()) -> None:
-        self.now = now
-        seen_movers = [Moving(f"seen-{t.id}", t.p + t.v * min(now - t.last_seen, 1.0), t.v.copy(), MOVER_RADIUS)
-                       for t in self.memory.movers(now)]
-        self.co.tick(now, poses, [*moving, *seen_movers])
-        try:
-            if now >= self.next_look:
-                self.next_look = now + LOOK_EVERY
-                self._look(now)
-                self._sync_obstacles()
-                self.memory.commit()
-            self._drive(now)
-            if self.search is not None:
-                self.search.step(now)
-        except Exception:
-            self.think_errors += 1
-            logger.exception("[hub] thinking failed; the drones carry on with their last goals")
+        with self.lock:
+            self.now = now
+            seen_movers = [Moving(f"seen-{t.id}", t.p + t.v * min(now - t.last_seen, 1.0), t.v.copy(), MOVER_RADIUS)
+                           for t in self.memory.movers(now)]
+            self.co.tick(now, poses, [*moving, *seen_movers])
+            try:
+                for drone_id, d in self.co.drones.items():
+                    self.poses[drone_id].append((now, d.tracked.p.copy(), d.tracked.yaw))
+                if now >= self.next_look:
+                    self.next_look = now + LOOK_EVERY
+                    self._look(now)
+                    self._sync_obstacles()
+                    self.memory.commit()
+                self._drive(now)
+                if self.search is not None:
+                    self.search.step(now)
+            except Exception:
+                self.think_errors += 1
+                logger.exception("[hub] thinking failed; the drones carry on with their last goals")
 
     def report(self, text: str) -> None:
         self.reports.append(text)

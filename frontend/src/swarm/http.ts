@@ -142,12 +142,8 @@ export function httpApi(base: string): Api {
       const response = await post("/zwarm/chat", { text }, CHAT_TIMEOUT_MS);
       return parseChat(await response.json());
     },
-    approve: async (id) => {
-      await post(`/zwarm/plan/${encodeURIComponent(id)}/approve`);
-    },
-    reject: async (id) => {
-      await post(`/zwarm/plan/${encodeURIComponent(id)}/reject`);
-    },
+    approve: async (id) => parseDecision(await (await post(`/zwarm/plan/${encodeURIComponent(id)}/approve`, undefined, PLAN_TIMEOUT_MS)).json()),
+    reject: async (id) => parseDecision(await (await post(`/zwarm/plan/${encodeURIComponent(id)}/reject`)).json()),
     findings: () =>
       background.run(async () => parseFindings(await getJson({ path: "/zwarm/findings", timeoutMs: POLL_TIMEOUT_MS }))),
     setFinding: async (id, status: FindingStatus) => {

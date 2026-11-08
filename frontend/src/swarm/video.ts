@@ -13,7 +13,7 @@ export class VideoFeeds {
   private readonly lastFrame = new Map<string, number>();
   private readonly skipUntil = new Map<string, number>();
   private next = 0;
-  private running = false;
+  private loop = 0; // only the newest loop keeps going
   private timer: number | undefined;
 
   constructor(api: Api) {

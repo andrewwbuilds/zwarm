@@ -19,8 +19,7 @@ from mapping.reconstruct import StepFailed, run
 from swarm.coordinator import Phase, ResponseCheck
 from swarm.mission import ALL_LOST_S, VIEW_BLOCKED_S, MissionError
 from swarm.room import Obstacle, Room
-from swarm.control import Pose
-from tests.test_agent import FakeFleet, call, fleet_agent, say, use
+from tests.test_agent import FakeFleet, Scripted, call, fleet_agent, say, use
 from tests.test_mapping_fleet import FakeFrames
 from tests.test_mission import Fleet
 

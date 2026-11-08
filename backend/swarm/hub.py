@@ -516,7 +516,7 @@ class Hub:
         thing = things[0]
         d = min(flying, key=lambda f: float(np.linalg.norm(f.tracked.p - thing.p)))
         others = [f.tracked.p for f in flying if f is not d]
-        view = Coverage(self.co.room).standoff(d.tracked.p, thing.p, avoid=others)
+        view = self.new_coverage().standoff(d.tracked.p, thing.p, avoid=others, tilt=self.tilt_of(d.id))
         if view is None:
             return f"I can't find a clear place to see the {label} from."
         self._stop_search()

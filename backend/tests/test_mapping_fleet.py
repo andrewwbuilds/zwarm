@@ -684,11 +684,11 @@ class BuildStateTests(unittest.TestCase):
         self.assertIn("too little overlap", status["error"])
         self.assertEqual(self.capture.points(), [])
 
-    def test_no_saved_frames_is_a_readable_failure(self):
-        self.capture.build("empty", splat=False)
-        status = self.capture.wait(5)
-        self.assertEqual(status["state"], "failed")
-        self.assertIn("No frames saved", status["error"])
+    def test_no_saved_frames_is_a_readable_refusal_that_changes_nothing(self):
+        before = self.capture.status()
+        with self.assertRaisesRegex(MapError, "No frames saved"):
+            self.capture.build("empty", splat=False)
+        self.assertEqual(self.capture.status(), before)
 
     def test_an_exploding_event_listener_cant_break_a_build(self):
         def explode(*_):

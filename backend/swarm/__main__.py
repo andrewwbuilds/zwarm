@@ -68,36 +68,32 @@ def cmd_layout(args) -> int:
     return 0
 
 
-def _frames(source, count: int, gap_s: float):
+def _detections(config, drone_id: str, seconds: float):
+    """What one drone's camera reads over some seconds, frame by frame."""
     import cv2
+    import numpy as np
 
-    capture = cv2.VideoCapture(source)
-    if not capture.isOpened():
-        raise SystemExit(f"could not open camera {source}")
+    from swarm.frames import StreamFrames
+    from swarm.tracking import AnchorReader
+
+    frames = StreamFrames(config.backends())
+    frames.start()
+    reader = AnchorReader(config.anchors)
+    out, last = [], None
+    end = time.monotonic() + seconds
     try:
-        for _ in range(count):
-            ok, frame = capture.read()
-            if not ok:
-                raise SystemExit(f"camera {source} stopped delivering frames")
-            yield frame
-            time.sleep(gap_s)
+        while time.monotonic() < end:
+            frame = frames.latest(drone_id)
+            if frame is None or frame.number == last:
+                time.sleep(0.01)
+                continue
+            last = frame.number
+            gray = cv2.imdecode(np.frombuffer(frame.jpeg, np.uint8), cv2.IMREAD_GRAYSCALE)
+            if gray is not None:
+                out.append((gray, reader.find(gray)))
     finally:
-        capture.release()
-
-
-def _source(text: str):
-    return int(text) if text.isdigit() else text
-
-
-def cmd_calibrate_lens(args) -> int:
-    from swarm.tracking import lens_from_checkerboards
-
-    print(f"Move a printed checkerboard around in front of camera {args.camera}, tilting it, for {args.seconds:.0f} s.")
-    frames = list(_frames(_source(args.camera), int(args.seconds / 0.5), 0.5))
-    model = lens_from_checkerboards(frames, (args.columns, args.rows), args.square)
-    model.save(args.out)
-    print(f"Saved {args.out}: reprojection error {model.reprojection_px:.2f} px. Above about 1 px, try again.")
-    return 0
+        frames.stop()
+    return out, reader
 
 
 def cmd_locate_camera(args) -> int:

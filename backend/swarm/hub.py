@@ -272,6 +272,12 @@ class Hub:
                 self.think_errors += 1
                 logger.exception("[hub] thinking failed; the drones carry on with their last goals")
 
+    def tilt_of(self, drone_id: str) -> float:
+        return self.tilts.get(drone_id, DEFAULT_TILT)
+
+    def new_coverage(self) -> Coverage:
+        return Coverage(self.co.room, {self.tilt_of(drone_id) for drone_id in self.co.drones})
+
     def report(self, text: str) -> None:
         self.reports.append(text)
         self.memory.note(self.now, "report", text)

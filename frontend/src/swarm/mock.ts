@@ -211,7 +211,7 @@ class MockSwarm {
     if (this.buildDoneAt !== null && now > this.buildDoneAt) {
       this.buildDoneAt = null;
       this.cloud = makeCloud();
-      this.map = { ...this.map, state: "done", registered: Math.round(Math.max(this.map.photos, 60) * 0.85) };
+      this.map = { ...this.map, state: "done", step: null, points: this.cloud.count, registered: Math.round(Math.max(this.map.photos, 60) * 0.85) };
       this.say("mission", `3D map built: ${this.cloud.count.toLocaleString()} points.`);
     }
   }

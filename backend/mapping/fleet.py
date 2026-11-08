@@ -550,10 +550,10 @@ def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = l
     if len(joined) > 1:
         warnings.append(f"The drones' photos didn't link by sight, so {len(joined)} separate maps were joined using tracked "
                         "positions. Their edges only line up as well as the tracking does.")
-    elif not joined and len([m for m in models if m.registered >= MIN_FIT_PHOTOS]) > 1:
-        warnings.append(f"The photos split into {len(models)} separate maps that don't overlap, and this shows only the largest. "
+    elif not joined and len(distinct) > 1:
+        warnings.append(f"The photos split into {len(distinct)} separate maps that don't overlap, and this shows only the largest. "
                         "Fly so the drones see some of the same floor, or give the build tracked positions.")
-    wrong = [part for part in parts if part["fit"] and part not in joined and part["model"].registered >= MIN_FIT_PHOTOS]
+    wrong = [part for part in distinct if part["fit"] and part["fit"]["agrees"] < MIN_ROOM_AGREEMENT]
     if wrong:
         share = wrong[0]["fit"]["agrees"]
         warnings.append(f"A map with {wrong[0]['model'].registered} photos disagrees with where the drones were tracked: only {share:.0%} of its "

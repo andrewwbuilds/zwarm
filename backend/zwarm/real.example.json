@@ -1,0 +1,219 @@
+{
+ "_readme": [
+  "Copy to real.json in the repo root and edit. docs/runbook.md says how to measure each value.",
+  "fence is metres in room coordinates: +x is north unless north_yaw_deg says otherwise. Keep x hi at or below the last tag row, since a drone facing +x past it sees nothing.",
+  "white_square_edge_m is the measured white square inside a tag's black ring. Every position and height scales with it.",
+  "obstacles are boxes the drones must avoid: {\"name\": \"couch\", \"lo\": [x, y, 0], \"hi\": [x, y, z]}. Nothing else knows about a wall the fence doesn't exclude.",
+  "focal_px stays null until `python -m swarm fit-focal real.json --drone N --write`."
+ ],
+ "north_yaw_deg": 0.0,
+ "flight_limit_s": 270.0,
+ "video_latency_s": 0.15,
+ "fence": {
+  "lo": [
+   -3.0,
+   -2.5,
+   0.0
+  ],
+  "hi": [
+   1.7,
+   2.5,
+   2.2
+  ]
+ },
+ "obstacles": [],
+ "limits": {
+  "max_speed": 0.3
+ },
+ "drones": [
+  {
+   "id": "1",
+   "backend": "http://localhost:8001",
+   "pad": [
+    -2.5,
+    1.2
+   ],
+   "yaw_deg": 0,
+   "camera_tilt_deg": 45,
+   "focal_px": null
+  },
+  {
+   "id": "2",
+   "backend": "http://localhost:8002",
+   "pad": [
+    -2.5,
+    0.0
+   ],
+   "yaw_deg": 0,
+   "camera_tilt_deg": 45,
+   "focal_px": null
+  },
+  {
+   "id": "3",
+   "backend": "http://localhost:8003",
+   "pad": [
+    -2.5,
+    -1.2
+   ],
+   "yaw_deg": 0,
+   "camera_tilt_deg": 45,
+   "focal_px": null
+  }
+ ],
+ "anchors": {
+  "tag_family": "tagStandard41h12",
+  "white_square_edge_m": 0.0767,
+  "tags": [
+   {
+    "tag": 0,
+    "x": -2.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 1,
+    "x": -2.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 2,
+    "x": -2.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 3,
+    "x": -2.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 4,
+    "x": -2.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 5,
+    "x": -1.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 6,
+    "x": -1.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 7,
+    "x": -1.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 8,
+    "x": -1.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 9,
+    "x": -1.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 10,
+    "x": 0.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 11,
+    "x": 0.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 12,
+    "x": 0.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 13,
+    "x": 0.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 14,
+    "x": 0.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 15,
+    "x": 1.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 16,
+    "x": 1.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 17,
+    "x": 1.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 18,
+    "x": 1.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 19,
+    "x": 1.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 20,
+    "x": 2.0,
+    "y": 2.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 21,
+    "x": 2.0,
+    "y": 1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 22,
+    "x": 2.0,
+    "y": 0.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 23,
+    "x": 2.0,
+    "y": -1.0,
+    "rotation_deg": 0.0
+   },
+   {
+    "tag": 24,
+    "x": 2.0,
+    "y": -2.0,
+    "rotation_deg": 0.0
+   }
+  ]
+ }
+}

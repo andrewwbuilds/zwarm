@@ -230,6 +230,19 @@ class StopWordsTests(unittest.TestCase):
                            ("stop all drones", "hold"), ("everyone freeze please", "hold"), ("emergency stop emergency stop", "estop")):
             self.assertEqual(self.verb(text), verb, text)
 
+    def test_ways_of_saying_land_need_no_model(self):
+        for text in ("Stop and land.", "stop and land", "stop, and land", "stop land", "stop then land", "stop everything and land",
+                     "stop mapping and land", "stop the mission and land", "end the mission and land", "come back and land",
+                     "come back, land", "go home and land", "fly back and land", "head back and land", "return and land",
+                     "bring them down", "Bring them all back down.", "bring them back down", "bring them back", "bring them home",
+                     "bring them back and land", "bring everyone down", "bring the drones home", "bring all the drones back",
+                     "take them down", "put them down", "wrap it up and bring everybody home", "come down", "everyone come down",
+                     "stop and land please", "okay stop and land", "stop and land everyone"):
+            self.assertEqual(self.verb(text), "land", text)
+        for text in ("stop and land here", "stop and land now", "stop and land right now", "put them down right where they are",
+                     "stop everything and land here"):
+            self.assertEqual(self.verb(text), "land_here", text)
+
     def test_not_a_stop_command(self):
         for text in ("stop mapping", "stop mapping and focus on the north side", "don't stop", "do not land", "don't land",
                      "no land", "stop the mission", "what does emergency stop do", "land on the table", "take off", "", "hold on a second"):

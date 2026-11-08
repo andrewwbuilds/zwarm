@@ -163,9 +163,7 @@ class Lens:
     def load(cls, path: str | Path) -> "Lens":
         data = json.loads(Path(path).read_text())
         return cls(np.array(data["matrix"], np.float64), np.array(data["distortion"], np.float64),
-                   None if data.get("rvec") is None else np.array(data["rvec"], np.float64),
-                   None if data.get("tvec") is None else np.array(data["tvec"], np.float64),
-                   data.get("reprojection_px"))
+                   int(data["width"]), int(data["height"]), data.get("reprojection_px"))
 
     def save(self, path: str | Path) -> None:
         Path(path).write_text(json.dumps({

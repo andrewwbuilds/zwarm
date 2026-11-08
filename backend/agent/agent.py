@@ -36,6 +36,8 @@ TURN_BUDGET_S = 40.0  # one sentence, however many model calls it takes. With th
 DIGEST_BUDGET_S = 15.0  # commenting on an event, in all. An operator with something to say comes first
 OBSERVE_EVERY_S = 30.0
 STOPPED = "The operator just gave a stop command, so this was dropped."
+FLEET_NOTE = "(fleet software, not the operator: "
+FINDINGS_LEFT_OUT = '{"ok": true, "text": "Findings were read here. Their words are left out of this history, so read them again if needed."}'
 OBSERVE_TOOLS = (*READ_ONLY, "focus_region")  # an event can't take off, start, stop or land anything
 # Worth a model's sentence. The rest (started, focus, progress) only repeat what the operator just did or can see.
 OBSERVE_EVENTS = ("drone_lost", "drone_back", "flight_limit", "reassigned", "done", "exhausted", "failed", "capture_failed",

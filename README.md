@@ -150,6 +150,17 @@ Real cameras use `swarm/yolo_eyes.py`, which needs `uv sync --inexact --extra fo
 
 Limits: YOLO only recognises the labels in `eyes.LABELS`, so a plain box or a wall is invisible to it. It hasn't been measured on real footage from a tilted camera. In simulation, a person known only from the cameras can still reach a drone (30 of 40 flights clean), so keep people out of the flying space. Only `talk` and the bench run the hub today: `swarm/server.py` still calls the coordinator directly.
 
+## Damage inspection (simulator tested)
+`backend/swarm/inspect.py` watches each flying drone's video during an inspect mission, sends sharp new views to a vision model on worker threads, and stores what it reports under `~/Developer/datasets/zwarm/` with a photo. Every finding stays pending until a person confirms or dismisses it. Why it works this way: `docs/decisions/0003-damage-inspection.md`.
+
+From `backend`, with `NVIDIA_API_KEY` in `backend/.env` for the last two:
+```
+uv run python -m unittest tests.test_inspect    # no network
+uv run python -m swarm.inspect_eval             # labelled test photos through the live model
+uv run python -m swarm.inspect_eval --demo      # the whole inspector over the simulated demo room
+```
+Limits: all scores so far are on simulated images (85% on the 20 test photos with Nano Omni, 2 false alarms and 1 miss), and the prompt was tuned on them. Real video is unscored. Sharpness limits are guesses until they are measured on real frames: `MIN_SHARPNESS` and `BLUR_SHARE` in `swarm/inspect.py`.
+
 ## Setup
 Move to the `backend` directory
 ```

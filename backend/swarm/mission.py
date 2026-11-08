@@ -411,8 +411,9 @@ class Sweep:
         avoid = [other.tracked.p for other in hub.co.drones.values()
                  if other is not d and other.phase in (Phase.AIR, Phase.CHECK, Phase.TAKEOFF, Phase.LANDING)]
         avoid += [order.goal for other_id, order in hub.orders.items() if other_id != d.id]
-        return self.coverage.best(d.tracked.p, d.tracked.yaw, claimed, avoid, keep_away=KEEP_AWAY, banned=self.banned,
-                                  tilt=hub.tilt_of(d.id))
+        tilt = hub.tilt_of(d.id)
+        return (self.coverage.best(d.tracked.p, d.tracked.yaw, claimed, avoid, keep_away=KEEP_AWAY, banned=self.banned, tilt=tilt)
+                or self.coverage.leftovers(d.tracked.p, claimed, avoid, KEEP_AWAY, self.banned, tilt))
 
     def _stand_by(self, d) -> Viewpoint | None:
         """Nothing left for this drone to look at. If it's outside the region, bring it in anyway."""

@@ -433,7 +433,9 @@ class Hub:
         problems = self.co.takeoff(self.now)
         return "Not taking off: " + "; ".join(problems) + "." if problems else "Taking off, one at a time."
 
-    def _do_land(self, c) -> str:
+    @_action
+    def land(self) -> str:
+        """Fly back to the pads, then land one after another."""
         self._stop_search()
         self.orders.clear()
         self.co.land(self.now)

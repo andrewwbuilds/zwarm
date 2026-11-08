@@ -692,6 +692,10 @@ class MissionManager:
             self._check_can_start(kind, now)
             if kind == "map" and self.capture is None:
                 raise MissionError("Map capture isn't set up here, so I can't build a map. I can explore instead.")
+            if kind == "map" and self.active and self.kind == "map":
+                # Same map, same photos. Stopping the capture to start another would start a build, and no new photos would save.
+                return self.focus(region)
+            self._check_no_build_running(kind)
             work_for = {"explore": self._plan_sweep, "map": self._plan_sweep, "inspect": self._plan_survey,
                         "search": self._plan_search}[kind]
             plan, region, target = work_for(kind, region, target, now)

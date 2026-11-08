@@ -720,6 +720,7 @@ class Coordinator:
             if d.phase == Phase.STOPPED:
                 continue
             velocity = result.velocities.get(d.id)
+            flying = d.phase in (Phase.TAKEOFF, Phase.CHECK, Phase.AIR, Phase.LANDING)
             if velocity is None:
                 d.commanded = np.zeros(3)
                 d.limited = False

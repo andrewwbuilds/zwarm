@@ -67,7 +67,19 @@ def run(command: list, log: Path, env: dict | None = None, timeout_s: float | No
     log.parent.mkdir(parents=True, exist_ok=True)
     try:
         with open(log, "w") as f:
-            result = subprocess.run([str(c) for c in command], stdout=f, stderr=subprocess.STDOUT, env={**os.environ, **(env or {})}, timeout=timeout_s)
+            process = subprocess.Popen([str(c) for c in command], stdout=f, stderr=subprocess.STDOUT, env={**os.environ, **(env or {})},
+                                       start_new_session=True)
+            with _running_lock:
+                _running.add(process)
+            try:
+                returncode = process.wait(timeout=timeout_s)
+            except subprocess.TimeoutExpired:
+                _kill(process)
+                process.wait()
+                raise
+            finally:
+                with _running_lock:
+                    _running.discard(process)
     except subprocess.TimeoutExpired:
         raise StepFailed(f"{Path(str(command[0])).name} {command[1] if len(command) > 1 else ''} was stopped after {timeout_s:.0f} s (log: {log})") from None
     if result.returncode != 0:

@@ -13,7 +13,7 @@ from swarm import hub_bench
 from swarm.commands import parse
 from swarm.control import Pose
 from swarm.coordinator import Coordinator, DroneConfig, Phase
-from swarm.eyes import Detection, blocked, in_view, locate
+from swarm.eyes import DEFAULT_TILT, Detection, blocked, camera_tilts, in_view, locate, ray, to_camera
 from swarm.hub import Hub
 from swarm.memory import FORGET_AFTER_MISSES, Memory
 from swarm.room import Obstacle, Room

@@ -23,6 +23,7 @@ TRAVEL_SPEED = 0.4
 TURN_SPEED = 0.55
 DWELL_S = 2.0
 RESET_RADIUS = 2.0  # a new obstacle may have hidden floor that was counted as seen, so look again
+KEEP_AWAY = 1.2  # metres between a viewpoint and any other drone or its goal
 MIN_GAIN = 2  # a viewpoint must offer at least this many new patches
 
 

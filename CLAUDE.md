@@ -35,5 +35,5 @@ cd ../frontend && npx tsc -b --noEmit && npm run lint
 - `backend/services/flight_controller.py` uses CRLF line endings. Preserve them, or the whole file shows as changed.
 - `backend/runs/` isn't ignored and fills with flight recordings. Stage explicit paths.
 - Camera geometry assumes a camera tilted 45 degrees down (`eyes.DEFAULT_TILT`). Pass `tilt=0.0` for a level one.
-- Real positions come from 25 printed AprilTags, family `tagStandard41h12`, flat on the floor in a grid and seen by each drone's own camera. Don't ask the user to print ArUco or QR codes. OpenCV can't read this family, so use `pupil-apriltags`. Its `tag_size` is the 5-cell black square, not the 9-cell tag.
+- Real positions come from 25 printed AprilTags, family `tagStandard41h12`, IDs 0-24, flat on the floor in a grid and seen by each drone's own camera. Don't ask the user to print ArUco or QR codes. OpenCV can't read this family, so use `pupil-apriltags`. Its `tag_size` is the 5-cell black square, not the 9-cell tag.
 - Several agents may share this checkout. Stage by path or hunk, never `git add -A`.

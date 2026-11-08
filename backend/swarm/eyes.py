@@ -37,6 +37,7 @@ class Detection:
     range: float  # metres to its middle, a rough estimate from one camera
     size: tuple[float, float, float]
     confidence: float
+    age: float = 0.0  # seconds between the picture being taken and this report
 
 
 class Eyes(Protocol):

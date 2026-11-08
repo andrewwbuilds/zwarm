@@ -1144,6 +1144,8 @@ class MissionManager:
 
     def _watch_crew(self, now: float) -> None:
         crew = {d.id for d in self.crew(now)}
+        if crew:
+            self.nobody_since = None
         for d in self.hub.co.drones.values():
             if d.id in crew:
                 self.bad_since.pop(d.id, None)

@@ -173,8 +173,13 @@ def _render_drone(job: tuple) -> dict:
     encoder = VideoEncoder(seed=int(drone))
     started = time.perf_counter()
     sizes, truth = [], {}
+    last = track[0]
     for i, (t, x, y, z, yaw, pitch, roll) in enumerate(track):
-        jpeg = encoder.compress(camera.render(Pose(x, y, z, rotation(yaw, pitch, roll))), SIZES[1])
+        image = camera.render(Pose(x, y, z, rotation(yaw, pitch, roll)))
+        if lens:
+            image = lens.apply(image, math.hypot(x - last[1], y - last[2]), yaw - last[4], 1 / FPS)
+        last = (t, x, y, z, yaw, pitch, roll)
+        jpeg = encoder.compress(image, SIZES[1])
         name = raw_name(i, int(t * 1000))
         (raw / name).write_bytes(jpeg)
         sizes.append(len(jpeg))

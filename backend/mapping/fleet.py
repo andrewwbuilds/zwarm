@@ -359,7 +359,7 @@ def level_map(cameras: dict, xyz: np.ndarray, tilt_deg: float = TILT_DEG, height
 
 # ---------------------------------------------------------------- the build
 def build_map(folder: Path, cap: int, runner, on_step: Callable[[str], None] = lambda step: None, shared_camera: bool = False,
-              make_splat: bool = False, splat_steps: int = SPLAT_STEPS) -> dict:
+              fix_lens: bool = False) -> dict:
     """Everything from saved frames to a finished map. Raises StepFailed or ToolMissing with a readable message."""
     times, started = {}, time.perf_counter()
 

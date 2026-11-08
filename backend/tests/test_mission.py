@@ -18,7 +18,7 @@ from swarm.frames import Frame
 from swarm.hub import Hub
 from swarm.inspect import FindingStore, Inspector
 from swarm.memory import Memory
-from swarm.mission import REGION_NAMES, MissionError, MissionManager, RegionCoverage, Regions, Survey, Sweep, views_of
+from swarm.mission import ALL_LOST_S, REGION_NAMES, MissionError, MissionManager, RegionCoverage, Regions, Survey, Sweep, views_of
 from swarm.room import Obstacle, Room
 from swarm.search import LOOKS_NEEDED, SEARCH_Z
 

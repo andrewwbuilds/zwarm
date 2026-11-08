@@ -531,15 +531,19 @@ class Coordinator:
                         self._forget_requests(d)
                     self.takeoff_queue.clear()
         elif d.phase == Phase.GROUND and d.unknown_air:
-            if d.tracked.fix_age < 1.0 and height > AIRBORNE_HEIGHT:
-                d.unknown_air = False
-                d.clear("takeoff")
-                self._begin_check(d, now)
+            if age <= STALE_S and d.tracked.fix_age < SEEN_UP_FIX_S and height > AIRBORNE_HEIGHT:
+                if d.came_down:
+                    self._back_in_air(d)
+                else:
+                    d.unknown_air = False
+                    d.clear("takeoff")
+                    self._begin_check(d, now)
         elif d.phase == Phase.LANDING:
+            seen_up = age <= STALE_S and d.tracked.fix_age < SEEN_UP_FIX_S and height > AIRBORNE_HEIGHT
             if age <= STALE_S and height < GROUNDED_HEIGHT and abs(d.tracked.v[2]) < 0.15:
+                blind = d.blind_landing
                 d.phase = Phase.GROUND
-                d.landing_requested = False
-                d.blind_landing = False
+                self._forget_requests(d)
                 d.sticks_wrong = False
                 d.clear("land")
             elif now - d.toggled_at > LAND_TIMEOUT_S:

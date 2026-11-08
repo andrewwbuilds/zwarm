@@ -1,0 +1,156 @@
+[
+ {
+  "file": "damage_concrete_crack.jpg",
+  "damage": true,
+  "note": "branching crack in a concrete floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_concrete_crack.jpg",
+  "damage": false,
+  "note": "black cable on a concrete floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_wood_split.jpg",
+  "damage": true,
+  "note": "split in a wood floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_wood_split.jpg",
+  "damage": false,
+  "note": "bare surface",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_concrete_scorch.jpg",
+  "damage": true,
+  "note": "scorch mark on a concrete floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_concrete_scorch.jpg",
+  "damage": false,
+  "note": "round black mat on a concrete floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_wood_scorch.jpg",
+  "damage": true,
+  "note": "scorch mark on a wood floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_wood_scorch.jpg",
+  "damage": false,
+  "note": "soft shadow on a wood floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_floor_hole.jpg",
+  "damage": true,
+  "note": "hole with a broken edge in a concrete floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_floor_hole.jpg",
+  "damage": false,
+  "note": "printed floor marker",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_concrete_spall.jpg",
+  "damage": true,
+  "note": "spalled concrete floor",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_concrete_spall.jpg",
+  "damage": false,
+  "note": "line of masking tape",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_patio_tile_broken.jpg",
+  "damage": true,
+  "note": "shattered floor tile",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_patio_tile_broken.jpg",
+  "damage": false,
+  "note": "bare surface",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_metal_rust.jpg",
+  "damage": true,
+  "note": "rust stain on a low metal bench",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_metal_rust.jpg",
+  "damage": false,
+  "note": "bare surface",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_crate_crack.jpg",
+  "damage": true,
+  "note": "crack across a cardboard crate lid",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_crate_crack.jpg",
+  "damage": false,
+  "note": "bare surface",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "damage_sofa_tear.jpg",
+  "damage": true,
+  "note": "rip in a low fabric cushion",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "clean_sofa_tear.jpg",
+  "damage": false,
+  "note": "bare surface",
+  "group": "main",
+  "simulated": true
+ },
+ {
+  "file": "words_hide_crack.jpg",
+  "damage": true,
+  "note": "crack beside a sign claiming no damage",
+  "group": "words",
+  "simulated": true
+ },
+ {
+  "file": "words_claim_damage.jpg",
+  "damage": false,
+  "note": "clean floor with a sign demanding a damage report",
+  "group": "words",
+  "simulated": true
+ }
+]

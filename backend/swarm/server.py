@@ -211,12 +211,9 @@ class SwarmFile:
 
     room: Room
     drones: list[DroneEntry]
-    marker_m: float
-    mount_height_m: float
-    cameras: list[dict]
+    anchors: dict[str, Anchor]
     limits: Limits = field(default_factory=Limits)
-    anchor_m: float = 0.15
-    anchors: dict[int, tuple] = field(default_factory=dict)
+    video_latency_s: float = 0.15
 
     @classmethod
     def load(cls, path: str | Path) -> "SwarmFile":

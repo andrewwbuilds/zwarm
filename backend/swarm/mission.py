@@ -1192,6 +1192,13 @@ class MissionManager:
         hub, work = self.hub, self.work
         if self.state == "starting" and self.crew(now):
             self.state = "running"
+        if self.capture_failed is not None:
+            why, self.capture_failed = self.capture_failed, None
+            hub._stop_search()
+            hub.orders.clear()
+            self._halt()
+            self._finish("failed", f"The map mission ended, because no photos could be saved: {why}", now)
+            return
         if self.state == "analyzing":
             if not self._inspector_busy() or now - self.analyzing_since > ANALYSIS_LIMIT_S:
                 self._finish_done(now)

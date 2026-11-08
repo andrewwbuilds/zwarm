@@ -438,6 +438,7 @@ class Toolbox:
 
     def _run_start_mission(self, args: dict) -> dict:
         with self.lock:
+            before = self.missions.status() or {}
             status = self.missions.start(args["kind"], args["region"], args.get("target"))
         note = f" {args['note']}" if args.get("note") else ""
         return {"ok": True, "text": f"Started: {describe('start_mission', args)}.{note}", "mission": _mission_summary(status)}

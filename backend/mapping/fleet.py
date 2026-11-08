@@ -785,6 +785,11 @@ class FleetCapture:
         with self.lock:
             if self.state == "capturing":
                 raise MapError(f"Map {self.name!r} is still capturing. Stop it before building {name!r}.")
+            building = self.state == "building"
+        if not building and not self.has_frames(name):
+            self.forget_empty()
+            raise MapError(f"No frames saved for map {name!r}. Start a capture while the drones are flying first.")
+        with self.lock:
             if self.state != "building":
                 if self.name != name:
                     self.saved = {}

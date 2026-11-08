@@ -747,6 +747,27 @@ class FleetCapture:
                     "warnings": list(result.get("warnings", [])), "seconds": dict(result.get("seconds", {})),
                     "runner": result.get("runner"), "splat": self.splat, "error": self.error}
 
+    def has_frames(self, name: str) -> bool:
+        """Whether any frames are saved under this name. A name that can't be a folder has none."""
+        try:
+            folder = self.root / safe_name(name) / "drones"
+            return folder.exists() and any(frame_files(path / "raw") for path in folder.iterdir() if path.is_dir())
+        except (MapError, OSError):
+            return False
+
+    def forget_empty(self) -> None:
+        """A capture that saved nothing shouldn't hide the last finished map."""
+        with self.lock:
+            name, state = self.name, self.state
+        if state != "captured" or self.has_frames(name or ""):
+            return
+        newest = self._newest()  # off the lock: this reads the disk, and status() can be asked from anywhere
+        with self.lock:
+            if self.state == "captured" and self.name == name:
+                self.name, self.state, self.step, self.error, self.saved, self.result, self.splat = None, "idle", None, None, {}, None, None
+                if newest is not None:
+                    self.name, self.result, self.state = newest[0], newest[1], "done"
+
     def build(self, name: str | None = None, splat: bool | None = None) -> dict:
         """Build a map in the background and return straight away. A failure shows up in status()['error'].
 

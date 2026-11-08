@@ -516,7 +516,6 @@ class PlansAreCheckedBeforeTakeoff(unittest.TestCase):
 
     def test_a_plan_that_went_bad_doesnt_take_off_at_approval(self):
         fleet = FakeFleet("ground")
-        from tests.test_agent import Scripted
         agent = fleet.agent(Scripted(use(call("start_mission", kind="explore", region="north")), say("Approve it.")))
         plan = agent.handle("explore the north side")["plan"]
         self.refusing(fleet)

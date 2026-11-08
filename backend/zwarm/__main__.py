@@ -9,10 +9,10 @@ import sys
 from zwarm.app import PORT
 
 
-def _serve(app, port: int) -> None:
-    import uvicorn
+def _serve(zw, app, port: int) -> None:
+    from swarm.server import serve
 
-    uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning", timeout_graceful_shutdown=2)
+    serve(app, zw.runtime, port, log_level="warning", timeout_graceful_shutdown=2)
 
 
 def cmd_sim(args) -> int:

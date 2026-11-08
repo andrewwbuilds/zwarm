@@ -301,8 +301,17 @@ def main() -> int:
     parser.add_argument("--fix-lens", action="store_true", help="hold the lens at the --hfov guess instead of refining it")
     parser.add_argument("--hfov", type=float, default=fleet.HFOV_DEG, help="starting guess for the lens")
     parser.add_argument("--reuse", help="build from another run's frames instead of rendering, naming its folder under --root")
+    parser.add_argument("--rough", action="store_true", help="different lens per drone, distortion, motion blur, exposure drift")
     parser.add_argument("--render-only", action="store_true")
+    parser.add_argument("--live", action="store_true", help="run capture and build against SimFrames in real time")
+    parser.add_argument("--rate", type=float, default=5.0, help="frames a second per drone in --live")
+    parser.add_argument("--splat", action="store_true", help="in --live, also train a splat")
     args = parser.parse_args()
+    if args.live:
+        root = Path(args.root) / "live-root"
+        shutil.rmtree(root, ignore_errors=True)
+        print("sim:", json.dumps(live(root, args.seconds, args.rate, args.splat), indent=1))
+        return 0
     name = args.name or f"{args.layout}-{int(args.seconds)}s"
     folder = Path(args.root) / name
     if args.reuse:

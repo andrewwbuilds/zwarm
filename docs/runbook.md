@@ -346,9 +346,9 @@ Rows marked **safety** give up a margin. Change those last, and by a small step.
 | Height wrong by a fixed share | White square measured wrong | `white_square_edge_m` in `real.json` | Measure again. Too high a reading means the file's size is too big |
 | Height wrong by a fixed few cm | Lens height above the floor | `backend/swarm/tracking.py:37` `CAMERA_HEIGHT_M` | Set it to what you measure |
 | Position right when still, off during moves | Video later than assumed | `video_latency_s` in `real.json` | Raise, 0.15 to 0.25 |
-| Pose ignored after a gap, then snaps back | True sightings rejected | `backend/swarm/tracking.py:357` `GATE_M` | Raise, 0.45 to 0.7 |
-| Sudden false jumps | Bad read let through | `backend/swarm/tracking.py:357` `GATE_M` | Lower, 0.45 to 0.3 |
-| `sigma` climbs while the drone holds fine | Hold better than assumed | `backend/swarm/tracking.py:349` `HOLD_DRIFT` | Lower, 0.04 to 0.02 |
+| Pose ignored after a gap, then snaps back | True sightings rejected | `backend/swarm/tracking.py:371` `GATE_M` | Raise, 0.45 to 0.7 |
+| Sudden false jumps | Bad read let through | `backend/swarm/tracking.py:371` `GATE_M` | Lower, 0.45 to 0.3 |
+| `sigma` climbs while the drone holds fine | Hold better than assumed | `backend/swarm/tracking.py:363` `HOLD_DRIFT` | Lower, 0.04 to 0.02 |
 | Turns away from its tags, then loses them | Too few tags at that heading | Grid spacing in step 2 | Use the 0.8 m grid |
 
 ### Takeoff and the test moves

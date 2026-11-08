@@ -33,14 +33,38 @@ def _print_ready(readiness) -> None:
         print(f"  NOT READY: {line}")
 
 
-def cmd_preflight(args) -> int:
-    from zwarm.app import check_ready
+def _subset(args) -> str | None:
+    """The swarm file with only --drones in it. Prints the reason and returns None if that can't be done."""
+    from zwarm.preflight import only_drones
 
-    print(f"Checking {args.config}. This reads capabilities and video and sends no flight command.", flush=True)
-    readiness = check_ready(args.config, not args.no_model)
-    _print_ready(readiness)
-    print("Ready to fly." if readiness.ready else "Not ready: fix what's listed above before flying.")
-    return 0 if readiness.ready else 2
+    try:
+        return only_drones(args.config, args.drones)
+    except FileNotFoundError:
+        print(f"There's no swarm file at {args.config}.")
+    except (OSError, ValueError, KeyError) as error:
+        print(f"Can't read the swarm file {args.config}: {error}")
+    return None
+
+
+def cmd_preflight(args) -> int:
+    from zwarm.preflight import NOT_READY, run, watch
+
+    path = _subset(args)
+    if path is None:
+        return NOT_READY
+    if args.watch:
+        return watch(path)
+    return run(path, not args.no_model, args.seconds, args.on_pad, args.save_frames, args.vision, out=lambda text: print(text, flush=True))
+
+
+def cmd_markers(args) -> int:
+    from zwarm.markers import write
+
+    only = [int(part) for part in args.ids.split(",")] if args.ids else None
+    pages, section, real_m = write(args.out, args.tag_width_mm / 1000, args.origin, args.spacing, args.columns, args.rows, args.start_id, only)
+    print(f"Wrote {len(pages)} page(s) and {section} in {args.out}. Each tag is {real_m * 1000:.1f} mm wide, with a {real_m * 5 / 9 * 1000:.1f} mm white square.")
+    print("Print at 100%, no fit to page, then measure the white square. Copy the \"anchors\" section into your swarm file and set white_square_edge_m to what you measured.")
+    return 0
 
 
 def cmd_fly(args) -> int:

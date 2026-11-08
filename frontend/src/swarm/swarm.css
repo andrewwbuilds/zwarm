@@ -344,7 +344,7 @@
 }
 .zw-findings h2, .zw-3d h2 { font: 700 23px/1.1 var(--zw-display); margin-bottom: 5px !important; }
 .zw-findings ul { flex: 1; min-height: 0; overflow-y: auto; list-style: none; display: flex; flex-direction: column; gap: 9px; }
-.zw-finding { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 10px; }
+.zw-finding { display: grid; grid-template-columns: clamp(84px, 26%, 112px) minmax(0, 1fr); gap: 10px; }
 .zw-finding-dismissed { opacity: 0.55; }
 .zw-photo {
   width: 112px;

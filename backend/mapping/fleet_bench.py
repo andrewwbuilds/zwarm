@@ -164,7 +164,7 @@ class Rough:
 
 
 def _render_drone(job: tuple) -> dict:
-    drone, track, folder, world, walls, scale = job
+    drone, track, folder, world, walls, scale, rough = job
     cv2.setNumThreads(1)
     raw = Path(folder) / "drones" / drone / "raw"
     raw.mkdir(parents=True, exist_ok=True)

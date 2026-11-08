@@ -42,7 +42,7 @@ Start from `swarm/example.json`. Each drone needs its `backend`, `pad` and `came
 
 Put pads behind the first row, as in the example: (-2.5, 1.2), (-2.5, 0) and (-2.5, -1.2), each nose toward +x. A drone on the floor can't see any tags, so **its starting position is wherever the file says its pad is**. Measure the pads and set the drones down carefully. Nothing checks this until the first sighting in the climb.
 
-Keep the fence inside the tag area: a drone facing +x past the last row sees nothing. List anything solid under `obstacles`. The swarm only avoids what's in that list and what the other drones report, and it can't see a wall the file doesn't mention.
+Keep the fence inside the tag area: a drone facing +x past the last row sees nothing. List anything solid under `obstacles`. The swarm only avoids what's in that list and what the other drones report, and it can't see a wall the file doesn't mention. Listed things count as floor to ceiling: drones go around them, because a drone over furniture can't see the tags.
 
 ## 4. Check each drone without flying
 

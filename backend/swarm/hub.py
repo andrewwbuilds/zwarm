@@ -86,7 +86,7 @@ class Search:
 
     def __init__(self, hub: "Hub", label: str, now: float, hint: Thing | None = None):
         self.hub, self.label, self.started = hub, label, now
-        self.coverage = Coverage(hub.co.room)
+        self.coverage = hub.new_coverage()
         self.state = "searching"  # searching, closing, found, exhausted, failed, stopped
         self.views: dict[str, object] = {}
         self.dwell: dict[str, float] = {}

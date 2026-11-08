@@ -460,7 +460,6 @@ class FleetCapture:
         self.root = Path(root)
         self.drones = list(drones) if drones is not None else None
         self.max_photos = max_photos or int(os.environ.get("MAP_BUILD_PHOTOS") or MAX_PHOTOS)
-        self.clock = clock
         self.on_event = on_event
         self.lock = threading.Lock()
         self.name: str | None = None

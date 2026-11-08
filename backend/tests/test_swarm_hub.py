@@ -157,7 +157,9 @@ class CameraGeometryTests(unittest.TestCase):
     def test_a_ray_that_never_reaches_the_floor_falls_back(self):
         p = (0.0, 0.0, 1.0)
         detection = Detection("cup", 0.0, 0.0, 2.0, (0.1, 0.1, 0.1), 0.9, foot=(0.0, math.radians(50.0)))
-        np.testing.assert_allclose(locate(p, 0.0, detection), np.array(p) + 2.0 * ray(0.0, DEFAULT_TILT, 0.0, 0.0), atol=1e-9)
+        where = locate(p, 0.0, detection)
+        np.testing.assert_allclose(where[:2], (np.array(p) + 2.0 * ray(0.0, DEFAULT_TILT, 0.0, 0.0))[:2], atol=1e-9)
+        self.assertEqual(where[2], 0.05, "not under the floor")
 
     def test_tilts_come_from_the_swarm_file(self):
         tilts = camera_tilts({"drones": [{"id": "1", "camera_tilt_deg": 30}, {"id": 2}]})

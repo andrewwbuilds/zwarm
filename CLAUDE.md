@@ -23,7 +23,8 @@ Host software for cheap Wi-Fi camera drones with closed firmware (fork of turbod
 ```sh
 ./fly.sh --sim                                      # fly the simulator in the browser
 ./fly.sh --swarm                                    # the whole app in the simulator, console at /swarm
-./fly.sh --swarm fly swarm.json                     # the whole app on real drones
+./fly.sh --swarm preflight real.json                # read-only pass or fail per drone, sends no flight command
+./fly.sh --swarm fly real.json [--drones 1,2]        # the whole app on real drones
 cd backend
 uv sync
 uv run python -m unittest discover tests            # all backend tests

@@ -299,6 +299,8 @@ class Inspector:
         self.counts = self._zero()
         self.last_error: str | None = None
         self.next_fault = -math.inf
+        self.next_behind = -math.inf
+        self.told_dropped = 0
         self.threads: list[threading.Thread] = []
 
     @staticmethod

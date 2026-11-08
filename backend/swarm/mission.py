@@ -807,6 +807,11 @@ class MissionManager:
             if max(left) < MIN_FLIGHT_LEFT_S:
                 raise MissionError(f"Every drone is within {MIN_FLIGHT_LEFT_S:.0f} s of its flight limit. Land and change batteries first.")
 
+    def _check_no_build_running(self, kind: str) -> None:
+        status = getattr(self.capture, "status", None)
+        if kind == "map" and status is not None and (status() or {}).get("state") == "building":
+            raise MissionError("The last map is still building, so a new one can't save photos yet. Wait for it, or explore instead.")
+
     def _new_coverage(self) -> RegionCoverage:
         tilts = {self.hub.tilt_of(drone_id) for drone_id in self.hub.co.drones}
         return RegionCoverage(self.hub.co.room, tilts, self.regions, self.usable)

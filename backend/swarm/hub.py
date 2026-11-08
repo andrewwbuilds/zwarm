@@ -99,6 +99,7 @@ class Search:
         self.close_seen_from = 0
         self.found_at: np.ndarray | None = None
         self.obstacle_count = len(hub.co.room.obstacles)
+        self.nobody_since: float | None = None
 
     def flying(self) -> list:
         return [d for d in self.hub.co.drones.values() if d.phase == Phase.AIR and not d.landing_requested]

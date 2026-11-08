@@ -335,6 +335,36 @@ class AFreshStart(Flight):
             self.assertFalse(d.landing_requested or d.sticks_wrong or d.land_here_wanted or d.check_held or d.unknown_air)
 
 
+class ADownedDroneStopsFencingOffTheRoom(Flight):
+    def test_the_others_get_the_room_back_once_it_has_finished_coming_down(self):
+        self.flying()
+        self.co.takeoff_queue.clear()
+        self.sigma = 0.71  # what a real flight froze at, which kept everyone 1.5 m away for the rest of it
+        down = (-1.0, 0.0, 0.0, 5.0, 1.0)
+        near = (0.2, 0.0, 1.0, 0.0, 1.0)
+        self.tick(a=down, b=near)
+        self.assertIn("land", self.links["a"].commands)
+        self.co._set_goal(self.b, np.array([-0.2, 0.0, 1.0]))
+        self.tick(a=down, b=near, seconds=3.0)
+        self.assertEqual(self.a.phase, Phase.GROUND)
+        self.assertTrue(self.a.came_down)
+        self.assertGreaterEqual(self.b.commanded[0], 0.0, "it may still be falling, so b is held well away at first")
+        self.tick(a=down, b=near, seconds=DOWN_SETTLED_S)
+        self.assertLess(self.b.commanded[0], -0.1, "b should be free to fly past now")
+        self.assertTrue(self.a.unknown_air, "it still needs checking by eye")
+        self.assertIn("land", self.a.faults)
+
+    def test_it_is_only_for_a_drone_that_came_down(self):
+        self.flying()
+        self.co.takeoff_queue.clear()
+        self.a.phase, self.a.unknown_air = Phase.GROUND, True  # a takeoff nobody saw may be hovering unseen
+        self.sigma = 0.71
+        near = (0.2, 0.0, 1.0, 0.0, 1.0)
+        self.co._set_goal(self.b, np.array([-0.2, 0.0, 1.0]))
+        self.tick(a=(-1.0, 0.0, 1.0, self.t, 1.0), b=near, seconds=DOWN_SETTLED_S + 1.0)
+        self.assertGreaterEqual(self.b.commanded[0], 0.0)
+
+
 class RadioOutageInTheSimulator(unittest.TestCase):
     """Simulator numbers: its flight controller lands itself after losing packets for too long."""
 

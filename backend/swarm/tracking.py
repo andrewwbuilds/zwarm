@@ -511,6 +511,7 @@ class InsideOutTracker:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if image.ndim == 3 else image
         lens = (optics.lens or Lens.from_fov()).for_size(gray.shape[1], gray.shape[0])
         found = self.readers[drone_id].find(gray)
+        small = cv2.resize(gray, (64, 36), interpolation=cv2.INTER_AREA).astype(np.float32)
         with self.lock:
             prior = self.estimators[drone_id].yaw
         fix = solve_fix(found, lens, math.radians(optics.tilt_deg), t, prior, self.fence)

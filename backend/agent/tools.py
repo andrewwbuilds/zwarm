@@ -296,6 +296,7 @@ class Toolbox:
         self._need_drones()
         if not self.flying():
             self._need_preflight()
+            self._need_a_plan_for(kind, region, target)
         return {"kind": kind, "region": region, "target": target, **({"note": note} if note else {})}
 
     def _inspect_target(self, target: str | None) -> tuple[str | None, str | None]:

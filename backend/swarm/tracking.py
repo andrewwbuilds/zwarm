@@ -151,11 +151,9 @@ class Lens:
     reprojection_px: float | None = None
 
     @classmethod
-    def from_fov(cls, width: int, height: int, horizontal_fov_deg: float) -> "CameraModel":
-        """A rough lens model for testing. Run `calibrate-lens` before relying on heights."""
-        focal = (width / 2) / math.tan(math.radians(horizontal_fov_deg) / 2)
-        matrix = np.array([[focal, 0, width / 2], [0, focal, height / 2], [0, 0, 1]], np.float64)
-        return cls(matrix, np.zeros(5))
+    def from_fov(cls, width: int = VIDEO_WIDTH, height: int = VIDEO_HEIGHT, horizontal_fov_deg: float = DEFAULT_FOV_DEG) -> "Lens":
+        """An ideal lens. The real S20's field of view is an estimate until `calibrate-lens` is run."""
+        return cls.from_focal((width / 2) / math.tan(math.radians(horizontal_fov_deg) / 2), width, height)
 
     @classmethod
     def load(cls, path: str | Path) -> "CameraModel":

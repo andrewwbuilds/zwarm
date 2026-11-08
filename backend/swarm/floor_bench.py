@@ -48,7 +48,7 @@ class FloorFlight(bench.Flight):
         lens = Lens.from_fov(horizontal_fov_deg=assumed_fov)
         optics = {c.id: DroneOptics(c.pad[0], c.pad[1], c.yaw, lens=lens) for c in configs}
         self.tracker = InsideOutTracker(optics, load_anchors(section), FENCE)
-        self.video = SimVideo(self.fleet, self.tracker, scene, video or VideoConditions(), seed)
+        self.video = SimVideo(self.fleet, self.tracker, scene, video or VideoConditions(), seed, **({"rate": frame_rate} if frame_rate else {}))
         self.co = Coordinator(self.room, configs, self.fleet.links, limits, tracker=self.tracker)
         self.errors: list[tuple[float, float, float, float]] = []
         self.velocity_gain_scale = 1.0

@@ -586,6 +586,10 @@ class InsideOutTracker:
         with self.lock:
             self.estimators[drone_id] = Estimator(d.x, d.y, d.yaw)
 
+    def blockers(self) -> list[tuple[np.ndarray, np.ndarray]]:
+        """What hides tags from a camera, as (lo, hi) boxes. Things the detector found move and come and go, so they don't count."""
+        return [] if self.room is None else [(np.array(o.lo, float), np.array(o.hi, float)) for o in self.room.listed()]
+
     def expected(self, drone_id: str, height: float = 1.0) -> list[str]:
         """The anchors this drone should see hovering over its pad."""
         d = self.drones[drone_id]

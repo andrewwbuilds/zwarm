@@ -96,7 +96,7 @@ class Room:
                 normal[axis] = -1.0
                 out.append((normal, above))
         for obstacle in self.obstacles.values():
-            lo, hi = np.array(obstacle.lo), np.array(obstacle.hi)
+            lo, hi = self.flight_box(obstacle)
             nearest = np.clip(p, lo, hi)
             offset = p - nearest
             distance = float(np.linalg.norm(offset))

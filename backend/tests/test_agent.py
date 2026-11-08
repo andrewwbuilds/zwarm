@@ -103,6 +103,10 @@ class ReadingReplies(unittest.TestCase):
         self.assertEqual(reply.tool_calls[0].name, "land")
         self.assertEqual(reply.content, "ok")
 
+    def test_unclosed_or_half_think_tags_are_dropped(self):
+        self.assertEqual(self.reply({"content": "Holding.<think>and then take off"}).content, "Holding.")
+        self.assertEqual(self.reply({"content": "thinking about take off</think>Holding."}).content, "Holding.")
+
     def test_no_choices_is_an_error(self):
         with self.assertRaises(ValueError):
             parse_reply({"choices": []}, "m")

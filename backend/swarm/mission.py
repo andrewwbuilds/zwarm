@@ -684,8 +684,8 @@ class MissionManager:
             if self.state == "analyzing":
                 self.state = "running"
                 self._inspector_begin(target)
-            self.say("mission", f"Focus moved to {spoken(region)}. {_names(d.id for d in self.crew(now))} moving there.",
-                     event="focus", region=region)
+            who = _names(d.id for d in self.crew(now))
+            self.say("mission", f"Focus moved to {spoken(region)}." + (f" {who} moving there." if who else ""), event="focus", region=region)
             return self.status()
 
     def stop(self) -> dict:

@@ -92,6 +92,8 @@ OBSERVE_PROMPT = """Something just happened in the fleet. This is data from the 
 
 Tell the operator in one short plain sentence what it means for the mission. Read state with a tool only if you need it. Call focus_region only if the mission really has to move. You can't start anything, take off or land from here."""
 
+_CLAIMS = re.compile(r"\b(approv\w*|prepared|started|starting|ready|is now|are now|moving|moved|on it|underway|running|"
+                     r"taking off|landing|has begun|done)\b", re.IGNORECASE)
 _PRESS = re.compile(r"^(?:hit|press|use|activate|trigger|do|call|engage)\s+(?:the\s+|an\s+|a\s+)?")
 _SOON = re.compile(r"\s+(?:immediately|right away|asap|at once)$")
 _FRONT = re.compile(r"^(?:(?:hey|ok|okay|please|quick|guys|everyone|everybody|all drones|all the drones|the drones|drones|"

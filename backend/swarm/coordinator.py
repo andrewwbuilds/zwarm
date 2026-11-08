@@ -309,6 +309,9 @@ class Coordinator:
             if d.phase == Phase.CHECK:
                 d.check = None
                 d.phase = Phase.AIR
+            if d.phase == Phase.TAKEOFF:
+                d.landing_requested = True
+                d.land_requested_at = now
             if d.phase == Phase.AIR:
                 d.landing_requested = True
                 d.land_requested_at = now

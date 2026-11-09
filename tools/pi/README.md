@@ -87,7 +87,7 @@ cd ~/zwarm/backend
 Current pairing (HITURBO S20, open networks). Each Pi saves the link as `drone-link` with
 autoconnect priority 100 and unlimited retries. If a drone powers off, the Pi falls back to
 home Wi-Fi, and NetworkManager never leaves a working connection on its own. A keeper timer
-(`tools/pi/drone-link/install.sh`, installed on all three Pis) checks every 15 s and rejoins
+(`tools/pi/drone-link/install.sh`, installed on all three Pis) checks every 5 s and rejoins
 the drone once it broadcasts again, then resets that backend's presumed flight state to
 grounded, since a drone whose network vanished lost power. Stop
 `zwarm-drone-link-keeper.timer` to keep a Pi on home Wi-Fi on purpose:
@@ -134,6 +134,12 @@ A Pi whose drone is off reports NOT READY and the other drones still come up.
   **Take off all**, **Land all** and **E-STOP all**. Sticks stay with the consoles.
   Take off all asks for confirmation first. `?ports=8011,8012,8013` points the page at
   other backends, such as local simulators, for testing without the drones.
+- **Low takeoff (1 ft)**, a checkbox on the fleet page and each console, climbs to the
+  firmware's hover height, then holds the throttle down for a fixed time. It reached about
+  0.3 m in the simulator, with a 1.27 m peak first. It has not been measured on a real
+  drone, and the drone reports no height, so measure it with a tape. Tune the distance in
+  `LOW_TAKEOFF_PLAN` in `frontend/src/backend.ts`. Moving the sticks cancels the descent,
+  and the drone then holds whatever height it has reached.
 - The S20 sends takeoff and land as one toggle bit and reports nothing back, so each
   backend tracks a *presumed* state (shown on each tile) and drops a takeoff to a drone
   presumed in the air or a land to one presumed on the ground. This applies to consoles

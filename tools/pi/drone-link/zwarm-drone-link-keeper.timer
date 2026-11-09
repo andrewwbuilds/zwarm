@@ -1,10 +1,10 @@
 [Unit]
-Description=Check the drone Wi-Fi link every 15 seconds
+Description=Check the drone Wi-Fi link every 5 seconds
 
 [Timer]
 OnBootSec=30s
-OnUnitActiveSec=15s
-AccuracySec=2s
+OnUnitActiveSec=5s
+AccuracySec=1s
 
 [Install]
 WantedBy=timers.target

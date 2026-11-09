@@ -1,11 +1,12 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { CameraTiltDirection, SpeedTier, useControls } from "../hooks/useControls";
 import type { SimState, useSim } from "../hooks/useSim";
 import { usePlugins } from "../hooks/usePlugins";
+import { useLowTakeoff } from "../hooks/useLowTakeoff";
 import { VideoFeed } from "./VideoFeed";
 import { DrawingOverlay } from "./DrawingOverlay";
 import { block, drop, num } from "../ui";
-import { API_BASE_URL } from "../backend";
+import { API_BASE_URL, forceLand, prepareLowTakeoff, presumedAirborne, startLowTakeoff } from "../backend";
 
 type Controls = ReturnType<typeof useControls>;
 type Sim = ReturnType<typeof useSim>;
@@ -158,6 +159,58 @@ function SimControls({ sim }: { sim: Sim }) {
 export function Console({ controls, sim, children }: { controls: Controls; sim: Sim; children?: ReactNode }) {
   const c = controls;
   const caps = c.commandCapabilities;
+  // Set when a land press would be dropped, which also shows the force land button.
+  const [landNote, setLandNote] = useState<string | null>(null);
+  const [lowTakeoff, setLowTakeoff] = useLowTakeoff();
+  const [takeoffNote, setTakeoffNote] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  // A stop pressed while a low takeoff is being prepared must also cancel the takeoff.
+  const stopped = useRef(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") stopped.current = true; };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const pressTakeoff = async () => {
+    setLandNote(null);
+    setTakeoffNote(null);
+    if (!lowTakeoff) {
+      c.takeOff();
+      return;
+    }
+    stopped.current = false;
+    setPreparing(true);
+    try {
+      await prepareLowTakeoff(API_BASE_URL);
+      if (stopped.current) setTakeoffNote("Low takeoff cancelled by the stop.");
+      else await startLowTakeoff(API_BASE_URL);
+    } catch (e) {
+      setTakeoffNote(`Low takeoff NOT sent: ${(e as Error).message}`);
+    } finally {
+      setPreparing(false);
+    }
+  };
+
+  const pressLand = async () => {
+    stopped.current = true;
+    if ((await presumedAirborne(API_BASE_URL)) === false) {
+      setLandNote("Land NOT sent: the backend thinks this drone is on the ground.");
+      return;
+    }
+    setLandNote(null);
+    c.land();
+  };
+
+  const pressForceLand = async () => {
+    try {
+      await forceLand(API_BASE_URL);
+      setLandNote(null);
+    } catch (e) {
+      setLandNote(`Force land failed: ${(e as Error).message}`);
+    }
+  };
 
   const scheme = (mode: Controls["mode"]) => (e: { currentTarget: HTMLElement }) => {
     if (mode === "mouse") document.body.requestPointerLock();
@@ -180,10 +233,27 @@ export function Console({ controls, sim, children }: { controls: Controls; sim: 
       <div className="raw" style={{ width: 400, padding: 8, overflowY: "auto" }}>
         <pre>{pilot(c)}{sim.state ? "\n" + telemetry(sim.state) : ""}</pre>
         <p>
-          <button disabled={!caps.takeoff} onClick={(e) => { c.takeOff(); drop(e); }}>takeoff</button>{" "}
-          <button disabled={!caps.land} onClick={(e) => { c.land(); drop(e); }}>land</button>{" "}
-          <button disabled={!caps.estop} onClick={(e) => { c.emergencyStop(); drop(e); }}>e-stop (esc)</button>
+          <button disabled={!caps.takeoff || preparing} onClick={(e) => { pressTakeoff(); drop(e); }}>takeoff</button>{" "}
+          <button disabled={!caps.land} onClick={(e) => { pressLand(); drop(e); }}>land</button>{" "}
+          <button disabled={!caps.estop} onClick={(e) => { stopped.current = true; setLandNote(null); c.emergencyStop(); drop(e); }}>e-stop (esc)</button>
         </p>
+        <p>
+          <label title="Climbs to its normal height first, then comes down. Not measured on a real drone yet.">
+            <input type="checkbox" checked={lowTakeoff} onKeyDown={block}
+              onChange={(e) => { setLowTakeoff(e.target.checked); drop(e); }} />{" "}
+            low takeoff (1 ft)
+          </label>
+          {preparing && " preparing..."}
+        </p>
+        {takeoffNote && <p style={{ color: "#f96" }}>{takeoffNote}</p>}
+        {landNote && (
+          <p style={{ color: "#f96" }}>
+            {landNote} Still in the air?{" "}
+            <button onClick={(e) => { pressForceLand(); drop(e); }}>force land</button>
+            <br />
+            On the floor, force land starts the motors.
+          </p>
+        )}
         <p>
           <button onClick={scheme("inc")}>keyboard</button>{" "}
           <button onClick={scheme("abs")} disabled={!c.gamepadConnected}>gamepad</button>{" "}

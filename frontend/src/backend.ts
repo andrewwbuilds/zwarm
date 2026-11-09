@@ -32,6 +32,61 @@ export function apiUrlForPort(port: number): string {
   return `http://localhost:${port}`;
 }
 
+// What the backend believes, or null if it doesn't track it or didn't answer in time.
+export async function presumedAirborne(base: string): Promise<boolean | null> {
+  try {
+    const r = await fetch(`${base}/capabilities`, { signal: AbortSignal.timeout(500) });
+    const data = await r.json();
+    return typeof data?.airborne === "boolean" ? data.airborne : null;
+  } catch {
+    return null;
+  }
+}
+
+// The backend drops a land for a drone it believes is down, and that belief is wrong when
+// a land toggle didn't take. Correct it, then land. On the floor this starts the motors,
+// because land and takeoff are one toggle, so only a person may ask for it.
+export async function forceLand(base: string): Promise<void> {
+  const send = async (path: string, init?: RequestInit) => {
+    const r = await fetch(`${base}${path}`, { method: "POST", signal: AbortSignal.timeout(3000), ...init });
+    if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
+  };
+  await send("/flight/assume", {
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ airborne: true }),
+  });
+  await send("/flight/land");
+}
+
+// The firmware climbs to its own hover height and reports no height back, so a low takeoff
+// lets it climb, then holds the throttle down for a fixed time. It still goes high for a few
+// seconds, and the 0.9 m is only true if the simulator's guessed rates match the drone.
+const LOW_TAKEOFF_PLAN = "climb 0.3\ntakeoff\nmove 0 0 -0.9\n";
+
+async function sendPlan(base: string, path: string, timeoutMs: number): Promise<void> {
+  const r = await fetch(`${base}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: LOW_TAKEOFF_PLAN }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    throw new Error(data?.detail ?? `HTTP ${r.status}`);
+  }
+}
+
+// Takes about 2 s on a Pi and sends nothing to the drone. Splitting it from the start lets
+// several drones leave together, and lets a stop pressed meanwhile cancel the takeoff.
+export async function prepareLowTakeoff(base: string): Promise<void> {
+  if ((await presumedAirborne(base)) === true) throw new Error("already presumed in the air");
+  await sendPlan(base, "/trajectory/plan", 15000);
+}
+
+export async function startLowTakeoff(base: string): Promise<void> {
+  await sendPlan(base, "/trajectory/run", 3000);
+}
+
 // "Drone 2" when this tab points at a fleet port, otherwise the backend address.
 export function backendLabel(base: string = API_BASE_URL): string {
   const port = Number(new URL(base).port);

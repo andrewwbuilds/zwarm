@@ -143,6 +143,7 @@ The four flight bugs from that check were fixed afterward, so the numbers above 
 Still open:
 
 - **Nothing has flown on real drones.** Tag reads on real video, stick scale and COLMAP on real frames are unmeasured.
+- **Real S20s sometimes ignore land.** A land press sends the toggle in one packet (12.5 ms at 80 Hz) and marks the drone grounded, so if it stays up, later presses are dropped. The cause isn't known. Control replies put packet loss near 0.3% (`docs/research/S2x.md`), so loss alone is unlikely. Workaround: "force land" on `/fleet` or in the single-drone console, only for a drone that's in the air, because on the floor it starts the motors.
 - `blank_floor` in `swarm bench` passes 15 of 20 seeds.
 - `agent.eval`: "Do the usual." from the ground makes a plan instead of asking. Nothing flies without Approve.
 

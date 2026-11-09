@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
-import { FLEET, apiUrlForPort, type FleetDrone } from "../backend";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FLEET, apiUrlForPort, forceLand, prepareLowTakeoff, startLowTakeoff, type FleetDrone } from "../backend";
+import { useLowTakeoff } from "../hooks/useLowTakeoff";
 
 // Fleet page: video and status for every drone, plus fleet-wide takeoff, land and E-stop.
 // Sticks stay with each drone's console (the "open console" links); this page never
@@ -7,8 +8,8 @@ import { FLEET, apiUrlForPort, type FleetDrone } from "../backend";
 //
 // S2x drones use one toggle bit for takeoff and land and report nothing back, so the
 // backend tracks a presumed state and drops a command that would reverse it. If that
-// belief is wrong (the drone ignored a takeoff, or crashed), fix it with "mark landed" /
-// "mark flying" before using the fleet buttons.
+// belief is wrong (the drone ignored a takeoff or a land, or crashed), fix it with
+// "mark landed" / "mark flying", or "force land" on a drone still in the air.
 
 type Status = "checking" | "online" | "offline";
 
@@ -69,10 +70,11 @@ function flightLabel(s: DroneState): string {
   return s.airborne ? "presumed IN AIR" : "presumed on ground";
 }
 
-function DroneTile({ drone, state, onAssume }: {
+function DroneTile({ drone, state, onAssume, onForceLand }: {
   drone: FleetDrone;
   state: DroneState;
   onAssume: (drone: FleetDrone, airborne: boolean) => void;
+  onForceLand: (drone: FleetDrone) => void;
 }) {
   const base = apiUrlForPort(drone.port);
   // A failed MJPEG <img> never retries, so remount it each time the backend comes back.
@@ -100,6 +102,15 @@ function DroneTile({ drone, state, onAssume }: {
             style={{ fontSize: 11 }}
           >
             {state.airborne ? "mark landed" : "mark flying"}
+          </button>
+        )}
+        {state.status === "online" && state.airborne === false && (
+          <button
+            title="For a drone still in the air that the backend thinks has landed. On the floor this starts its motors."
+            onClick={() => onForceLand(drone)}
+            style={{ fontSize: 11, color: "#fff", background: "#b50", border: "none", borderRadius: 3 }}
+          >
+            force land
           </button>
         )}
         <a
@@ -137,6 +148,9 @@ export default function FleetPage() {
   const { states, refresh } = useFleetState();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [lowTakeoff, setLowTakeoff] = useLowTakeoff();
+  // E-STOP stays live while a low takeoff is being prepared, and must cancel it.
+  const stopped = useRef(false);
 
   useEffect(() => {
     document.title = "Fleet monitor";
@@ -168,20 +182,48 @@ export default function FleetPage() {
     }
     const names = targets.map((d) => d.name).join(", ");
     const note = skipped.length ? `\n\nSkipping ${skipped.join(", ")}: presumed in the air already.` : "";
-    if (!window.confirm(`Take off ${names}?\n\nProps clear, drones spaced apart, nobody close.${note}`)) return;
-    run("Take off all", targets, "/flight/takeoff");
+    const height = lowTakeoff
+      ? "\n\nLOW TAKEOFF: each drone climbs to its normal height for about 3 s, then comes down to about 1 ft. That height is not measured yet."
+      : "";
+    if (!window.confirm(`Take off ${names}?${height}\n\nProps clear, drones spaced apart, nobody close.${note}`)) return;
+    if (lowTakeoff) lowTakeoffAll(targets);
+    else run("Take off all", targets, "/flight/takeoff");
+  };
+
+  const lowTakeoffAll = async (targets: FleetDrone[]) => {
+    stopped.current = false;
+    setBusy(true);
+    setMessage("Low takeoff: preparing, about 2 s");
+    const prepared = await Promise.all(targets.map((d) =>
+      prepareLowTakeoff(apiUrlForPort(d.port)).then(() => null, (e: Error) => e.message)));
+    const results = await Promise.all(targets.map(async (d, i) => {
+      if (prepared[i]) return `${d.name}: NOT sent (${prepared[i]})`;
+      if (stopped.current) return `${d.name}: cancelled by the stop`;
+      try {
+        await startLowTakeoff(apiUrlForPort(d.port));
+        return `${d.name}: sent`;
+      } catch (e) {
+        return `${d.name}: FAILED (${(e as Error).message})`;
+      }
+    }));
+    setMessage(`Low takeoff: ${results.join(" · ")}`);
+    setBusy(false);
+    refresh();
   };
 
   const landAll = () => {
     const targets = online.filter((d) => states[d.port].airborne !== false);
     if (targets.length === 0) {
-      setMessage("Land all: no online drone is presumed in the air.");
+      setMessage("Land all: nothing sent, every drone is presumed on the ground. Still flying? Use force land on its tile.");
       return;
     }
     run("Land all", targets, "/flight/land");
   };
 
-  const estopAll = () => run("E-STOP all", online, "/flight/estop");
+  const estopAll = () => {
+    stopped.current = true;
+    run("E-STOP all", online, "/flight/estop");
+  };
 
   const assume = async (drone: FleetDrone, airborne: boolean) => {
     try {
@@ -193,11 +235,25 @@ export default function FleetPage() {
     refresh();
   };
 
+  const forceLandOne = async (drone: FleetDrone) => {
+    if (!window.confirm(`Force land ${drone.name}?\n\nOnly if it is in the air. Land and takeoff are the same signal, so on the floor this STARTS ITS MOTORS.`)) return;
+    try {
+      await forceLand(apiUrlForPort(drone.port));
+      setMessage(`${drone.name}: force land sent`);
+    } catch (e) {
+      setMessage(`${drone.name}: force land FAILED (${(e as Error).message})`);
+    }
+    refresh();
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#000" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 12px", background: "#1a1a1a", color: "#ddd", fontFamily: "monospace", fontSize: 13 }}>
         <button style={button("#2a7")} disabled={busy || online.length === 0} onClick={takeoffAll}>Take off all</button>
         <button style={button("#27c")} disabled={busy || online.length === 0} onClick={landAll}>Land all</button>
+        <label title="Climbs to its normal height first, then comes down. Not measured on a real drone yet." style={{ whiteSpace: "nowrap" }}>
+          <input type="checkbox" checked={lowTakeoff} onChange={(e) => setLowTakeoff(e.target.checked)} /> Low takeoff (1 ft)
+        </label>
         <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={message}>
           {message || `${online.length}/${FLEET.length} drones online`}
         </span>
@@ -215,7 +271,7 @@ export default function FleetPage() {
         }}
       >
         {FLEET.map((d) => (
-          <DroneTile key={d.port} drone={d} state={states[d.port] ?? INITIAL} onAssume={assume} />
+          <DroneTile key={d.port} drone={d} state={states[d.port] ?? INITIAL} onAssume={assume} onForceLand={forceLandOne} />
         ))}
       </div>
     </div>
